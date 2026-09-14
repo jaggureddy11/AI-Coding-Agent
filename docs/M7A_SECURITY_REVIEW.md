@@ -26,11 +26,14 @@ Regardless of whether the developer chooses an open-weight local model running o
     2. **EditSet Approval**: Multi-file diffs are presented in shadow documents. The developer must approve each file change before any disk mutation.
   - Selective rejection removes unapproved files prior to atomic write operations.
 
-### 3. Credential Isolation
-- **Threat**: Cloud API secrets leak into the Webview, logs, or local network payloads.
+### 3. Credential Isolation & Hugging Face Access Token Flow
+- **Threat**: Cloud API secrets (OpenAI, Anthropic, Gemini, Hugging Face) leak into the Webview, logs, RPC payloads, Git commits, or local network payloads.
 - **Mitigation**:
-  - API keys are stored exclusively in VS Code's native encrypted `SecretStorage`.
+  - API keys are stored exclusively in VS Code's native encrypted `SecretStorage` (`jaggu.apiKey.huggingface`, `jaggu.apiKey.openai`, etc.).
   - The Webview RPC protocol (`ExtensionToWebviewMessage`) only transmits sanitized `ModelDescriptor` metadata containing non-secret health statuses (`available`, `missing_credentials`, etc.).
+  - The Hugging Face token flows strictly:
+    $$\text{VS Code SecretStorage} \longrightarrow \text{Extension Host In-Memory} \longrightarrow \text{HTTPS Authorization Header} \longrightarrow \text{HF Router}$$
+  - Token is never printed to logs, diagnostics, telemetry, or error messages.
   - Local endpoints (`http://localhost:11434`, `http://localhost:1234/v1`) do not require secrets unless explicitly configured.
   - Logging and event telemetry mask sensitive authorization headers.
 
@@ -65,3 +68,4 @@ Regardless of whether the developer chooses an open-weight local model running o
 | **C-10** | Logs do not contain API keys or sensitive payloads | Passed |
 | **C-11** | Arbitrary shell execution prohibited | Passed |
 | **C-12** | Model cannot override agent orchestrator safety rules | Passed |
+| **C-13** | Hugging Face token isolated in SecretStorage | Passed |

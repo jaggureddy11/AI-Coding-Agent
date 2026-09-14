@@ -9,6 +9,7 @@ import { EventBus } from '../events/eventBus.js';
 import { OpenAIProvider } from './openai.js';
 import { AnthropicProvider } from './anthropic.js';
 import { GeminiProvider } from './gemini.js';
+import { HuggingFaceProvider } from './huggingface.js';
 import { OllamaProvider } from './ollama.js';
 import { OpenAICompatibleProvider } from './openaiCompatible.js';
 import { MockModelProvider } from './mock.js';
@@ -34,6 +35,7 @@ export class ModelGateway {
     this.registerProvider(new OpenAIProvider());
     this.registerProvider(new AnthropicProvider());
     this.registerProvider(new GeminiProvider());
+    this.registerProvider(new HuggingFaceProvider());
     this.registerProvider(new OllamaProvider());
     this.registerProvider(new OpenAICompatibleProvider());
     this.registerProvider(new MockModelProvider());

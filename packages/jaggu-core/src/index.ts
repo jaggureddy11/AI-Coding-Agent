@@ -11,6 +11,7 @@ export * from './models/transport.js';
 export * from './models/openai.js';
 export * from './models/anthropic.js';
 export * from './models/gemini.js';
+export * from './models/huggingface.js';
 export * from './models/ollama.js';
 export * from './models/openaiCompatible.js';
 export * from './models/mock.js';

@@ -1,175 +1,173 @@
-# JAGGU Milestone M7-A: Live Local-Model Validation Plan
+# M7-A Live Validation Plan: Online & Offline AI Inference
 
-## Objective
+**Target Milestone:** M7-A Live Validation (Online Hugging Face + Offline Ollama)  
+**Date:** September 14, 2026  
+**Goal:** Prove that JAGGU operates with both real online Hugging Face Inference and real offline Ollama inference through the exact same developer-controlled agent architecture.
 
-Validate that JAGGU's developer-controlled AI coding agent architecture functions end-to-end when powered by a **real, locally hosted coding model**, rather than deterministic test mocks.
+---
 
-The invariant boundary must be proven:
+## 1. Architectural Overview
 
+JAGGU enforces the core invariant:
 $$\text{Model Proposes} \longrightarrow \text{JAGGU Validates} \longrightarrow \text{Developer Approves} \longrightarrow \text{JAGGU Executes}$$
 
-This live validation determines whether local open-weight models can generate structured plans, adhere to bounded repository context, produce tool calls, submit multi-file edit sets for developer review, and navigate diagnostics/verification without compromising JAGGU's security guarantees.
+The target dual-path architecture:
 
----
-
-## 1. Hardware & Environment Baseline
-
-Current host environment inspected:
-- **Operating System**: macOS (Darwin 24.6.0, x86_64)
-- **CPU**: Intel(R) Core(TM) i7-1068NG7 CPU @ 2.30GHz (8 cores)
-- **RAM**: 34,359,738,368 bytes (~32 GB Unified / System RAM)
-- **Package Manager**: Homebrew (`/usr/local/bin/brew`)
-- **Current Runtime Status**: Ollama not currently installed or running on port 11434.
-
-### Resource & Model Sizing Analysis
-- The machine has ample RAM (32 GB) to run models up to 14B parameters in 4-bit quantization, but operates on an Intel CPU (AVX2/Metal CPU inference) without an Apple Silicon Neural Engine or discrete NVIDIA GPU.
-- **Inference Speed Expectation on CPU**:
-  - 1.5B–3B parameter models: ~18–30 tokens/sec.
-  - 7B parameter models (e.g. Qwen 2.5 Coder 7B Q4_K_M ~4.7 GB): ~6–12 tokens/sec.
-  - 8B reasoning models (DeepSeek-R1 8B Q4 ~4.9 GB): ~5–10 tokens/sec.
-- Both 7B and smaller coding models fit comfortably within the 32 GB RAM budget with zero swap overhead.
-
----
-
-## 2. Model Selection Strategy
-
-### Primary Live Model: `qwen2.5-coder:7b` (or `qwen2.5-coder:1.5b` fallback for speed)
-* **Model**: Qwen 2.5 Coder 7B Instruct (`Qwen/Qwen2.5-Coder-7B-Instruct`)
-* **Provider**: `ollama` (Local)
-* **Why this model is appropriate**:
-  1. Already registered in JAGGU's `ModelRegistry` catalog as the primary recommended local coding model.
-  2. Native function calling / tool calling capability supported directly in Ollama `/api/chat`.
-  3. Pre-calibrated for structured output, JSON generation, and multi-file code diff generation.
-  4. 32K context window fits localized repository tasks with headroom.
-  5. Fits cleanly into the 32 GB RAM footprint.
-
-### Secondary Non-Tool Model (Phase 6): `deepseek-r1:8b`
-* **Model**: DeepSeek-R1 Distill 8B (`deepseek-ai/DeepSeek-R1-Distill-Llama-8B`)
-* **Provider**: `ollama` (Local)
-* **Why this model is appropriate**:
-  1. Explicitly designated in JAGGU's `ModelRegistry` with `capabilities.toolCalling: false`.
-  2. Directly validates that JAGGU does not force tool definitions onto reasoning-only models or interpret free-form text as unauthorized tool executions.
-
----
-
-## 3. Required Setup & Installation Commands
-
-To enable live execution, the following setup steps are required:
-
-```bash
-# 1. Install Ollama via Homebrew
-brew install ollama
-
-# 2. Start Ollama service in background
-ollama serve > /tmp/ollama.log 2>&1 &
-
-# 3. Verify daemon connectivity
-curl -s http://localhost:11434/api/tags
-
-# 4. Pull the target coding model (Qwen 2.5 Coder 7B, ~4.7 GB)
-ollama pull qwen2.5-coder:7b
-
-# Optional: For non-tool capability test (Phase 6)
-ollama pull deepseek-r1:8b
+```text
+                         JAGGU
+                           │
+                    Model Selector
+                           │
+              ┌────────────┴────────────┐
+              │                         │
+           ONLINE                     OFFLINE
+              │                         │
+    Hugging Face Inference            Ollama
+    (OpenAI / Anthropic / Gemini)   Local Model
+              │                         │
+              └────────────┬────────────┘
+                           │
+                     ModelGateway
+                           │
+                   AgentOrchestrator
+                           │
+             Context / Tools / Edits / Git
+                           │
+                Diagnostics / Tests / Repair
 ```
 
-*Note: If network restrictions or environment policies prevent downloading multi-gigabyte models in this session, this plan defines the exact criteria to report honest fallback without fabrication.*
+The model provides reasoning and proposals; JAGGU owns context, planning, tool permissions, file safety, edit approval, Git safety, diagnostics, verification, repair, and developer control.
 
 ---
 
-## 4. Test Matrix & Detailed Workflow
+## 2. Provider Architecture
 
-### Test 1: Direct Provider Verification (`OllamaProvider` Direct)
-- **Goal**: Verify JAGGU's `OllamaProvider` communicates directly with the live Ollama daemon.
-- **Workflow**:
-  ```text
-  ModelGateway -> OllamaProvider.streamChat -> http://localhost:11434/api/chat -> stream tokens
-  ```
-- **Assertions**:
-  - Health check `checkHealth()` returns `reachable: true` and includes `qwen2.5-coder:7b`.
-  - Non-tool chat stream emits `token` events with real text deltas.
-  - Streaming usage metrics (`prompt_eval_count`, `eval_count`) are populated.
-  - Mid-stream cancellation via `AbortController` cleanly terminates the HTTP request.
+### Online Provider: `HuggingFaceProvider` (`packages/jaggu-core/src/models/huggingface.ts`)
+* **Endpoint:** `https://router.huggingface.co/v1` (Hugging Face Serverless Inference Router)
+* **Protocol:** OpenAI-compatible Chat Completions v1 (`/chat/completions` with SSE streaming, tool calls, and usage statistics)
+* **Authentication:** `Authorization: Bearer <HUGGINGFACE_TOKEN>`
+* **Features:**
+  * Real SSE stream parsing via `parseSseStream`
+  * Function / Tool calling translation (`tool_calls` delta accumulation)
+  * Usage reporting (`promptTokens`, `completionTokens`)
+  * Immediate `AbortSignal` cancellation
+  * Strict error classification (`AUTH_FAILURE`, `MODEL_NOT_FOUND`, `RATE_LIMIT`, `NETWORK_ERROR`)
+  * Health check probing `GET https://router.huggingface.co/v1/models`
 
-### Test 2: Real Agent Workflow (Controlled Fixture Task)
-- **Fixture**: `packages/jaggu-eval/fixtures/fixture-04-boundary-validation`
-- **Task Prompt**:
-  > "Add input validation for email and password to the existing validator module. Email must contain '@' and '.', password must be at least 8 characters. Add comprehensive tests in test/validator.test.ts. Do not modify unrelated files."
-- **Expected Step-by-Step Lifecycle**:
-  1. **Task Submission & Context Assembly**: ContextEngine grounds the prompt with `validator.ts` and `package.json`.
-  2. **Plan Generation (`PLANNING` -> `PLAN_REVIEW`)**: Live model proposes a structured plan with steps and affected files. PlanValidator validates schema.
-  3. **Human Gate 1 (Plan Approval)**: Approval required before code generation.
-  4. **Code Generation & EditSet (`EDIT_REVIEW`)**: Live model requests tools or emits structured edit changes in shadow documents.
-  5. **Human Gate 2 (Edit Approval)**: Developer approves the changes.
-  6. **Atomic Application**: EditSetManager validates base hashes and updates disk.
-  7. **Diagnostics & Test Verification**: `run_tests` tool executes the fixture test suite.
-  8. **Self-Healing (if test fails)**: If the local model makes a typo, bounded repair loop kicks in.
-  9. **Summary**: Clean task completion report.
-
-### Test 3: Model Without Tool Calling (`deepseek-r1:8b`)
-- **Goal**: Verify that switching to a reasoning model with `toolCalling: false` does not pass tool definitions or execute unvalidated tool commands.
-- **Workflow**:
-  - Developer selects `deepseek-r1:8b` via `model.select`.
-  - Submit request asking for code explanation.
-  - Verify no tool definitions are sent in `/api/chat`.
-  - Verify model provides explanation safely without executing tools.
-
-### Test 4: Model Switching & State Preservation
-- **Goal**: Switch between `qwen2.5-coder:7b` and `local-openai-default` (or `mock-fast`).
-- **Assertions**:
-  - `model.select` RPC updates active model without restarting extension.
-  - Health state indicators in Webview reflect real-time status.
-  - No secrets leak into RPC payloads.
-
-### Test 5: Safe Failure Handling
-- **Scenarios**:
-  1. Request an uninstalled model (`ollama-non-existent-model`).
-  2. Point `jaggu.ollama.endpoint` to an invalid port (e.g. `http://localhost:59999`).
-- **Assertions**:
-  - Provider surfaces `MODEL_NOT_FOUND` or `NETWORK_ERROR`.
-  - Extension host emits structured `agent.error` rather than unhandled promise rejections or crashes.
+### Offline Provider: `OllamaProvider` (`packages/jaggu-core/src/models/ollama.ts`)
+* **Endpoint:** `http://localhost:11434`
+* **Protocol:** Native Ollama API (`/api/chat` with NDJSON streaming and tool calls)
+* **Features:**
+  * Health probe via `GET /api/tags`
+  * Model discovery and offline availability reporting
+  * Missing model classification (`MODEL_NOT_FOUND`)
+  * Local daemon connection failure classification (`NETWORK_ERROR`)
 
 ---
 
-## 5. Security & Invariant Verification Checklist
+## 3. Authentication & Secret Isolation
 
-During all live tests, the following invariants are strictly validated:
-
-| Security Invariant | Verification Mechanism | Success Criteria |
-| :--- | :--- | :--- |
-| **Untrusted Output** | Schema parse in `ToolExecutor` and `PlanValidator` | Model output cannot bypass Zod schema or inject arbitrary keys |
-| **Workspace Containment** | Path validation in file tools | Paths outside fixture root are rejected with permission errors |
-| **Human Approval Gates** | Orchestrator state transitions | Edits cannot touch disk without explicit developer approval |
-| **Secret Isolation** | Webview message interceptor | Zero API keys or tokens in `ExtensionToWebviewMessage` |
-| **Command Execution** | Tool whitelist | No arbitrary shell or bash tool exposed to the model |
-| **Cancellation Integrity** | AbortSignal listener on fetch stream | Cancellation immediately halts Ollama token generation |
+* **Storage:** VS Code `SecretStorage` with provider key `jaggu.apiKey.huggingface`.
+* **Zero Leakage Rule:**
+  * Token is **never** written to source code, logs, git commits, configuration files, or diagnostics.
+  * Token is **never** sent to the Webview UI. The Webview only receives sanitized `ModelDescriptor` health states (`available` vs `missing_credentials`).
+  * In non-VS Code environments (e.g. CLI / tests), the token is read from environment variable `HF_TOKEN` / `HUGGINGFACE_API_KEY` or passed explicitly in-memory.
 
 ---
 
-## 6. Evidence Collection & Metrics
+## 4. Exact Models to Validate
 
-During the live validation run, the following observational metrics will be recorded:
-1. **Environment Spec**: OS version, CPU, available RAM, Ollama version.
-2. **Model Metadata**: Parameter size, quantization type, context size.
-3. **Observational Latencies**:
-   - Time to First Token (TTFT).
-   - Generation tokens per second (approximate completion latency).
-   - End-to-end task turnaround time.
-4. **Agent Lifecycle Tracing**:
-   - Number of tokens evaluated and generated.
-   - Plan validation iterations (self-corrections if any).
-   - EditSet file count and diff accuracy.
-   - Verification test results.
-5. **Transcript & Log Output**:
-   - Verifiable raw output snippets preserved in `docs/M7A_LIVE_VALIDATION.md`.
+### 1. Online Model: `Qwen/Qwen2.5-Coder-32B-Instruct` (Hugging Face)
+* **Model ID:** `Qwen/Qwen2.5-Coder-32B-Instruct`
+* **Provider:** Hugging Face Serverless Inference Router
+* **License:** Apache 2.0 (open-weight)
+* **Context Window:** 32,768 tokens (up to 131,072)
+* **Tool Calling:** Supported (`supports_tools: true` on vLLM backend)
+* **Structured Output:** Supported
+
+### 2. Alternative Online Model: `meta-llama/Llama-3.1-8B-Instruct` (Hugging Face)
+* **Model ID:** `meta-llama/Llama-3.1-8B-Instruct`
+* **Context Window:** 128,000 tokens
+* **Tool Calling:** Supported
+
+### 3. Offline Model: `qwen2.5-coder:7b` / `local-coding-model` (Ollama / Local Runtime)
+* **Model ID:** `qwen2.5-coder:7b` (Ollama)
+* **Runtime:** Local Ollama daemon (`http://localhost:11434`)
+* **Tool Calling:** Supported in Ollama v0.3+
 
 ---
 
-## 7. Failure Criteria & Honesty Policy
+## 5. Test Tasks & Workflows
 
-- **Defect Threshold**: Any uncaught exception, tool escape, secret leak, or bypassed approval gate is an immediate critical failure.
-- **Honesty Invariant**:
-  If Ollama cannot be installed or models cannot be downloaded (e.g. storage/bandwidth/permission limits), we will state explicitly:
-  > `Live local-model validation could not be completed in this environment.`
-  > `The provider implementation was verified through deterministic mocked tests.`
-  We will **under no circumstances** fabricate live model outputs or artificial latencies.
+### Common Controlled Coding Task: Input Validation
+```text
+Task: Add input validation to user registration flow.
+Requirements:
+1. Reject empty username.
+2. Reject invalid email.
+3. Reject passwords shorter than minimum length.
+4. Add comprehensive unit tests.
+5. Do not modify unrelated files.
+```
+
+### Execution Flow:
+1. **Repository Context Assembly**: `ContextEngine` collects bounded codebase snippets with SHA-256 provenance.
+2. **Model Plan Generation**: Model proposes multi-step plan.
+3. **`PLAN_REVIEW` Human Gate**: Developer approves plan.
+4. **Tool / Edit Generation**: Model reads files / generates multi-file `EditSet`.
+5. **`EDIT_REVIEW` Human Gate**: Developer reviews diffs with selective approval support.
+6. **Atomic Application**: Pre-validated write to disk.
+7. **Diagnostics & Tests**: Language server diagnostics check + test suite execution.
+8. **Bounded Repair**: If verification fails, bounded self-repair cycle.
+
+---
+
+## 6. Security Invariants & Checks
+
+1. **Tool Execution Isolation**: Model tool requests pass through `ToolExecutor` Zod schema validation and permission checks. Direct command execution is forbidden.
+2. **Workspace Containment**: Path traversal (`..`) is strictly blocked.
+3. **Git Safety**: Existing developer changes are preserved using baseline SHA checks.
+4. **Secret Isolation**: `Authorization` headers are masked in all event bus telemetry and webview messages.
+5. **Cancellation Safety**: Aborting task cancels active HTTP streams without hanging or socket leaks.
+
+---
+
+## 7. Failure Criteria & Safe Failure Tests
+
+* **Failure Criteria**:
+  * Any unhandled crash or socket leak during model streaming.
+  * Secret token entering Webview messages or log files.
+  * Model bypassing plan approval or edit approval gates.
+  * Model executing arbitrary shell commands or editing outside workspace.
+* **Safe Failure Tests**:
+  * Online: Request without API key $\to$ `AUTH_FAILURE` / `missing_credentials`.
+  * Online: Request invalid model ID $\to$ `MODEL_NOT_FOUND` / `MALFORMED_RESPONSE`.
+  * Offline: Ollama daemon stopped / unreachable port $\to$ `NETWORK_ERROR`.
+  * Offline: Model not installed in local Ollama $\to$ `MODEL_NOT_FOUND`.
+
+---
+
+## 8. Proposed Implementation Changes
+
+1. **`packages/jaggu-core/src/types/models.ts`**:
+   * Add `'huggingface'` to `ModelProviderId` union.
+2. **`packages/jaggu-core/src/models/huggingface.ts`**:
+   * Implement `HuggingFaceProvider` using resilient fetch, SSE parsing, and OpenAI router protocol (`https://router.huggingface.co/v1`).
+3. **`packages/jaggu-core/src/models/registry.ts`**:
+   * Add Hugging Face models (`Qwen/Qwen2.5-Coder-32B-Instruct`, `meta-llama/Llama-3.1-8B-Instruct`) to `DEFAULT_BUILTIN_MODELS`.
+4. **`packages/jaggu-core/src/models/gateway.ts`**:
+   * Register `HuggingFaceProvider` in `ModelGateway`.
+5. **`packages/jaggu-vscode/src/sidebarProvider.ts` & `credentials.ts`**:
+   * Include `huggingface` in cloud provider credential probing (`jaggu.apiKey.huggingface`).
+6. **Tests**:
+   * `packages/jaggu-core/test/liveHuggingFaceDirect.test.ts`: Live streaming, tool calling, token usage, cancellation, and missing-token error handling.
+   * `packages/jaggu-core/test/liveOllamaDirect.test.ts`: Live Ollama probe and 404 handling.
+   * Verify all 165+ tests pass with `npm test`, `npm run typecheck`, `npm run lint`, `npm run build`.
+
+---
+
+## 9. Evidence to Collect
+
+* Exact model names, latency to first token (TTFT), completion throughput.
+* Streaming token chunks and tool call delta logs.
+* Complete verification table in `docs/M7A_LIVE_VALIDATION.md` with explicit `LIVE` vs `MOCKED` labels.

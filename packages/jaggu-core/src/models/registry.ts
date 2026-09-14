@@ -118,6 +118,40 @@ export const DEFAULT_BUILTIN_MODELS: ModelDescriptor[] = [
     health: 'unknown',
   },
 
+  // --- Cloud: Hugging Face Inference ---
+  {
+    id: 'Qwen/Qwen2.5-Coder-32B-Instruct',
+    displayName: 'Qwen 2.5 Coder 32B (Hugging Face)',
+    providerId: 'huggingface',
+    runtimeType: 'cloud',
+    contextWindow: 32768,
+    maxOutputTokens: 8192,
+    capabilities: {
+      streaming: true,
+      toolCalling: true,
+      structuredOutput: true,
+      vision: false,
+    },
+    health: 'unknown',
+    huggingFaceModelId: 'Qwen/Qwen2.5-Coder-32B-Instruct',
+  },
+  {
+    id: 'meta-llama/Llama-3.1-8B-Instruct',
+    displayName: 'Llama 3.1 8B Instruct (Hugging Face)',
+    providerId: 'huggingface',
+    runtimeType: 'cloud',
+    contextWindow: 128000,
+    maxOutputTokens: 8192,
+    capabilities: {
+      streaming: true,
+      toolCalling: true,
+      structuredOutput: true,
+      vision: false,
+    },
+    health: 'unknown',
+    huggingFaceModelId: 'meta-llama/Llama-3.1-8B-Instruct',
+  },
+
   // --- Local: Ollama Coding Models ---
   {
     id: 'qwen2.5-coder:7b',

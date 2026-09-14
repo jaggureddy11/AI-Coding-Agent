@@ -318,7 +318,7 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
     }
 
     // 3. Probe Cloud provider credentials (non-secret availability check)
-    const cloudProviders = ['openai', 'anthropic', 'gemini'] as const;
+    const cloudProviders = ['openai', 'anthropic', 'gemini', 'huggingface'] as const;
     for (const p of cloudProviders) {
       try {
         const key = await this._credentialManager?.getApiKey(p);

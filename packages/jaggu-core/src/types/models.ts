@@ -7,7 +7,7 @@ export interface ModelCapabilities {
   maxOutputTokens: number;
 }
 
-export type ModelProviderId = 'openai' | 'anthropic' | 'gemini' | 'ollama' | 'openai-compatible' | 'mock' | (string & {});
+export type ModelProviderId = 'openai' | 'anthropic' | 'gemini' | 'huggingface' | 'ollama' | 'openai-compatible' | 'mock' | (string & {});
 
 export interface ModelMetadata {
   id: string;
