@@ -18,6 +18,7 @@ describe('Extension Host Lifecycle and Registration', () => {
     expect(result.eventBus).toBeInstanceOf(EventBus);
     expect(result.docStore).toBeInstanceOf(InMemoryVirtualDocStore);
     expect(result.sidebarProvider).toBeInstanceOf(JagguSidebarProvider);
+    expect(result.contextEngine).toBeDefined();
     expect(result.statusBarItem).toBeDefined();
     expect(result.statusBarItem.text).toBe('$(sparkle) JAGGU: Ready');
     expect(result.statusBarItem.command).toBe('jaggu.openChat');
@@ -29,7 +30,7 @@ describe('Extension Host Lifecycle and Registration', () => {
     expect(cmds['jaggu.cancelSession']).toBeDefined();
 
     // Verify subscriptions populated
-    expect(context.subscriptions.length).toBeGreaterThanOrEqual(5);
+    expect(context.subscriptions.length).toBeGreaterThanOrEqual(7);
 
     deactivate();
   });

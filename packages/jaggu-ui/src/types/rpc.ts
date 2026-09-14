@@ -1,10 +1,11 @@
-import { AgentState, Plan, PlanStep, ApprovalRequest, UiAgentStatus } from '@jaggu/core';
+import type { AgentState, Plan, PlanStep, ApprovalRequest, UiAgentStatus, ContextSnippetSummary } from '@jaggu/core';
 
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant' | 'system';
   text: string;
   timestamp: number;
+  provenance?: ContextSnippetSummary[];
 }
 
 export type WebviewToExtensionMessage =
@@ -24,7 +25,8 @@ export type ExtensionToWebviewMessage =
   | { type: 'agent.error'; payload: { code?: string; message: string } }
   | { type: 'agent.config'; payload: { provider: string; model: string } }
   | { type: 'token.delta'; payload: { text: string; messageId: string } }
-  | { type: 'token.complete'; payload: { messageId: string; fullText: string; tokensUsed?: number } }
+  | { type: 'token.complete'; payload: { messageId: string; fullText: string; tokensUsed?: number; provenance?: ContextSnippetSummary[] } }
+  | { type: 'context.assembled'; payload: { taskId: string; filesCount: number; totalTokens: number; provenance: ContextSnippetSummary[] } }
   | { type: 'AGENT_STATE_CHANGED'; payload: { state: AgentState; detail?: string } }
   | { type: 'TOKEN_STREAM_CHUNK'; payload: { text: string } }
   | { type: 'PLAN_GENERATED'; payload: Plan }
@@ -103,6 +105,7 @@ export function isValidExtensionMessage(msg: unknown): msg is ExtensionToWebview
     'agent.config',
     'token.delta',
     'token.complete',
+    'context.assembled',
     'AGENT_STATE_CHANGED',
     'TOKEN_STREAM_CHUNK',
     'PLAN_GENERATED',

@@ -133,6 +133,37 @@ export interface JagguEvents {
     code: string;
     timestamp: number;
   };
+
+  // Context Engine Lifecycle Events (M3)
+  'context.search_started': {
+    taskId: string;
+    query: string;
+    timestamp: number;
+  };
+  'context.search_completed': {
+    taskId: string;
+    matchesFound: number;
+    timestamp: number;
+  };
+  'context.file_selected': {
+    taskId: string;
+    filePath: string;
+    reason: string;
+    score: number;
+    timestamp: number;
+  };
+  'context.assembled': {
+    taskId: string;
+    filesCount: number;
+    totalTokens: number;
+    truncated: boolean;
+    timestamp: number;
+  };
+  'context.error': {
+    taskId: string;
+    error: string;
+    timestamp: number;
+  };
 }
 
 export type EventKey = keyof JagguEvents;

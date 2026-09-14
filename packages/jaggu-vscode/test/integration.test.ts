@@ -116,4 +116,65 @@ describe('Webview ↔ Extension Host RPC Integration Flow', () => {
 
     vi.useRealTimers();
   });
+
+  it('should discover workspace files, assemble bounded context, and transmit provenance to Webview', async () => {
+    const fs = await import('fs');
+    const path = await import('path');
+    const os = await import('os');
+    const { WorkspaceDiscovery, ContextEngine, ModelGateway, MockModelProvider } = await import('@jaggu/core');
+
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'jaggu-m3-integ-'));
+    fs.mkdirSync(path.join(tmpDir, 'src', 'auth'), { recursive: true });
+    fs.writeFileSync(
+      path.join(tmpDir, 'src', 'auth', 'authService.ts'),
+      'export class AuthService {\n  login(user: string) { return "jwt_token"; }\n}\n',
+    );
+    fs.writeFileSync(
+      path.join(tmpDir, 'src', 'auth', 'authService.test.ts'),
+      'describe("AuthService", () => { it("logs in", () => {}); });\n',
+    );
+
+    const eventBus = new EventBus();
+    const discovery = new WorkspaceDiscovery([tmpDir]);
+    const contextEngine = new ContextEngine(discovery);
+    const mockGateway = new ModelGateway();
+    mockGateway.registerProvider(new MockModelProvider({ chunkDelayMs: 0 }));
+
+    const extensionUri = { toString: () => 'file:///mock/ext', fsPath: '/mock/ext' } as any;
+    const provider = new JagguSidebarProvider(extensionUri, eventBus, mockGateway, undefined, contextEngine);
+
+    const receivedInWebview: ExtensionToWebviewMessage[] = [];
+    provider.postMessageToWebview = (msg: any) => {
+      receivedInWebview.push(msg);
+      return Promise.resolve(true);
+    };
+
+    await provider.handleIncomingMessage({
+      type: 'user.submit',
+      payload: {
+        id: 'task_auth_search',
+        text: 'Where is authentication implemented in this project?',
+        timestamp: Date.now(),
+      },
+    });
+
+    // Verify context.assembled was posted to Webview
+    const contextAssembled = receivedInWebview.find((m) => m.type === 'context.assembled');
+    expect(contextAssembled).toBeDefined();
+    expect((contextAssembled as any).payload.filesCount).toBeGreaterThan(0);
+    expect((contextAssembled as any).payload.provenance.length).toBeGreaterThan(0);
+
+    // Verify token.complete carries provenance
+    const completeMsg = receivedInWebview.find((m) => m.type === 'token.complete');
+    expect(completeMsg).toBeDefined();
+    expect((completeMsg as any).payload.provenance).toBeDefined();
+    expect(
+      (completeMsg as any).payload.provenance.some((p: any) =>
+        p.relativeFilePath.includes('authService.ts'),
+      ),
+    ).toBe(true);
+
+    // Clean up
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
 });

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { UiAgentStatus } from '@jaggu/core';
+import type { UiAgentStatus, ContextSnippetSummary } from '@jaggu/core';
 import { StatusPill } from './components/StatusPill.js';
+import { ContextPill } from './components/ContextPill.js';
 import {
   VsCodeApi,
   ChatMessage,
@@ -29,6 +30,7 @@ export const App: React.FC<AppProps> = ({
     model: 'mock-fast',
   });
 
+  const activeProvenanceRef = useRef<ContextSnippetSummary[] | undefined>();
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   const scrollToBottom = () => {
@@ -65,6 +67,10 @@ export const App: React.FC<AppProps> = ({
             return [...prev, msg.payload];
           });
           break;
+        case 'context.assembled':
+          activeProvenanceRef.current = msg.payload.provenance;
+          setStatusDetail(`Grounded in ${msg.payload.filesCount} workspace files`);
+          break;
         case 'token.delta': {
           const { messageId, text } = msg.payload;
           setMessages((prev) => {
@@ -79,27 +85,43 @@ export const App: React.FC<AppProps> = ({
             } else {
               return [
                 ...prev,
-                { id: messageId, role: 'assistant', text, timestamp: Date.now() },
+                {
+                  id: messageId,
+                  role: 'assistant',
+                  text,
+                  timestamp: Date.now(),
+                  provenance: activeProvenanceRef.current,
+                },
               ];
             }
           });
           break;
         }
         case 'token.complete': {
-          const { messageId, fullText } = msg.payload;
+          const { messageId, fullText, provenance } = msg.payload;
           setMessages((prev) => {
             const index = prev.findIndex((m) => m.id === messageId);
             if (index >= 0) {
               const updated = [...prev];
               const existing = updated[index];
               if (existing) {
-                updated[index] = { ...existing, text: fullText };
+                updated[index] = {
+                  ...existing,
+                  text: fullText,
+                  provenance: provenance || existing.provenance || activeProvenanceRef.current,
+                };
               }
               return updated;
             } else {
               return [
                 ...prev,
-                { id: messageId, role: 'assistant', text: fullText, timestamp: Date.now() },
+                {
+                  id: messageId,
+                  role: 'assistant',
+                  text: fullText,
+                  timestamp: Date.now(),
+                  provenance: provenance || activeProvenanceRef.current,
+                },
               ];
             }
           });
@@ -378,6 +400,9 @@ export const App: React.FC<AppProps> = ({
               >
                 {msg.text}
               </div>
+              {msg.role === 'assistant' && msg.provenance && msg.provenance.length > 0 && (
+                <ContextPill provenance={msg.provenance} />
+              )}
             </div>
           ))
         )}

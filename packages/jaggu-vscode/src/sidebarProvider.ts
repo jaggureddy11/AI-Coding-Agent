@@ -6,6 +6,10 @@ import {
   ModelGateway,
   ModelMessage,
   ModelError,
+  ContextEngine,
+  ContextPackage,
+  ActiveEditorContext,
+  WorkspaceDiscovery,
 } from '@jaggu/core';
 import {
   isValidWebviewMessage,
@@ -20,6 +24,7 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
   private _currentStatus: UiAgentStatus = 'IDLE';
   private _activeAbortController?: AbortController;
   private _statusResetTimer?: NodeJS.Timeout;
+  private _contextEngine?: ContextEngine;
 
   private readonly _onDidChangeStatus = new vscode.EventEmitter<{
     state: UiAgentStatus;
@@ -32,7 +37,19 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
     private readonly _eventBus: EventBus,
     private readonly _modelGateway: ModelGateway = new ModelGateway(),
     private readonly _credentialManager?: CredentialManager,
-  ) {}
+    contextEngine?: ContextEngine,
+  ) {
+    this._contextEngine = contextEngine;
+  }
+
+  public getContextEngine(): ContextEngine {
+    if (!this._contextEngine) {
+      const workspaceRoots = vscode.workspace.workspaceFolders?.map((f) => f.uri.fsPath) || [];
+      const discovery = new WorkspaceDiscovery(workspaceRoots);
+      this._contextEngine = new ContextEngine(discovery);
+    }
+    return this._contextEngine;
+  }
 
   public get currentStatus(): UiAgentStatus {
     return this._currentStatus;
@@ -140,7 +157,7 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
     const abortSignal = this._activeAbortController.signal;
 
     // 2. Transition to PROCESSING state
-    this._setStatus('PROCESSING', 'Streaming model response...');
+    this._setStatus('PROCESSING', 'Analyzing workspace context...');
     this._eventBus.emit('agent.started', {
       taskId: id,
       conversationId: 'conv_main',
@@ -148,7 +165,71 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
       timestamp,
     });
 
-    // 3. Resolve active provider and credentials
+    // 3. Resolve active editor context if any
+    let activeEditorContext: ActiveEditorContext | undefined;
+    const activeEditor = vscode.window.activeTextEditor;
+    if (activeEditor) {
+      const doc = activeEditor.document;
+      const selection = activeEditor.selection;
+      const selectedText = doc.getText(selection);
+      const cursorLine = selection.active.line;
+      const startLine = Math.max(0, cursorLine - 20);
+      const endLine = Math.min(doc.lineCount - 1, cursorLine + 20);
+
+      activeEditorContext = {
+        filePath: doc.uri.fsPath,
+        languageId: doc.languageId,
+        cursorLine: cursorLine + 1,
+        selectedText: selectedText.trim().length > 0 ? selectedText : undefined,
+        visibleLineRange: { start: startLine + 1, end: endLine + 1 },
+      };
+    }
+
+    // 4. Discover and assemble bounded workspace context
+    const contextEngine = this.getContextEngine();
+    if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) {
+      contextEngine.setWorkspaceRoots(vscode.workspace.workspaceFolders.map((f) => f.uri.fsPath));
+    }
+
+    let contextPackage: ContextPackage | undefined;
+    try {
+      contextPackage = await contextEngine.assembleContext(
+        text,
+        activeEditorContext,
+        abortSignal,
+        this._eventBus,
+        id,
+      );
+
+      if (abortSignal.aborted) {
+        return;
+      }
+
+      if (contextPackage && contextPackage.provenance.length > 0) {
+        this.postMessageToWebview({
+          type: 'context.assembled',
+          payload: {
+            taskId: id,
+            filesCount: contextPackage.filesCount,
+            totalTokens: contextPackage.totalEstimatedTokens,
+            provenance: contextPackage.provenance,
+          },
+        });
+        this._setStatus(
+          'PROCESSING',
+          `Grounded with ${contextPackage.filesCount} workspace file(s)...`,
+        );
+      }
+    } catch (ctxErr: unknown) {
+      if (abortSignal.aborted) return;
+      this._eventBus.emit('context.error', {
+        taskId: id,
+        error: ctxErr instanceof Error ? ctxErr.message : String(ctxErr),
+        timestamp: Date.now(),
+      });
+    }
+
+    // 5. Resolve active provider and credentials
     const providerId = this._credentialManager?.getActiveProvider() || 'mock';
     const model = this._credentialManager?.getActiveModel() || undefined;
     let apiKey: string | undefined;
@@ -171,10 +252,19 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
       return;
     }
 
+    const systemPromptParts = [
+      'You are JAGGU, an autonomous AI coding agent designed to assist with software engineering tasks in this workspace.',
+      'Always refer to the actual repository structure and provided files to answer questions accurately and concisely.',
+    ];
+    if (contextPackage && contextPackage.promptContextText) {
+      systemPromptParts.push(contextPackage.promptContextText);
+    }
+    const systemPrompt = systemPromptParts.join('\n\n');
+
     const messages: ModelMessage[] = [
       {
         role: 'system',
-        content: 'You are JAGGU, an autonomous AI coding agent designed to assist with software engineering tasks.',
+        content: systemPrompt,
       },
       { role: 'user', content: text },
     ];
@@ -220,6 +310,7 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
           payload: {
             messageId,
             fullText: fullResponseText,
+            provenance: contextPackage?.provenance,
           },
         });
 

@@ -1,5 +1,12 @@
 import * as vscode from 'vscode';
-import { EventBus, InMemoryVirtualDocStore, UiAgentStatus, ModelGateway } from '@jaggu/core';
+import {
+  EventBus,
+  InMemoryVirtualDocStore,
+  UiAgentStatus,
+  ModelGateway,
+  ContextEngine,
+  WorkspaceDiscovery,
+} from '@jaggu/core';
 import { JagguSidebarProvider } from './sidebarProvider.js';
 import { JagguShadowDocProvider } from './virtualDocProvider.js';
 import { CredentialManager } from './credentials.js';
@@ -11,13 +18,34 @@ export function activate(context: vscode.ExtensionContext): {
   statusBarItem: vscode.StatusBarItem;
   credentialManager: CredentialManager;
   modelGateway: ModelGateway;
+  contextEngine: ContextEngine;
 } {
   const eventBus = new EventBus();
   const docStore = new InMemoryVirtualDocStore();
   const credentialManager = new CredentialManager(context.secrets);
   const modelGateway = new ModelGateway();
 
-  // 1. Register Virtual Document Content Provider for native diff previews
+  // 1. Initialize Context Engine with current workspace roots
+  const workspaceRoots = vscode.workspace.workspaceFolders?.map((f) => f.uri.fsPath) || [];
+  const discovery = new WorkspaceDiscovery(workspaceRoots);
+  const contextEngine = new ContextEngine(discovery);
+
+  // 2. Invalidate repository index cache when files are modified in editor
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeTextDocument((e) => {
+      contextEngine.getRepoMap().markDirty(e.document.uri.fsPath);
+    }),
+  );
+
+  // 3. Update roots when workspace folders change
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeWorkspaceFolders(() => {
+      const currentRoots = vscode.workspace.workspaceFolders?.map((f) => f.uri.fsPath) || [];
+      contextEngine.setWorkspaceRoots(currentRoots);
+    }),
+  );
+
+  // 4. Register Virtual Document Content Provider for native diff previews
   const virtualDocProvider = new JagguShadowDocProvider(docStore);
   context.subscriptions.push(
     vscode.workspace.registerTextDocumentContentProvider(
@@ -26,12 +54,13 @@ export function activate(context: vscode.ExtensionContext): {
     ),
   );
 
-  // 2. Register Webview Sidebar View Provider
+  // 5. Register Webview Sidebar View Provider
   const sidebarProvider = new JagguSidebarProvider(
     context.extensionUri,
     eventBus,
     modelGateway,
     credentialManager,
+    contextEngine,
   );
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(
@@ -168,7 +197,7 @@ export function activate(context: vscode.ExtensionContext): {
     updateStatusBar(e.state);
   });
 
-  return { eventBus, docStore, sidebarProvider, statusBarItem, credentialManager, modelGateway };
+  return { eventBus, docStore, sidebarProvider, statusBarItem, credentialManager, modelGateway, contextEngine };
 }
 
 export function deactivate(): void {

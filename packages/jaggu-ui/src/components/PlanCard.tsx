@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plan } from '@jaggu/core';
+import type { Plan } from '@jaggu/core';
 
 interface PlanCardProps {
   plan: Plan;

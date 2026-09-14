@@ -20,3 +20,12 @@ export * from './types/context.js';
 export * from './types/task.js';
 export * from './types/diff.js';
 export * from './diff/virtualDocStore.js';
+
+// Repository Context & Code Intelligence (M3)
+export * from './context/workspace.js';
+export * from './context/ripgrep.js';
+export * from './context/repoMap.js';
+export * from './context/promptInjection.js';
+export * from './context/engine.js';
+
+

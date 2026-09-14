@@ -30,6 +30,13 @@ vi.mock('vscode', () => {
       }),
     },
     workspace: {
+      workspaceFolders: [],
+      onDidChangeTextDocument: (_listener: (e: any) => any) => ({ dispose: () => {} }),
+      onDidChangeWorkspaceFolders: (_listener: (e: any) => any) => ({ dispose: () => {} }),
+      getConfiguration: (_section?: string) => ({
+        get: (_key: string, defaultVal?: any) => defaultVal,
+        update: vi.fn().mockResolvedValue(undefined),
+      }),
       registerTextDocumentContentProvider: (scheme: string, provider: any) => {
         docProvider = { scheme, provider };
         return { dispose: () => {} };

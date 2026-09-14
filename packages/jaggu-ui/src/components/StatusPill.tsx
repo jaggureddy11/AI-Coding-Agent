@@ -1,5 +1,5 @@
 import React from 'react';
-import { AgentState, UiAgentStatus } from '@jaggu/core';
+import type { AgentState, UiAgentStatus } from '@jaggu/core';
 
 export interface StatusPillProps {
   state: UiAgentStatus | AgentState;
@@ -8,24 +8,17 @@ export interface StatusPillProps {
 export const StatusPill: React.FC<StatusPillProps> = ({ state }) => {
   // Normalize to UiAgentStatus
   let normalizedStatus: UiAgentStatus;
-  if (state in AgentState) {
-    switch (state as AgentState) {
-      case AgentState.IDLE:
-        normalizedStatus = 'IDLE';
-        break;
-      case AgentState.COMPLETED:
-        normalizedStatus = 'SUCCESS';
-        break;
-      case AgentState.FAILED:
-        normalizedStatus = 'ERROR';
-        break;
-      case AgentState.CANCELLED:
-        normalizedStatus = 'CANCELLED';
-        break;
-      default:
-        normalizedStatus = 'PROCESSING';
-        break;
-    }
+  const s = String(state).toUpperCase();
+  if (s === 'IDLE') {
+    normalizedStatus = 'IDLE';
+  } else if (s === 'COMPLETED' || s === 'SUCCESS') {
+    normalizedStatus = 'SUCCESS';
+  } else if (s === 'FAILED' || s === 'ERROR') {
+    normalizedStatus = 'ERROR';
+  } else if (s === 'CANCELLED') {
+    normalizedStatus = 'CANCELLED';
+  } else if (['INITIALIZING', 'READING_CONTEXT', 'PLANNING', 'AWAITING_APPROVAL', 'EXECUTING', 'VALIDATING', 'PROCESSING'].includes(s)) {
+    normalizedStatus = 'PROCESSING';
   } else {
     normalizedStatus = state as UiAgentStatus;
   }

@@ -1,3 +1,5 @@
+export * from '../context/types.js';
+
 export interface ContextQuery {
   prompt: string;
   activeFilePath?: string;
@@ -5,20 +7,8 @@ export interface ContextQuery {
   maxTokens?: number;
 }
 
-export interface ContextSnippet {
-  filePath: string;
-  content: string;
-  priorityTier: number; // 1 (highest) to 8 (lowest)
-  estimatedTokens: number;
-}
-
-export interface AssembledContext {
-  snippets: ContextSnippet[];
-  totalTokens: number;
-  budgetLimit: number;
-}
-
 export interface IContextEngine {
-  gatherContext(query: ContextQuery, abortSignal?: AbortSignal): Promise<AssembledContext>;
+  gatherContext(query: ContextQuery, abortSignal?: AbortSignal): Promise<unknown>;
   estimateTokens(text: string): number;
 }
+
