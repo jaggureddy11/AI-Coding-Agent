@@ -6,7 +6,8 @@
   "types": "./dist/index.d.ts",
   "type": "module",
   "scripts": {
-    "build": "tsc -b",
+    "bundle": "esbuild src/main.tsx --bundle --outfile=../jaggu-vscode/media/webview.js --format=iife --target=es2022 --minify --sourcemap --define:process.env.NODE_ENV=\\\"production\\\"",
+    "build": "tsc -b && npm run bundle",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
@@ -16,6 +17,7 @@
   "devDependencies": {
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
+    "esbuild": "^0.21.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

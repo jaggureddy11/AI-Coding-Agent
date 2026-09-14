@@ -10,6 +10,27 @@ export enum AgentState {
   CANCELLED = 'CANCELLED',
 }
 
+export type UiAgentStatus = 'IDLE' | 'PROCESSING' | 'SUCCESS' | 'ERROR' | 'CANCELLED';
+
+export function agentStateToUiStatus(state: AgentState): UiAgentStatus {
+  switch (state) {
+    case AgentState.IDLE:
+      return 'IDLE';
+    case AgentState.THINKING:
+    case AgentState.PLANNING:
+    case AgentState.WAITING_FOR_APPROVAL:
+    case AgentState.EXECUTING:
+    case AgentState.VERIFYING:
+      return 'PROCESSING';
+    case AgentState.COMPLETED:
+      return 'SUCCESS';
+    case AgentState.FAILED:
+      return 'ERROR';
+    case AgentState.CANCELLED:
+      return 'CANCELLED';
+  }
+}
+
 export interface LoopGuardLimits {
   /** Maximum number of tool iterations per single user prompt */
   maxIterations: number;

@@ -1,0 +1,69 @@
+/* JAGGU Webview Base Theme Styles */
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--vscode-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif);
+  font-size: var(--vscode-font-size, 13px);
+  color: var(--vscode-sideBar-foreground, var(--vscode-foreground, #cccccc));
+  background-color: var(--vscode-sideBar-background, #252526);
+  user-select: text;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--vscode-scrollbarSlider-background, rgba(121, 121, 121, 0.4));
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--vscode-scrollbarSlider-hoverBackground, rgba(100, 100, 100, 0.7));
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: var(--vscode-scrollbarSlider-activeBackground, rgba(191, 191, 191, 0.4));
+}
+
+/* Animations */
+@keyframes pulse {
+  0% {
+    opacity: 0.4;
+    transform: scale(0.95);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+  100% {
+    opacity: 0.4;
+    transform: scale(0.95);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

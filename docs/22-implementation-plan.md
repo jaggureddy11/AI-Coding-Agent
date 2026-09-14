@@ -17,14 +17,13 @@ JAGGU is implemented in 17 rigorous, sequentially verifiable milestones (M0–M1
 - **Dependencies**: Node.js v20+, TypeScript 5.4+.
 - **Rollback**: Delete package directories.
 
-### M1: Basic JAGGU Extension Shell & Webview UI
+### M1: Basic JAGGU Extension Shell & Webview UI *(COMPLETED - Sep 14, 2026)*
 - **Goal**: Scaffold the VS Code Extension shell, Activity Bar icon, and React Webview sidebar.
 - **Affected Packages**: `packages/jaggu-vscode`, `packages/jaggu-ui`.
-- **Steps**: Register `jaggu.activityBar` view container; render React 18 UI with VS Code theme CSS variables.
-- **Tests**: Extension activates in Extension Development Host; sidebar loads within 150ms.
-- **Acceptance Criteria**: Clicking Activity Bar icon reveals styled JAGGU sidebar with status pill.
-- **Dependencies**: M0.
-- **Rollback**: Revert `package.json` contributes block.
+- **Implementation Details**: Bundled production Webview via `esbuild` (151KB), implemented typed RPC message dispatcher (`user.submit`, `agent.status`, `agent.message`, `agent.error`, `agent.cancel`), created conversational thread with empty state, cancel controls, clear button, and dynamic status bar item (`$(sparkle) JAGGU: Ready`).
+- **Tests**: 6 test suites passed, 25/25 unit & integration tests passing (`npm test`).
+- **Acceptance Criteria**: Full Webview ↔ Extension Host communication verified; status transitions and cancellation functional.
+- **Record**: See [`docs/implementation/M1-extension-shell.md`](file:///Users/apple/Desktop/PROJECTS/Coding%20Agent/docs/implementation/M1-extension-shell.md).
 
 ### M2: Multi-Provider Model Gateway
 - **Goal**: Implement `IModelProvider` abstraction supporting Anthropic, OpenAI, Gemini, and Ollama.

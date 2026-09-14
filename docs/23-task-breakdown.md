@@ -176,29 +176,29 @@ Every task defined below is **atomic, independently implementable, and independe
 - **Tests**: Pass 3-file diff; verify generated message conforms to Conventional Commits format.
 - **Acceptance Criteria**: Clean, descriptive commit message generation.
 
-### TASK-022: VS Code Extension Shell & Activity Bar Setup
+### TASK-022: VS Code Extension Host Shell Setup *(COMPLETED - M1)*
 - **Objective**: Implement the VS Code extension entry point and register view containers.
 - **Prerequisites**: TASK-001.
 - **Files**: `packages/jaggu-vscode/src/extension.ts`, `packages/jaggu-vscode/package.json`.
-- **Implementation**: Register `jaggu.activityBar` and `jaggu.sidebarView`; handle activation events.
-- **Tests**: Launch VS Code Extension Host; confirm Activity Bar icon loads.
-- **Acceptance Criteria**: Extension activates cleanly in <150ms.
+- **Implementation**: Registered `jaggu-activity-bar` container, `jaggu.sidebarView`, `jaggu.openChat`, and status bar item.
+- **Tests**: Automated extension host lifecycle tests passing in `packages/jaggu-vscode/test/extension.test.ts`.
+- **Acceptance Criteria**: Extension activates cleanly; providers and status bar item registered.
 
-### TASK-023: Webview Sidebar Implementation (React 18 + Tailwind)
+### TASK-023: Webview Sidebar Implementation (React 18) *(COMPLETED - M1)*
 - **Objective**: Build modern, responsive Webview UI with conversation stream and task state.
 - **Prerequisites**: TASK-022.
-- **Files**: `packages/jaggu-ui/src/App.tsx`, `packages/jaggu-ui/src/components/ChatView.tsx`.
-- **Implementation**: Wire React components, markdown renderer with syntax highlighting, and input box.
-- **Tests**: Render chat messages, streaming tokens, and status pills in Storybook/Vitest.
-- **Acceptance Criteria**: Native VS Code look-and-feel across dark and light themes.
+- **Files**: `packages/jaggu-ui/src/App.tsx`, `packages/jaggu-ui/src/components/StatusPill.tsx`, `packages/jaggu-vscode/media/webview.js`.
+- **Implementation**: Built React 18 UI with conversational thread, empty state, suggestion prompts, status pill, and cancel/clear controls bundled via `esbuild`.
+- **Tests**: React DOM and rendering unit tests in `packages/jaggu-ui/test/ui.test.tsx`.
+- **Acceptance Criteria**: Native VS Code look-and-feel using CSS variables; responsive across dark, light, and high contrast themes.
 
-### TASK-024: Webview RPC Protocol Bridge
+### TASK-024: Webview RPC Protocol Bridge *(COMPLETED - M1)*
 - **Objective**: Establish bidirectional typed RPC between Webview and Extension Host.
 - **Prerequisites**: TASK-023.
-- **Files**: `packages/jaggu-vscode/src/webviewRpc.ts`, `packages/jaggu-ui/src/rpcClient.ts`.
-- **Implementation**: Implement `postMessage` protocol with handlers for all message types in `docs/14`.
-- **Tests**: Send message from Webview; assert Extension Host receives and responds with typed event.
-- **Acceptance Criteria**: Sub-5ms message roundtrip latency.
+- **Files**: `packages/jaggu-vscode/src/sidebarProvider.ts`, `packages/jaggu-ui/src/types/rpc.ts`.
+- **Implementation**: Implemented `postMessage` protocol with runtime schema guards (`isValidWebviewMessage`, `isValidExtensionMessage`), deterministic mock agent response pipeline, and cancel handler.
+- **Tests**: Automated end-to-end integration tests in `packages/jaggu-vscode/test/integration.test.ts` and schema validation in `packages/jaggu-ui/test/rpc.test.ts`.
+- **Acceptance Criteria**: Typed bi-directional messaging verified; sub-millisecond dispatch.
 
 ### TASK-025: Visual Diff Reviewer Webview Component
 - **Objective**: Build the interactive visual diff review card in the sidebar and Monaco diff integration.

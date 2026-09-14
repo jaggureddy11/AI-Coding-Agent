@@ -5,7 +5,8 @@
     "rootDir": "./src"
   },
   "references": [
-    { "path": "../jaggu-core" }
+    { "path": "../jaggu-core" },
+    { "path": "../jaggu-ui" }
   ],
   "include": ["src/**/*"]
 }

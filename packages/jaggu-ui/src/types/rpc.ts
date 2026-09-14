@@ -1,12 +1,27 @@
-import { AgentState, Plan, PlanStep, ApprovalRequest } from '@jaggu/core';
+import { AgentState, Plan, PlanStep, ApprovalRequest, UiAgentStatus } from '@jaggu/core';
+
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant' | 'system';
+  text: string;
+  timestamp: number;
+}
 
 export type WebviewToExtensionMessage =
+  | { type: 'user.submit'; payload: { id: string; text: string; timestamp: number } }
+  | { type: 'agent.cancel'; payload?: { taskId?: string } }
+  | { type: 'ui.ready'; payload?: { timestamp: number } }
+  | { type: 'ui.clear'; payload?: Record<string, never> }
+  // Extended types for future plan approvals
   | { type: 'SUBMIT_PROMPT'; payload: { prompt: string } }
   | { type: 'CANCEL_ACTIVE_TASK'; payload: { taskId: string } }
   | { type: 'APPROVE_PLAN'; payload: { planId: string } }
   | { type: 'RESOLVE_APPROVAL'; payload: { approvalId: string; decision: 'APPROVED' | 'REJECTED' } };
 
 export type ExtensionToWebviewMessage =
+  | { type: 'agent.status'; payload: { state: UiAgentStatus; detail?: string } }
+  | { type: 'agent.message'; payload: ChatMessage }
+  | { type: 'agent.error'; payload: { code?: string; message: string } }
   | { type: 'AGENT_STATE_CHANGED'; payload: { state: AgentState; detail?: string } }
   | { type: 'TOKEN_STREAM_CHUNK'; payload: { text: string } }
   | { type: 'PLAN_GENERATED'; payload: Plan }
@@ -19,4 +34,77 @@ export interface VsCodeApi {
   postMessage(message: WebviewToExtensionMessage): void;
   getState(): unknown;
   setState(state: unknown): void;
+}
+
+/**
+ * Validates whether an incoming raw object conforms to the WebviewToExtensionMessage contract.
+ */
+export function isValidWebviewMessage(msg: unknown): msg is WebviewToExtensionMessage {
+  if (typeof msg !== 'object' || msg === null) return false;
+  const candidate = msg as { type?: unknown; payload?: unknown };
+  if (typeof candidate.type !== 'string') return false;
+
+  switch (candidate.type) {
+    case 'user.submit': {
+      const p = candidate.payload as { id?: unknown; text?: unknown; timestamp?: unknown };
+      return (
+        typeof p === 'object' &&
+        p !== null &&
+        typeof p.id === 'string' &&
+        typeof p.text === 'string' &&
+        typeof p.timestamp === 'number'
+      );
+    }
+    case 'agent.cancel':
+    case 'ui.ready':
+    case 'ui.clear':
+      return candidate.payload === undefined || (typeof candidate.payload === 'object' && candidate.payload !== null);
+    case 'SUBMIT_PROMPT': {
+      const p = candidate.payload as { prompt?: unknown };
+      return typeof p === 'object' && p !== null && typeof p.prompt === 'string';
+    }
+    case 'CANCEL_ACTIVE_TASK': {
+      const p = candidate.payload as { taskId?: unknown };
+      return typeof p === 'object' && p !== null && typeof p.taskId === 'string';
+    }
+    case 'APPROVE_PLAN': {
+      const p = candidate.payload as { planId?: unknown };
+      return typeof p === 'object' && p !== null && typeof p.planId === 'string';
+    }
+    case 'RESOLVE_APPROVAL': {
+      const p = candidate.payload as { approvalId?: unknown; decision?: unknown };
+      return (
+        typeof p === 'object' &&
+        p !== null &&
+        typeof p.approvalId === 'string' &&
+        (p.decision === 'APPROVED' || p.decision === 'REJECTED')
+      );
+    }
+    default:
+      return false;
+  }
+}
+
+/**
+ * Validates whether an incoming raw object conforms to the ExtensionToWebviewMessage contract.
+ */
+export function isValidExtensionMessage(msg: unknown): msg is ExtensionToWebviewMessage {
+  if (typeof msg !== 'object' || msg === null) return false;
+  const candidate = msg as { type?: unknown; payload?: unknown };
+  if (typeof candidate.type !== 'string') return false;
+
+  const validTypes = [
+    'agent.status',
+    'agent.message',
+    'agent.error',
+    'AGENT_STATE_CHANGED',
+    'TOKEN_STREAM_CHUNK',
+    'PLAN_GENERATED',
+    'PLAN_STEP_UPDATED',
+    'APPROVAL_REQUESTED',
+    'TASK_COMPLETED',
+    'TASK_ERROR',
+  ];
+
+  return validTypes.includes(candidate.type);
 }

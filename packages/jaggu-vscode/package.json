@@ -38,6 +38,11 @@
     },
     "commands": [
       {
+        "command": "jaggu.openChat",
+        "title": "JAGGU: Open Chat",
+        "category": "JAGGU"
+      },
+      {
         "command": "jaggu.startSession",
         "title": "JAGGU: Start New Session",
         "category": "JAGGU"
@@ -55,7 +60,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@jaggu/core": "*"
+    "@jaggu/core": "*",
+    "@jaggu/ui": "*"
   },
   "devDependencies": {
     "@types/vscode": "^1.90.0"

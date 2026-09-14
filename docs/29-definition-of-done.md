@@ -78,3 +78,12 @@ Every pull request and milestone must satisfy all 9 criteria:
 ### 3.5 Standard 5: Security & Audit Audit
 - Passes verification against `SecretSanitizer` test vectors.
 - Tool commands audit to `.vscode/jaggu/audit.log` with sanitized arguments.
+
+---
+
+## 4. Milestone Quality Gate Sign-Off Record
+
+| Milestone | Date | Gates Passed | Test Result | Verification Record |
+| :--- | :--- | :--- | :--- | :--- |
+| **M0** | 2026-09-14 | All 9 Gates (Strict TypeCheck, Clean Monorepo, Vitest Suites) | 13/13 Passed (100%) | [`M0-scaffolding.md`](file:///Users/apple/Desktop/PROJECTS/Coding%20Agent/docs/implementation/M0-scaffolding.md) |
+| **M1** | 2026-09-14 | All 9 Gates (Webview Bundle, Typed RPC, CSP Nonce, State Sync) | 25/25 Passed (100%) | [`M1-extension-shell.md`](file:///Users/apple/Desktop/PROJECTS/Coding%20Agent/docs/implementation/M1-extension-shell.md) |

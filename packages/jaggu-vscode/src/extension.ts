@@ -1,11 +1,13 @@
 import * as vscode from 'vscode';
-import { EventBus, InMemoryVirtualDocStore } from '@jaggu/core';
+import { EventBus, InMemoryVirtualDocStore, UiAgentStatus } from '@jaggu/core';
 import { JagguSidebarProvider } from './sidebarProvider.js';
 import { JagguShadowDocProvider } from './virtualDocProvider.js';
 
 export function activate(context: vscode.ExtensionContext): {
   eventBus: EventBus;
   docStore: InMemoryVirtualDocStore;
+  sidebarProvider: JagguSidebarProvider;
+  statusBarItem: vscode.StatusBarItem;
 } {
   const eventBus = new EventBus();
   const docStore = new InMemoryVirtualDocStore();
@@ -30,8 +32,15 @@ export function activate(context: vscode.ExtensionContext): {
 
   // 3. Register Core Commands
   context.subscriptions.push(
+    vscode.commands.registerCommand('jaggu.openChat', () => {
+      vscode.commands.executeCommand('jaggu.sidebarView.focus');
+    }),
+  );
+
+  context.subscriptions.push(
     vscode.commands.registerCommand('jaggu.startSession', () => {
-      vscode.window.showInformationMessage('JAGGU: Session started.');
+      vscode.commands.executeCommand('jaggu.sidebarView.focus');
+      vscode.window.showInformationMessage('JAGGU: Session ready.');
     }),
   );
 
@@ -42,21 +51,53 @@ export function activate(context: vscode.ExtensionContext): {
         reason: 'User triggered jaggu.cancelSession command',
         timestamp: Date.now(),
       });
+      sidebarProvider.handleIncomingMessage({ type: 'agent.cancel', payload: {} });
       vscode.window.showInformationMessage('JAGGU: Task cancelled.');
     }),
   );
 
   // 4. Status Bar Indicator
   const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-  statusBarItem.text = '$(sparkle) JAGGU';
-  statusBarItem.tooltip = 'JAGGU AI Coding Agent: Ready';
-  statusBarItem.command = 'jaggu.startSession';
+  statusBarItem.command = 'jaggu.openChat';
+  statusBarItem.tooltip = 'Click to open JAGGU AI Coding Agent';
+
+  const updateStatusBar = (status: UiAgentStatus) => {
+    switch (status) {
+      case 'IDLE':
+        statusBarItem.text = '$(sparkle) JAGGU: Ready';
+        statusBarItem.backgroundColor = undefined;
+        break;
+      case 'PROCESSING':
+        statusBarItem.text = '$(sync~spin) JAGGU: Processing...';
+        statusBarItem.backgroundColor = undefined;
+        break;
+      case 'SUCCESS':
+        statusBarItem.text = '$(check) JAGGU: Done';
+        statusBarItem.backgroundColor = undefined;
+        break;
+      case 'ERROR':
+        statusBarItem.text = '$(error) JAGGU: Error';
+        statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.errorBackground');
+        break;
+      case 'CANCELLED':
+        statusBarItem.text = '$(stop) JAGGU: Cancelled';
+        statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
+        break;
+    }
+  };
+
+  updateStatusBar('IDLE');
   statusBarItem.show();
   context.subscriptions.push(statusBarItem);
 
-  return { eventBus, docStore };
+  // Synchronize status bar with sidebar status
+  sidebarProvider.onDidChangeStatus((e) => {
+    updateStatusBar(e.state);
+  });
+
+  return { eventBus, docStore, sidebarProvider, statusBarItem };
 }
 
 export function deactivate(): void {
-  // Cleanup managed resources
+  // Clean up resources on extension host shutdown
 }

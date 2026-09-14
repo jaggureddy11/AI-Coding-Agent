@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JAGGU Webview Verification</title>
+  <link rel="stylesheet" href="../packages/jaggu-vscode/media/webview.css">
+  <style>
+    :root {
+      --vscode-sideBar-background: #1e1e1e;
+      --vscode-sideBar-foreground: #cccccc;
+      --vscode-foreground: #cccccc;
+      --vscode-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --vscode-font-size: 13px;
+      --vscode-input-background: #2d2d2d;
+      --vscode-input-foreground: #cccccc;
+      --vscode-input-border: #3c3c3c;
+      --vscode-button-background: #0e639c;
+      --vscode-button-foreground: #ffffff;
+      --vscode-button-secondaryBackground: #3a3d41;
+      --vscode-button-secondaryForeground: #ffffff;
+      --vscode-badge-background: #3c3c3c;
+      --vscode-badge-foreground: #ffffff;
+      --vscode-charts-green: #4ec9b0;
+      --vscode-progressBar-background: #007acc;
+      --vscode-sideBarSectionHeader-border: rgba(255, 255, 255, 0.08);
+      --vscode-sideBarSectionHeader-background: transparent;
+      --vscode-editor-inactiveSelectionBackground: rgba(255, 255, 255, 0.06);
+    }
+  </style>
+  <script>
+    window.acquireVsCodeApi = function() {
+      return {
+        postMessage: function(msg) {
+          console.log('[Webview -> Extension RPC]', msg);
+          if (msg.type === 'ui.ready') {
+            setTimeout(function() {
+              window.postMessage({ type: 'agent.status', payload: { state: 'IDLE', detail: 'Ready' } }, '*');
+            }, 50);
+          } else if (msg.type === 'user.submit') {
+            window.postMessage({ type: 'agent.status', payload: { state: 'PROCESSING', detail: 'Analyzing task...' } }, '*');
+            setTimeout(function() {
+              window.postMessage({
+                type: 'agent.message',
+                payload: {
+                  id: 'asst_' + Date.now(),
+                  role: 'assistant',
+                  text: 'I received your request: "' + msg.payload.text + '". In Milestone M1, the Webview ↔ Extension Host RPC channel is active and verified. The LLM Model Gateway and Code Editing tools will be connected in M2–M4.',
+                  timestamp: Date.now()
+                }
+              }, '*');
+              window.postMessage({ type: 'agent.status', payload: { state: 'SUCCESS', detail: 'Completed' } }, '*');
+              setTimeout(function() {
+                window.postMessage({ type: 'agent.status', payload: { state: 'IDLE', detail: 'Ready' } }, '*');
+              }, 1500);
+            }, 500);
+          } else if (msg.type === 'agent.cancel') {
+            window.postMessage({
+              type: 'agent.message',
+              payload: {
+                id: 'sys_' + Date.now(),
+                role: 'system',
+                text: '[Operation cancelled by user]',
+                timestamp: Date.now()
+              }
+            }, '*');
+            window.postMessage({ type: 'agent.status', payload: { state: 'CANCELLED', detail: 'Cancelled' } }, '*');
+          } else if (msg.type === 'ui.clear') {
+            window.postMessage({ type: 'agent.status', payload: { state: 'IDLE', detail: 'Ready' } }, '*');
+          }
+        },
+        getState: function() { return {}; },
+        setState: function(s) {}
+      };
+    };
+  </script>
+</head>
+<body style="width: 320px; height: 600px; margin: 0 auto; border: 1px solid #333; background: #1e1e1e;">
+  <div id="root"></div>
+  <script src="../packages/jaggu-vscode/media/webview.js"></script>
+</body>
+</html>

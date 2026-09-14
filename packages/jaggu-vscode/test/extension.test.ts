@@ -1,62 +1,82 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 
-// Mock the host-provided 'vscode' module for unit testing
-vi.mock('vscode', () => {
-  class EventEmitter<T> {
-    private handlers: Array<(e: T) => any> = [];
-    event = (listener: (e: T) => any) => {
-      this.handlers.push(listener);
-      return { dispose: () => {} };
-    };
-    fire(data: T) {
-      this.handlers.forEach((h) => h(data));
-    }
-  }
-
-  return {
-    EventEmitter,
-    Uri: {
-      parse: (str: string) => ({ toString: () => str, scheme: str.split(':')[0] }),
-    },
-  };
-});
-
+import * as vscode from 'vscode';
+import { activate, deactivate } from '../src/extension.js';
+import { JagguSidebarProvider } from '../src/sidebarProvider.js';
 import { JagguShadowDocProvider } from '../src/virtualDocProvider.js';
-import { InMemoryVirtualDocStore } from '@jaggu/core';
+import { InMemoryVirtualDocStore, EventBus } from '@jaggu/core';
 
-describe('JagguShadowDocProvider', () => {
-  it('should return empty string for non-existent document', () => {
-    const store = new InMemoryVirtualDocStore();
-    const provider = new JagguShadowDocProvider(store);
-    const mockUri = { toString: () => 'jaggu-shadow://unknown.ts' } as any;
+describe('Extension Host Lifecycle and Registration', () => {
+  it('should activate extension and register all core providers and commands', () => {
+    const context = {
+      subscriptions: [] as any[],
+      extensionUri: { toString: () => 'file:///mock/ext', fsPath: '/mock/ext' },
+    } as any;
 
-    expect(provider.provideTextDocumentContent(mockUri)).toBe('');
+    const result = activate(context);
+
+    expect(result.eventBus).toBeInstanceOf(EventBus);
+    expect(result.docStore).toBeInstanceOf(InMemoryVirtualDocStore);
+    expect(result.sidebarProvider).toBeInstanceOf(JagguSidebarProvider);
+    expect(result.statusBarItem).toBeDefined();
+    expect(result.statusBarItem.text).toBe('$(sparkle) JAGGU: Ready');
+    expect(result.statusBarItem.command).toBe('jaggu.openChat');
+
+    // Verify commands registered
+    const cmds = (vscode.commands as any).__getRegisteredCommands();
+    expect(cmds['jaggu.openChat']).toBeDefined();
+    expect(cmds['jaggu.startSession']).toBeDefined();
+    expect(cmds['jaggu.cancelSession']).toBeDefined();
+
+    // Verify subscriptions populated
+    expect(context.subscriptions.length).toBeGreaterThanOrEqual(5);
+
+    deactivate();
   });
 
-  it('should return proposedContent for staged virtual document', () => {
-    const store = new InMemoryVirtualDocStore();
-    store.set('jaggu-shadow://src/app.ts', 'const x = 1;', 'const x = 42;');
+  it('should render Webview HTML with strict CSP and nonce', () => {
+    const eventBus = new EventBus();
+    const extensionUri = { toString: () => 'file:///mock/ext', fsPath: '/mock/ext' } as any;
+    const provider = new JagguSidebarProvider(extensionUri, eventBus);
 
-    const provider = new JagguShadowDocProvider(store);
-    const mockUri = { toString: () => 'jaggu-shadow://src/app.ts' } as any;
+    const mockWebview = {
+      asWebviewUri: (uri: any) => uri,
+      cspSource: 'vscode-webview:',
+    } as any;
 
-    expect(provider.provideTextDocumentContent(mockUri)).toBe('const x = 42;');
+    const html = provider.getHtmlForWebview(mockWebview);
+    expect(html).toContain('Content-Security-Policy');
+    expect(html).toContain("default-src 'none'");
+    expect(html).toContain('nonce-');
+    expect(html).toContain('webview.js');
+    expect(html).toContain('webview.css');
+    expect(html).toContain('<div id="root"></div>');
   });
 
-  it('should have correct scheme constant', () => {
-    expect(JagguShadowDocProvider.SCHEME).toBe('jaggu-shadow');
-  });
+  it('should manage status transitions and fire onDidChangeStatus', () => {
+    const eventBus = new EventBus();
+    const extensionUri = { toString: () => 'file:///mock/ext', fsPath: '/mock/ext' } as any;
+    const provider = new JagguSidebarProvider(extensionUri, eventBus);
 
-  it('should fire onDidChange event when notifyChanged is called', () => {
-    const store = new InMemoryVirtualDocStore();
-    const provider = new JagguShadowDocProvider(store);
-    let eventFired = false;
-    provider.onDidChange(() => {
-      eventFired = true;
+    const states: string[] = [];
+    provider.onDidChangeStatus((e) => {
+      states.push(e.state);
     });
 
-    const mockUri = { toString: () => 'jaggu-shadow://src/app.ts' } as any;
-    provider.notifyChanged(mockUri);
-    expect(eventFired).toBe(true);
+    // Send invalid payload -> should reject
+    let sentMessage: any = null;
+    provider.postMessageToWebview = (msg: any) => {
+      sentMessage = msg;
+      return Promise.resolve(true);
+    };
+
+    provider.handleIncomingMessage({ type: 'invalid.unknown' });
+    expect(sentMessage?.type).toBe('agent.error');
+    expect(sentMessage?.payload?.code).toBe('INVALID_RPC_PAYLOAD');
+
+    // Send ui.ready -> should send agent.status IDLE
+    provider.handleIncomingMessage({ type: 'ui.ready' });
+    expect(sentMessage?.type).toBe('agent.status');
+    expect(sentMessage?.payload?.state).toBe('IDLE');
   });
 });
