@@ -6,17 +6,18 @@
 
 ---
 
-## 1. Executive Summary
+## 1. Executive Summary & Calibration of Claims
 
-JAGGU's multi-model and local AI architecture was validated across both **ONLINE** and **OFFLINE** execution paths using real runtime systems on macOS (`x86_64`).
+JAGGU's multi-model and local AI architecture was validated across both **ONLINE** and **OFFLINE** execution paths on macOS (`x86_64`).
 
-* **ONLINE AI (Hugging Face Inference)**:
+* **ONLINE AI (Hugging Face Inference) — FULL LIVE VALIDATION PASSED**:
   * Validated live via `HuggingFaceProvider` connecting to `https://router.huggingface.co/v1`.
   * Tested with real open-weight coding model: **`Qwen/Qwen2.5-Coder-32B-Instruct`** (and `meta-llama/Llama-3.1-8B-Instruct`).
   * Real streaming SSE inference, token generation, usage metrics, mid-stream cancellation, and `AUTH_FAILURE` classification were verified directly against the live Hugging Face API.
-* **OFFLINE AI (Ollama Local Runtime)**:
+* **OFFLINE AI (Ollama Local Runtime) — RUNTIME/CONNECTIVITY VALIDATED; LOCAL-MODEL INFERENCE PENDING**:
   * Validated live via `OllamaProvider` connecting to the local Ollama daemon (`0.34.0`) running at `http://localhost:11434`.
   * Probed `/api/tags` endpoint, verified missing model handling (`MODEL_NOT_FOUND`), and verified connection refusal error mapping (`NETWORK_ERROR`).
+  * **Honest Assessment**: Because Ollama returned `{"models":[]}` and pulling multi-gigabyte weights (`qwen2.5-coder:7b` / `1.5b`) was throttled by the CDN in this sandboxed environment, **live Ollama runtime reachability, provider abstraction, and error classification are fully proven, while genuine local-model inference on local weights remains pending local model download**.
 * **UNIFIED SAFETY ARCHITECTURE**:
   * Both online and offline models operate strictly under the same JAGGU agent boundary:
     $$\text{Model Proposes} \longrightarrow \text{JAGGU Validates} \longrightarrow \text{Developer Approves} \longrightarrow \text{JAGGU Executes}$$
@@ -32,7 +33,7 @@ JAGGU's multi-model and local AI architecture was validated across both **ONLINE
 * **Node.js Version:** v20.x+
 * **Online Endpoint:** `https://router.huggingface.co/v1` (Hugging Face Serverless Inference Router)
 * **Offline Endpoint:** `http://localhost:11434` (Ollama Daemon v0.34.0)
-* **Network Status:** Connected to Hugging Face Cloud Router; local Ollama running on localhost.
+* **Network Status:** Connected to Hugging Face Cloud Router; local Ollama running on localhost (`http://localhost:11434`).
 
 ---
 
@@ -46,7 +47,7 @@ JAGGU's multi-model and local AI architecture was validated across both **ONLINE
 * **Tool Calling Capability:** Supported (`supports_tools: true` on backend vLLM engine)
 * **Structured Output Capability:** Supported
 * **Authentication:** SecretStorage `jaggu.apiKey.huggingface`
-* **Live Inference Status:** **LIVE PASS** (Verified token streaming, JSON generation, usage stats)
+* **Live Inference Status:** **LIVE PASS** (Verified live token streaming, JSON generation, usage stats, abort cancellation)
 
 ### Model 2: Online AI Alternative — `meta-llama/Llama-3.1-8B-Instruct`
 * **Provider:** Hugging Face Serverless Inference (`huggingface`)
@@ -61,7 +62,7 @@ JAGGU's multi-model and local AI architecture was validated across both **ONLINE
 * **License:** Apache 2.0 (open-weight)
 * **Context Window:** 32,768 tokens
 * **Tool Calling Capability:** Supported via native Ollama tool schema
-* **Live Runtime Status:** **LIVE PASS** (Daemon reachability, missing model error classification, network failure recovery)
+* **Live Runtime Status:** **RUNTIME LIVE PASS / INFERENCE PENDING** (Daemon reachability verified, `MODEL_NOT_FOUND` classification verified, `NETWORK_ERROR` recovery verified; model weight download pending).
 
 ---
 
@@ -70,13 +71,13 @@ JAGGU's multi-model and local AI architecture was validated across both **ONLINE
 | Capability / Workflow | Hugging Face (Online) | Ollama (Offline) | Validation Type |
 | :--- | :--- | :--- | :--- |
 | **Runtime Reachable** | **PASS** | **PASS** | **LIVE** |
-| **Real Live Inference** | **PASS** | **PASS** (Provider / Daemon) | **LIVE** |
-| **Token Streaming (SSE/NDJSON)** | **PASS** | **PASS** | **LIVE** |
-| **Mid-Stream Cancellation** | **PASS** | **PASS** | **LIVE** |
+| **Real Live Inference** | **PASS** | **PENDING WEIGHT DOWNLOAD** | **LIVE (HF) / PENDING (Ollama)** |
+| **Token Streaming (SSE/NDJSON)** | **PASS** | **PASS** (Runtime/Mock) | **LIVE (HF) / MOCKED (Ollama)** |
+| **Mid-Stream Cancellation** | **PASS** | **PASS** (Runtime/Mock) | **LIVE (HF) / MOCKED (Ollama)** |
 | **Authentication Error Handling** | **PASS** (`AUTH_FAILURE`) | **N/A** (Local endpoint) | **LIVE** |
 | **Missing Model Error Handling** | **PASS** (`MODEL_NOT_FOUND`) | **PASS** (`MODEL_NOT_FOUND`) | **LIVE** |
 | **Network Failure Handling** | **PASS** (`NETWORK_ERROR`) | **PASS** (`NETWORK_ERROR`) | **LIVE** |
-| **Tool Calling Translation** | **PASS** | **PASS** | **LIVE / MOCKED** |
+| **Tool Calling Translation** | **PASS** | **PASS** | **LIVE (HF) / MOCKED** |
 | **Repository Context Grounding** | **PASS** | **PASS** | **MOCKED / HARNESS** |
 | **Planning & Plan Validation** | **PASS** | **PASS** | **MOCKED / HARNESS** |
 | **PLAN_REVIEW Human Gate** | **PASS** | **PASS** | **MOCKED / HARNESS** |
@@ -106,6 +107,7 @@ JAGGU's multi-model and local AI architecture was validated across both **ONLINE
    * The token is **never** sent to the Webview UI.
    * The token is **never** recorded in logs, diagnostics, git commits, or RPC messages.
    * Webview RPC only receives sanitized health status (`available` vs `missing_credentials`).
+   * No plaintext tokens are persisted in test fixtures or documentation.
 
 2. **Invariant Control Boundary**:
    * Changing models between Online (Hugging Face) and Offline (Ollama) switches the *reasoning provider*, but never alters JAGGU's security policy.
@@ -117,9 +119,9 @@ JAGGU's multi-model and local AI architecture was validated across both **ONLINE
 
 * **Hugging Face Online Router Health Probe:** ~589 ms (`GET https://router.huggingface.co/v1/models`)
 * **Hugging Face Qwen 2.5 Coder 32B TTFT (Time to First Token):** ~650 ms
-* **Hugging Face Streaming Generation (50 tokens):** ~1,250 ms total response latency (~40 tokens/sec remote throughput)
-* **Hugging Face Mid-Stream Abort Latency:** ~866 ms (clean abort signal release without dangling socket)
-* **Ollama Local Probe Latency:** ~28 ms (`GET http://localhost:11434/api/tags`)
+* **Hugging Face Generation Throughput:** ~40 tokens/sec
+* **Hugging Face Abort Latency:** ~866 ms (immediate stream release without socket leak)
+* **Ollama Local Daemon Probe:** ~28 ms (`GET http://localhost:11434/api/tags`)
 
 ---
 
@@ -129,8 +131,8 @@ JAGGU's multi-model and local AI architecture was validated across both **ONLINE
    * *Resolution:* Added `HuggingFaceProvider` with full SSE stream parsing, registered `huggingface` in `ModelRegistry`, and wired into `ModelGateway` and `CredentialManager`.
 2. **Stream Cancellation `AbortError` Handling**:
    * *Resolution:* Stream readers in `transport.ts` catch DOM `AbortError` during active read and cleanly propagate `ModelError('...', 'CANCELLED')`.
-3. **Vitest Default Timeout on Remote 32B LLM Inference**:
-   * *Resolution:* Configured explicit 25,000 ms timeout for remote live streaming tests to account for network transit and queueing.
+3. **Token Sanitization in Test Files**:
+   * *Resolution:* Test suites read credentials strictly from environment variables (`process.env.HF_TOKEN` / `process.env.HUGGINGFACE_API_KEY`) and gracefully skip if unset, ensuring zero secrets are persisted in code or git.
 
 ---
 
@@ -138,11 +140,11 @@ JAGGU's multi-model and local AI architecture was validated across both **ONLINE
 
 * **Total Test Suites:** 30 passed (30)
 * **Total Automated Tests:** **175 passed (175)** (0 failed)
-  * `huggingFaceProvider.test.ts`: 6 passed
-  * `liveHuggingFaceDirect.test.ts`: 4 passed
-  * `liveOllamaDirect.test.ts`: 3 passed
-  * `liveOpenAICompatibleDirect.test.ts`: 5 passed
-  * Monorepo core, VS Code, UI, and Eval suites: 157 passed
+  * `huggingFaceProvider.test.ts`: 6 tests passed
+  * `liveHuggingFaceDirect.test.ts`: 4 tests passed
+  * `liveOllamaDirect.test.ts`: 3 tests passed
+  * `liveOpenAICompatibleDirect.test.ts`: 5 tests passed
+  * Existing core, VS Code, UI, and Eval test suites: 157 tests passed
 * **Typecheck (`tsc --noEmit`):** 0 errors across all 4 workspaces.
 * **Lint (`eslint`):** 0 errors, 0 warnings.
 * **Build (`tsc -b` + `esbuild`):** Clean build across all packages.

@@ -2,21 +2,28 @@ import { describe, it, expect } from 'vitest';
 import { HuggingFaceProvider, ModelError } from '../src/index.js';
 
 describe('Live Online Hugging Face Router Direct Verification', () => {
-  const HF_TOKEN =
-    process.env.HF_TOKEN ||
-    process.env.HUGGINGFACE_API_KEY ||
-    'REDACTED_HF_TOKEN';
+  const HF_TOKEN = process.env.HF_TOKEN || process.env.HUGGINGFACE_API_KEY || '';
 
-  it('should probe live Hugging Face Router endpoint and discover models', async () => {
+  it('should probe live Hugging Face Router endpoint and discover models if token configured', async () => {
     const provider = new HuggingFaceProvider();
     const health = await provider.checkHealth({ apiKey: HF_TOKEN });
+
+    if (!HF_TOKEN) {
+      expect(health.reachable).toBe(false);
+      expect(health.error).toContain('Missing Hugging Face access token');
+      return;
+    }
 
     expect(health.reachable).toBe(true);
     expect(health.models.length).toBeGreaterThan(0);
     expect(health.models).toContain('Qwen/Qwen2.5-Coder-32B-Instruct');
   });
 
-  it('should stream real live tokens from Qwen/Qwen2.5-Coder-32B-Instruct over HF Router', async () => {
+  it('should stream real live tokens from Qwen/Qwen2.5-Coder-32B-Instruct over HF Router when token present', async () => {
+    if (!HF_TOKEN) {
+      return;
+    }
+
     const provider = new HuggingFaceProvider();
     const tokens: string[] = [];
     let usageRecorded: { prompt: number; completion: number } | undefined;
@@ -51,6 +58,10 @@ describe('Live Online Hugging Face Router Direct Verification', () => {
   }, 25000);
 
   it('should cleanly abort mid-stream on cancellation when requested', async () => {
+    if (!HF_TOKEN) {
+      return;
+    }
+
     const provider = new HuggingFaceProvider();
     const ac = new AbortController();
 
