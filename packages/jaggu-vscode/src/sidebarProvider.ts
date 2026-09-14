@@ -117,7 +117,10 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
     return this._contextEngine;
   }
 
-  public createOrchestrator(workspaceRoots: string[]): AgentOrchestrator {
+  public createOrchestrator(
+    workspaceRoots: string[],
+    customDiagnosticsProvider?: import('@jaggu/core').IDiagnosticsProvider,
+  ): AgentOrchestrator {
     const editSetManager = new EditSetManager(this._docStore, this._eventBus, workspaceRoots);
     const verificationEngine = new VerificationEngine({
       toolExecutor: this._toolExecutor,
@@ -129,9 +132,11 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
       eventBus: this._eventBus,
       workspaceRoots,
     });
-    const diagnosticsProvider = new VSCodeDiagnosticsProvider({
-      workspaceRoot: workspaceRoots[0] || '',
-    });
+    const diagnosticsProvider =
+      customDiagnosticsProvider ||
+      new VSCodeDiagnosticsProvider({
+        workspaceRoot: workspaceRoots[0] || '',
+      });
     const taskCheckpointManager = new TaskCheckpointManager({
       workspaceRoots,
     });
