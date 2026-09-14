@@ -1,7 +1,7 @@
 # 02 — Product Requirements Document (PRD)
 
 ## 1. Document Overview
-- **Product**: ForgeAI
+- **Product**: JAGGU (AI Coding Agent)
 - **Status**: Draft / Approved for Architecture Phase
 - **Target Release**: MVP v0.1.0
 - **Author**: Lead Product Architect & Staff Engineer
@@ -18,7 +18,7 @@ Modern software engineering involves severe cognitive fragmentation. A typical e
 5. **Git Version Control**: Staging hunks, inspecting diffs, resolving conflicts, and drafting commit messages.
 6. **AI Translation Overhead**: Copy-pasting code snippets back and forth into web-based AI chat tools, losing project context and introducing hallucinations.
 
-**ForgeAI unifies these fragmented loops directly inside the developer's core workspace.**
+**JAGGU unifies these fragmented loops directly inside the developer's core workspace.**
 
 ---
 
@@ -111,7 +111,7 @@ Modern software engineering involves severe cognitive fragmentation. A typical e
 
 | ID | Module | Requirement Description | Priority |
 |---|---|---|---|
-| **FR-01** | UI | Dedicated ForgeAI Activity Bar icon and primary Sidebar panel. | P0 |
+| **FR-01** | UI | Dedicated JAGGU Activity Bar icon and primary Sidebar panel. | P0 |
 | **FR-02** | UI | Chat interface supporting markdown rendering, code fences with syntax highlighting, and copy buttons. | P0 |
 | **FR-03** | UI | Interactive Plan View displaying checklist of tasks with real-time status indicators. | P0 |
 | **FR-04** | UI | Side-by-side and inline visual Diff Review viewer before writing changes to disk. | P0 |
@@ -132,6 +132,6 @@ Modern software engineering involves severe cognitive fragmentation. A typical e
 
 - **UI Responsiveness**: The main VS Code UI thread must never experience blocking or dropped frames (>60 FPS maintained during indexing or streaming).
 - **Latency**: First-token streaming latency must not exceed 800ms on broadband connections.
-- **Resource Footprint**: ForgeAI background idle memory consumption must stay below 120MB RSS.
+- **Resource Footprint**: JAGGU background idle memory consumption must stay below 120MB RSS.
 - **Data Privacy**: No workspace source code or metadata is sent to any external server other than the user's explicitly configured LLM provider.
 - **Zero Data Loss**: Every file modification must support immediate undo and state restoration.

@@ -2,7 +2,7 @@
 
 ## 1. Error Classification: Recoverable vs Fatal
 
-A key differentiator of an autonomous engineering agent is its ability to withstand runtime friction. Naive agents crash or abort on the first unhandled exception. ForgeAI rigorously categorizes every potential failure into **Recoverable (Self-Healable)** versus **Fatal (Unrecoverable)**.
+A key differentiator of an autonomous engineering agent is its ability to withstand runtime friction. Naive agents crash or abort on the first unhandled exception. JAGGU rigorously categorizes every potential failure into **Recoverable (Self-Healable)** versus **Fatal (Unrecoverable)**.
 
 ```
                               [Error Occurred]
@@ -48,7 +48,7 @@ A key differentiator of an autonomous engineering agent is its ability to withst
 
 ## 3. The Self-Healing Diagnostic Pipeline
 
-When a test failure or build error occurs during execution, ForgeAI triggers its internal self-healing pipeline:
+When a test failure or build error occurs during execution, JAGGU triggers its internal self-healing pipeline:
 
 ```typescript
 export class DiagnosticSelfHealer {

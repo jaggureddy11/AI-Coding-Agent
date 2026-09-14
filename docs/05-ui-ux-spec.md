@@ -2,7 +2,7 @@
 
 ## 1. Design Principles & Alignment with VS Code
 
-ForgeAI is designed to feel like an organic, first-class subsystem of Visual Studio Code rather than a foreign, unstyled web frame. 
+JAGGU is designed to feel like an organic, first-class subsystem of Visual Studio Code rather than a foreign, unstyled web frame. 
 - **Native Aesthetic**: Inherits all VS Code CSS variables (`var(--vscode-editor-background)`, `var(--vscode-foreground)`, `var(--vscode-badge-background)`), guaranteeing perfect visual harmony across all dark, light, and high-contrast themes.
 - **High Information Density**: Built for professional engineers who value speed, terminal precision, and concise status over empty whitespace.
 - **Zero UI Blocking**: All streaming, animations, and transitions use CSS hardware-accelerated transforms and async non-blocking rendering.
@@ -13,9 +13,9 @@ ForgeAI is designed to feel like an organic, first-class subsystem of Visual Stu
 
 ```
 +----------------------------------------------------------------------------------------------------+
-| VS Code Title Bar                                                                   [ForgeAI: Idle]|
+| VS Code Title Bar                                                                   [JAGGU: Idle]|
 +----+----------------------+-------------------------------------------------+----------------------+
-| A  |                      | Active Editor: src/routes/index.ts              | ForgeAI Sidebar      |
+| A  |                      | Active Editor: src/routes/index.ts              | JAGGU Sidebar      |
 | c  |  Explorer /          |                                                 |                      |
 | t  |  File Tree           | 14 import { Router } from 'express';             | [Agent: EXECUTING]   |
 | i  |                      | 15                                              |                      |
@@ -33,7 +33,7 @@ ForgeAI is designed to feel like an organic, first-class subsystem of Visual Stu
 +----+----------------------+-------------------------------------------------+----------------------+
 ```
 
-### 2.1 Surface 1: ForgeAI Activity Bar & Sidebar
+### 2.1 Surface 1: JAGGU Activity Bar & Sidebar
 - **Activity Bar Icon**: Clean, modern stylized anvil/spark icon registered via `package.json` contributes `viewsContainers`.
 - **Sidebar Header**: Displays active workspace name, current LLM model pill (`Claude 3.5 Sonnet`), and session reset button.
 - **Agent Status Header Bar**: Real-time status indicator pill with distinct colors:
@@ -61,17 +61,17 @@ Rendered directly within the conversation stream when a complex task is formulat
 - **Compact File Change Drawer in Sidebar**: Displays a list of files modified by the agent with change counters:
   - `src/controllers/health.ts` (+32, -0)
   - `src/routes/index.ts` (+4, -1)
-- **Native VS Code Diff Tab**: Clicking any changed file opens the battle-tested, native VS Code side-by-side diff tab: `vscode.commands.executeCommand('vscode.diff', diskUri, shadowUri, 'ForgeAI Diff: index.ts')`.
+- **Native VS Code Diff Tab**: Clicking any changed file opens the battle-tested, native VS Code side-by-side diff tab: `vscode.commands.executeCommand('vscode.diff', diskUri, shadowUri, 'JAGGU Diff: index.ts')`.
 - **Review Controls**: Floating action buttons in the sidebar allow the developer to `[Accept All Changes]`, `[Accept Active File]`, or `[Discard All]`. Approved changes are applied via `vscode.workspace.applyEdit()`, cleanly supporting `Cmd+Z` undo.
 
 ### 2.4 Surface 4: Terminal & Execution Activity
 - **Sidebar Execution Card**: Renders high-level command status in the conversation stream (e.g., `npm test` -> Exit Code 0, Duration: 1.4s).
-- **Native VS Code OutputChannel**: Real-time unabridged stdout and stderr stream directly into a dedicated VS Code Output panel (`Output -> ForgeAI Task Trace`), providing native text selection, search, and zero Webview rendering overhead.
+- **Native VS Code OutputChannel**: Real-time unabridged stdout and stderr stream directly into a dedicated VS Code Output panel (`Output -> JAGGU Task Trace`), providing native text selection, search, and zero Webview rendering overhead.
 
 ### 2.5 Surface 5: Inline Code Actions & Floating Prompt (Cmd+K)
-- Selecting code in any editor triggers a subtle ForgeAI lightbulb quick-fix:
-  - *"Explain with ForgeAI"*
-  - *"Refactor with ForgeAI"*
+- Selecting code in any editor triggers a subtle JAGGU lightbulb quick-fix:
+  - *"Explain with JAGGU"*
+  - *"Refactor with JAGGU"*
   - *"Generate Tests for Selection"*
 - Hitting `Cmd+K` (macOS) or `Ctrl+K` (Windows/Linux) spawns a focused inline prompt bar floating directly over the selected editor lines, allowing quick modifications without switching to the sidebar.
 
@@ -99,8 +99,8 @@ Rendered directly within the conversation stream when a complex task is formulat
 ## 4. Keyboard Shortcuts & Accessibility
 
 ### 4.1 Keybindings
-- `Cmd + Shift + A` / `Ctrl + Shift + A`: Toggle ForgeAI Sidebar focus.
-- `Cmd + K` / `Ctrl + K`: Open Inline ForgeAI Prompt on selection.
+- `Cmd + Shift + A` / `Ctrl + Shift + A`: Toggle JAGGU Sidebar focus.
+- `Cmd + K` / `Ctrl + K`: Open Inline JAGGU Prompt on selection.
 - `Escape`: Instantly cancel active agent stream or command execution.
 - `Cmd + Enter` / `Ctrl + Enter`: Submit prompt / Approve plan.
 - `Alt + A`: Accept active diff hunk.

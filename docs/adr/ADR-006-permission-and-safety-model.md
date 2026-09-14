@@ -7,7 +7,7 @@ Accepted
 AI agents equipped with terminal runners and file-deletion tools can execute arbitrary code on developer workstations. Vulnerabilities such as prompt injection (e.g. from malicious comments in untrusted open-source repos) could instruct the agent to run destructive commands (`rm -rf ~`, `curl | bash`, exfiltrating `.env` secrets).
 
 ## Decision
-ForgeAI implements a **Strict Three-Tier Permission Classification Engine**:
+JAGGU implements a **Strict Three-Tier Permission Classification Engine**:
 - **SAFE (Tier 1)**: Read-only, idempotent operations (`read_file`, `search_code`, `list_directory`, `git_status`). Auto-executed.
 - **MODERATE (Tier 2)**: File edits and standard build/test runners (`write_file`, `npm test`). Configurable auto or single plan approval.
 - **HIGH_RISK (Tier 3)**: File deletions, arbitrary shell executions, package installations, network calls, dotfile/credential reads. Mandatory explicit modal authorization.

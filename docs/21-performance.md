@@ -32,7 +32,7 @@ All compute-heavy operations are strictly banned from the Extension Host's main 
 
 ### 3.2 Token Streaming Throttling (Micro-Batching)
 Modern LLMs (e.g., Gemini 2.0 Flash, Claude 3.5 Sonnet) can emit over 80 tokens per second. Updating the React Webview DOM on every single incoming token chunk overwhelms the IPC channel (`postMessage`) and degrades renderer performance.
-ForgeAI applies **Adaptive Micro-Batching**:
+JAGGU applies **Adaptive Micro-Batching**:
 ```typescript
 export class StreamRendererThrottle {
   private buffer: string = '';
@@ -60,5 +60,5 @@ export class StreamRendererThrottle {
 ## 4. Memory Management & Cache Eviction
 
 1. **Sliding AST Cache**: AST symbol nodes are cached in a Least-Recently-Used (LRU) cache with a maximum capacity of 500 files or 25MB.
-2. **Log File Rotation**: `.vscode/forgeai/audit.log` is capped at 10MB; rotated to `audit.1.log` with max 2 archival generations.
+2. **Log File Rotation**: `.vscode/jaggu/audit.log` is capped at 10MB; rotated to `audit.1.log` with max 2 archival generations.
 3. **Shadow Buffer Cleanup**: When a task completes or cancels, temporary in-memory file buffers are unreferenced immediately to allow V8 garbage collection.

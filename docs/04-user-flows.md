@@ -1,8 +1,8 @@
-# 04 — ForgeAI User Flows & Interaction Lifecycles
+# 04 — JAGGU User Flows & Interaction Lifecycles
 
 ## 1. Overview
 
-This document specifies the exact, step-by-step user journeys and system interactions across the 21 primary engineering workflows supported by ForgeAI. Every flow is modeled with deterministic transitions, user approval gates, cancellation semantics, and recovery paths.
+This document specifies the exact, step-by-step user journeys and system interactions across the 21 primary engineering workflows supported by JAGGU. Every flow is modeled with deterministic transitions, user approval gates, cancellation semantics, and recovery paths.
 
 ---
 
@@ -14,7 +14,7 @@ This document specifies the exact, step-by-step user journeys and system interac
 sequenceDiagram
     autonumber
     actor User as Developer
-    participant UI as ForgeAI Sidebar / Webview
+    participant UI as JAGGU Sidebar / Webview
     participant Orch as Agent Orchestrator
     participant Context as Context Engine (Ripgrep / LSP)
     participant Model as Model Gateway (LLM)
@@ -71,15 +71,15 @@ sequenceDiagram
 ## 3. Detailed Specification for All 21 User Flows
 
 ### Flow 1: First Launch & Onboarding
-1. Developer installs ForgeAI extension in VS Code.
-2. ForgeAI Activity Bar icon appears on the left navigation bar.
-3. Clicking the icon opens the ForgeAI Welcome View:
+1. Developer installs JAGGU extension in VS Code.
+2. JAGGU Activity Bar icon appears on the left navigation bar.
+3. Clicking the icon opens the JAGGU Welcome View:
    - Brief 3-bullet introduction.
    - Quick provider setup buttons (Anthropic, OpenAI, Gemini, Ollama).
    - "Connect Provider" button.
 
 ### Flow 2: Open Repository Detection
-1. When a workspace folder is opened, ForgeAI's activation event `onStartupFinished` fires.
+1. When a workspace folder is opened, JAGGU's activation event `onStartupFinished` fires.
 2. Context engine detects:
    - Repository root path.
    - Project type (`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`).
@@ -87,7 +87,7 @@ sequenceDiagram
 3. Status badge in sidebar displays: `Workspace: Ready (Node.js/TypeScript)`.
 
 ### Flow 3: Configure AI Provider & API Key
-1. Developer clicks the settings gear icon in ForgeAI toolbar.
+1. Developer clicks the settings gear icon in JAGGU toolbar.
 2. Modal input prompt appears (or dedicated settings tab):
    - Choose Model Provider: `[Anthropic / Claude 3.5 Sonnet]` (Default).
    - Input API Key: `sk-ant-...`.
@@ -140,12 +140,12 @@ sequenceDiagram
 2. Options available:
    - `Accept Hunk` / `Reject Hunk`.
    - `Accept All Files` / `Discard All`.
-3. Once accepted, ForgeAI commits changes to actual workspace files on disk.
+3. Once accepted, JAGGU commits changes to actual workspace files on disk.
 
 ### Flow 11: Agent Executes Terminal Command
 1. Plan reaches Step 4: *"Run test suite"*.
 2. Agent requests execution of `npm test tests/health.test.ts`.
-3. Because `run_command` is classified as `MODERATE`, ForgeAI displays inline command card:
+3. Because `run_command` is classified as `MODERATE`, JAGGU displays inline command card:
    - `Command: npm test tests/health.test.ts`
    - `Directory: /Users/apple/Desktop/my-project`
 4. If "Auto-run safe tests" setting is enabled, proceeds; otherwise awaits single-click confirmation.
@@ -198,12 +198,12 @@ sequenceDiagram
 3. Agent logs denial, adapts its plan, and refactors without deleting the file.
 
 ### Flow 20: Git Diff Review & Working Tree Check
-1. User clicks the "Git Status" button in ForgeAI toolbar.
-2. ForgeAI compares working tree against HEAD commit.
+1. User clicks the "Git Status" button in JAGGU toolbar.
+2. JAGGU compares working tree against HEAD commit.
 3. Renders concise summary of all changes made during the session.
 4. Generates an optional semantic commit message: `feat(health): add healthcheck endpoint with uptime stats`.
 
 ### Flow 21: Conversation Restoration & History
 1. User closes and reopens VS Code.
-2. ForgeAI loads previous session history from `.vscode/forgeai/sessions.json` (or extension global storage).
+2. JAGGU loads previous session history from `.vscode/jaggu/sessions.json` (or extension global storage).
 3. Chat history, past task plans, and terminal outputs are restored in read-only replay state, ready for follow-up prompts.

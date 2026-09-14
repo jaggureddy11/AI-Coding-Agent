@@ -2,8 +2,8 @@
 
 ## 1. State Architecture: Persistent vs Ephemeral
 
-ForgeAI strictly bifurcates state into two categories:
-1. **Persistent State**: Stored on disk in `.vscode/forgeai/` or VS Code's global storage directory. Survives editor restarts. Includes conversation logs, user configuration, task audit logs, and approval preferences.
+JAGGU strictly bifurcates state into two categories:
+1. **Persistent State**: Stored on disk in `.vscode/jaggu/` or VS Code's global storage directory. Survives editor restarts. Includes conversation logs, user configuration, task audit logs, and approval preferences.
 2. **Ephemeral Runtime State**: Maintained exclusively in memory within active Node.js processes. Reset upon session restart. Includes active AST symbol caches, shadow buffer file edits, in-flight cancellation tokens, and live terminal process handles.
 
 ---
@@ -200,10 +200,10 @@ export interface ModelUsage {
 
 ## 3. Storage Layout on Disk
 
-Persistent files are organized cleanly in the workspace `.vscode/forgeai/` directory (automatically added to `.gitignore`):
+Persistent files are organized cleanly in the workspace `.vscode/jaggu/` directory (automatically added to `.gitignore`):
 
 ```
-.vscode/forgeai/
+.vscode/jaggu/
 ├── config.json               # WorkspaceConfig overrides
 ├── sessions/
 │   ├── sess_9a8b7c6d.json    # Conversation, Messages & Tasks

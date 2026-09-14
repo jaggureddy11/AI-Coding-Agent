@@ -10,11 +10,11 @@ When an AI agent modifies code, executing direct writes to disk immediately caus
 3. **Loss of Undo History**: Standard editor undo stacks are disrupted by external disk modifications.
 
 ## Decision
-ForgeAI implements an **In-Memory Virtual Document Provider & Native VS Code Diff Architecture**:
+JAGGU implements an **In-Memory Virtual Document Provider & Native VS Code Diff Architecture**:
 1. Mutating tools (`write_file`, `apply_patch`, `create_file`) stage their proposed modifications in an in-memory virtual document map.
-2. The extension registers a `vscode.workspace.registerTextDocumentContentProvider` for the custom URI scheme `forgeai-shadow://`.
-3. Diff review triggers the native VS Code side-by-side or inline diff tab: `vscode.commands.executeCommand('vscode.diff', diskUri, shadowUri, 'ForgeAI Diff: ' + fileName)`.
-4. When the user approves changes, ForgeAI constructs and applies a `vscode.WorkspaceEdit()`, which natively modifies the files, integrates seamlessly with VS Code's undo/redo history (`Cmd+Z`), and saves to disk cleanly.
+2. The extension registers a `vscode.workspace.registerTextDocumentContentProvider` for the custom URI scheme `jaggu-shadow://`.
+3. Diff review triggers the native VS Code side-by-side or inline diff tab: `vscode.commands.executeCommand('vscode.diff', diskUri, shadowUri, 'JAGGU Diff: ' + fileName)`.
+4. When the user approves changes, JAGGU constructs and applies a `vscode.WorkspaceEdit()`, which natively modifies the files, integrates seamlessly with VS Code's undo/redo history (`Cmd+Z`), and saves to disk cleanly.
 
 ## Alternatives Considered
 - **Direct Disk Overwrite with Git Commit Undo**:

@@ -2,19 +2,19 @@
 
 ## 1. Observability Architecture & Principles
 
-Observability in ForgeAI serves two essential purposes:
+Observability in JAGGU serves two essential purposes:
 1. **Developer Insight**: Providing the engineer with an audit trail of every decision, tool call, command output, and latency metric in real time.
 2. **System Health & Debugging**: Allowing developers to diagnose failures, measure model latency, and inspect token consumption.
 
 ### Strict Privacy Guarantee (The Anti-Surveillance Invariant)
 - **Zero Secret Ingestion**: Passwords, API keys, bearer tokens, and private SSH keys are scrubbed before reaching any logger.
-- **Zero Codebase Exfiltration**: Private source code is never transmitted to any third-party telemetry server. Telemetry is local-first (`.vscode/forgeai/audit.log`) and opt-in only.
+- **Zero Codebase Exfiltration**: Private source code is never transmitted to any third-party telemetry server. Telemetry is local-first (`.vscode/jaggu/audit.log`) and opt-in only.
 
 ---
 
 ## 2. Structured Log Schema (NDJSON)
 
-Logs are written as newline-delimited JSON (NDJSON) to `.vscode/forgeai/audit.log`:
+Logs are written as newline-delimited JSON (NDJSON) to `.vscode/jaggu/audit.log`:
 
 ```typescript
 export interface AuditLogEntry {
@@ -61,10 +61,10 @@ export interface AuditLogEntry {
 
 ## 3. Real-Time Developer Output Channels
 
-ForgeAI provides three distinct visibility surfaces inside VS Code:
+JAGGU provides three distinct visibility surfaces inside VS Code:
 
-### 3.1 Surface 1: Dedicated Output Channel (`ForgeAI Trace`)
-- Accessible via VS Code's native `Output` panel dropdown (`Output -> ForgeAI Trace`).
+### 3.1 Surface 1: Dedicated Output Channel (`JAGGU Trace`)
+- Accessible via VS Code's native `Output` panel dropdown (`Output -> JAGGU Trace`).
 - Prints clean, formatted, human-readable execution breadcrumbs:
   ```
   [11:45:00 INFO] [Task: task_102] State -> UNDERSTAND
@@ -81,9 +81,9 @@ ForgeAI provides three distinct visibility surfaces inside VS Code:
 
 ### 3.3 Surface 3: VS Code Status Bar Item
 - Displays background activity in the bottom status bar:
-  - `$(sparkle) ForgeAI: Idle`
-  - `$(sync~spin) ForgeAI: Running tests... (1.2s)`
-  - `$(check) ForgeAI: Task Complete (3 files)`
+  - `$(sparkle) JAGGU: Idle`
+  - `$(sync~spin) JAGGU: Running tests... (1.2s)`
+  - `$(check) JAGGU: Task Complete (3 files)`
 
 ---
 

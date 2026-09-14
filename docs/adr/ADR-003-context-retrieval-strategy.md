@@ -10,7 +10,7 @@ Supplying relevant repository context to an LLM is the single most critical fact
 3. Wasteful token burn.
 
 ## Decision
-ForgeAI implements an **8-Tier Context Priority Hierarchy** governed by a strict sliding token budget (default: 12,000 tokens). Higher-tier sources (Active Selection, Active File, Diagnostic Errors, LSP Symbols) take precedence over lower-tier sources (Imported files, Ripgrep search, Tests, Docs), with automatic middle-file truncation when budget ceilings are approached.
+JAGGU implements an **8-Tier Context Priority Hierarchy** governed by a strict sliding token budget (default: 12,000 tokens). Higher-tier sources (Active Selection, Active File, Diagnostic Errors, LSP Symbols) take precedence over lower-tier sources (Imported files, Ripgrep search, Tests, Docs), with automatic middle-file truncation when budget ceilings are approached.
 
 ## Alternatives Considered
 - **Dump All Open Files into Prompt**:

@@ -2,7 +2,7 @@
 
 ## 1. Evaluation Philosophy: Empirical Rigor Over Demos
 
-Most AI coding assistants rely on subjective video demos and cherry-picked prompts. ForgeAI establishes an **Empirical Evaluation Framework** (`packages/forgeai-eval`) to measure agent capability, regression rates, and tool efficiency scientifically across model releases and code iterations.
+Most AI coding assistants rely on subjective video demos and cherry-picked prompts. JAGGU establishes an **Empirical Evaluation Framework** (`packages/jaggu-eval`) to measure agent capability, regression rates, and tool efficiency scientifically across model releases and code iterations.
 
 ---
 
@@ -28,7 +28,7 @@ Every benchmark run computes an automated evaluation scorecard tracking eight ke
 The evaluation suite includes 25 curated, realistic coding tasks across 5 distinct archetypes:
 
 ```
-packages/forgeai-eval/benchmarks/
+packages/jaggu-eval/benchmarks/
 ├── archetype-1-explain/        # Repository exploration and architecture explanation
 ├── archetype-2-feature/        # End-to-end multi-file feature implementation
 ├── archetype-3-debug/          # Diagnosing and repairing broken test suites

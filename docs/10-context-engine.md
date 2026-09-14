@@ -4,7 +4,7 @@
 
 Modern repositories easily span hundreds of thousands of lines of code, far exceeding effective LLM reasoning attention spans and token budgets. Sending an entire repository into a prompt degrades reasoning, induces hallucinations, and multiplies inference costs.
 
-The **ForgeAI Context Engine** extracts high-relevance semantic ground truth while staying strictly within a defined token budget (typically 6,000 to 12,000 tokens).
+The **JAGGU Context Engine** extracts high-relevance semantic ground truth while staying strictly within a defined token budget (typically 6,000 to 12,000 tokens).
 
 ```
 +-----------------------------------------------------------------------------------------+
@@ -80,7 +80,7 @@ When constructing the final prompt context, snippets are added in descending ord
 
 ## 4. Token Budgeting & Compaction Algorithm
 
-ForgeAI uses a sliding token budget:
+JAGGU uses a sliding token budget:
 ```typescript
 export interface ContextBudgetConfig {
   maxContextTokens: number;      // Default: 12,000

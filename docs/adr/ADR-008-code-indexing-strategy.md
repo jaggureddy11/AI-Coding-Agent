@@ -9,7 +9,7 @@ Codebase search is the foundational sensory input for an AI coding agent. Two ar
 2. **Hybrid Lexical + Structural Search (Ripgrep + VS Code LSP)**: Combines regex/keyword ripgrep search with compiler-driven symbol graphs from Language Server Protocol extensions.
 
 ## Decision
-ForgeAI implements a **Hybrid Lexical + Structural Retrieval Engine** for the MVP. Vector databases and embedding models are deliberately deferred to post-MVP (Phase 8+).
+JAGGU implements a **Hybrid Lexical + Structural Retrieval Engine** for the MVP. Vector databases and embedding models are deliberately deferred to post-MVP (Phase 8+).
 
 ## Alternatives Considered
 - **Local Embedded Vector Database (Chroma / LanceDB)**:

@@ -2,7 +2,7 @@
 
 ## 1. System Topology & Process Model
 
-ForgeAI is structured as a decoupled multi-process architecture optimized for performance, security, and integration with Visual Studio Code. Rather than running all computations on the VS Code UI thread, ForgeAI strictly segregates execution across three execution domains:
+JAGGU is structured as a decoupled multi-process architecture optimized for performance, security, and integration with Visual Studio Code. Rather than running all computations on the VS Code UI thread, JAGGU strictly segregates execution across three execution domains:
 
 ```
 +-----------------------------------------------------------------------------------------+
@@ -10,7 +10,7 @@ ForgeAI is structured as a decoupled multi-process architecture optimized for pe
 |  +-----------------------------------------------------------------------------------+  |
 |  | VS Code Workbench Shell & Monaco Editor                                           |  |
 |  | +-----------------------------+  +----------------------------------------------+ |  |
-|  | | ForgeAI Webview Sidebar     |  | Native Monaco Multi-Diff Editor              | |  |
+|  | | JAGGU Webview Sidebar     |  | Native Monaco Multi-Diff Editor              | |  |
 |  | | (React 18 + Tailwind)       |  | (Myers / Line Diff Computations)             | |  |
 |  | +--------------+--------------+  +----------------------+-----------------------+ |  |
 |  +----------------|----------------------------------------|-------------------------+  |
@@ -20,7 +20,7 @@ ForgeAI is structured as a decoupled multi-process architecture optimized for pe
 |                   v                                        v                            |
 |                                EXTENSION HOST PROCESS                                   |
 |  +-----------------------------------------------------------------------------------+  |
-|  | ForgeAI Extension Controller (`packages/forgeai-vscode`)                         |  |
+|  | JAGGU Extension Controller (`packages/jaggu-vscode`)                         |  |
 |  | - Window / Document Listeners      - SecretStorage (API Keys)                     |  |
 |  | - Editor Decoration Controller     - Pseudoterminal / PTY Bridge                  |  |
 |  | - LSP Client Invoker               - Git Extension Bridge                         |  |
@@ -30,32 +30,32 @@ ForgeAI is structured as a decoupled multi-process architecture optimized for pe
 +----------------------------------------v------------------------------------------------+
 |                                  AGENT CORE ENGINE                                      |
 |  +-----------------------------------------------------------------------------------+  |
-|  | Agent Orchestrator (`packages/forgeai-core/agent`)                                |  |
+|  | Agent Orchestrator (`packages/jaggu-core/agent`)                                |  |
 |  | - Deterministic Finite State Machine (FSM)                                        |  |
 |  | - Task & Milestone Planner                                                        |  |
 |  | - Self-Healing Loop Coordinator                                                   |  |
 |  +-----------------------------------------------------------------------------------+  |
-|  | Context Engine (`packages/forgeai-context`)                                        |  |
+|  | Context Engine (`packages/jaggu-context`)                                        |  |
 |  | - Ripgrep Content & File Search Engine                                            |  |
 |  | - AST Import / Symbol Dependency Resolver                                         |  |
 |  | - Sliding Window Token Budget Manager                                             |  |
 |  +-----------------------------------------------------------------------------------+  |
-|  | Model Gateway (`packages/forgeai-models`)                                         |  |
+|  | Model Gateway (`packages/jaggu-models`)                                         |  |
 |  | - Provider Adapters (Anthropic, OpenAI, Gemini, Ollama)                           |  |
 |  | - SSE Stream Reader & Tool-Call Chunk Parser                                      |  |
 |  | - Rate-Limit & Backoff Resilience Engine                                          |  |
 |  +-----------------------------------------------------------------------------------+  |
-|  | Tool Execution Runtime (`packages/forgeai-core/tools`)                            |  |
+|  | Tool Execution Runtime (`packages/jaggu-core/tools`)                            |  |
 |  | - File System Tools (Read, Write, Create, Delete, List)                            |  |
 |  | - Terminal Runner (node-pty / subshell process manager)                            |  |
 |  | - Git Inspector & Snapshot Checkpointer                                           |  |
 |  +-----------------------------------------------------------------------------------+  |
-|  | Safety & Permission Engine (`packages/forgeai-core/security`)                      |  |
+|  | Safety & Permission Engine (`packages/jaggu-core/security`)                      |  |
 |  | - 3-Tier Operation Risk Classifier (Safe, Moderate, High-Risk)                     |  |
 |  | - Interactive Approval Token Coordinator                                          |  |
 |  | - Secret Sanitizer & Shell Metacharacter Escaper                                  |  |
 |  +-----------------------------------------------------------------------------------+  |
-|  | Diff & Shadow Buffer Engine (`packages/forgeai-core/diff`)                         |  |
+|  | Diff & Shadow Buffer Engine (`packages/jaggu-core/diff`)                         |  |
 |  | - In-Memory Transactional Staging Buffer                                          |  |
 |  | - Myers Line-by-Line & Character-Level Diff Calculator                            |  |
 |  | - Per-Hunk Accept / Reject Logic                                                   |  |
@@ -66,7 +66,7 @@ ForgeAI is structured as a decoupled multi-process architecture optimized for pe
 
 ## 2. Core Subsystems & Component Responsibilities
 
-### 2.1 Agent Core Engine (`packages/forgeai-core`)
+### 2.1 Agent Core Engine (`packages/jaggu-core`)
 - **Agent Orchestrator**: Houses the authoritative Finite State Machine (FSM). Manages state transitions, dispatches instructions to the Model Gateway, invokes tools, and enforces loop boundaries (max 20 iterations, max 3 test repairs).
 - **Context Engine**: Bundles ripgrep (`@vscode/ripgrep`), connects to VS Code LSP for symbol resolution, harvests active editor context, and enforces the 8-tier sliding token budget.
 - **Model Gateway**: Provides a polymorphic, unified interface over Anthropic, OpenAI, Gemini, and local Ollama APIs using native Node `fetch` SSE streaming.
@@ -74,15 +74,15 @@ ForgeAI is structured as a decoupled multi-process architecture optimized for pe
 - **Safety & Permission Manager**: Intercepts tool calls; enforces Safe/Moderate/High-Risk policies; scrubs secrets with regex filters; enforces shell denylists.
 - **Shadow Buffer Manager**: Maintains virtual proposed files in memory, exposes them to `TextDocumentContentProvider`, and generates `WorkspaceEdit` objects on approval.
 
-### 2.2 User Interface Layer (`packages/forgeai-ui`)
-- **Responsibility**: React 18 + Tailwind CSS Webview application rendered strictly within the ForgeAI Sidebar.
+### 2.2 User Interface Layer (`packages/jaggu-ui`)
+- **Responsibility**: React 18 + Tailwind CSS Webview application rendered strictly within the JAGGU Sidebar.
 - **Surfaces**: Conversation timeline, streaming markdown responses, interactive Plan Cards with step-by-step checkboxes, and High-Risk Approval confirmation modals.
 
-### 2.3 VS Code Extension Host Bridge (`packages/forgeai-vscode`)
-- **Responsibility**: Minimal, high-speed adapter connecting VS Code extension lifecycle to `forgeai-core`.
-- **Integrations**: Registers `WebviewViewProvider`, hooks `TextDocumentContentProvider` for `forgeai-shadow://` diff tabs, exposes status bar items, and bridges `vscode.git` and LSP commands.
+### 2.3 VS Code Extension Host Bridge (`packages/jaggu-vscode`)
+- **Responsibility**: Minimal, high-speed adapter connecting VS Code extension lifecycle to `jaggu-core`.
+- **Integrations**: Registers `WebviewViewProvider`, hooks `TextDocumentContentProvider` for `jaggu-shadow://` diff tabs, exposes status bar items, and bridges `vscode.git` and LSP commands.
 
-### 2.4 Evaluation Benchmark Suite (`packages/forgeai-eval`)
+### 2.4 Evaluation Benchmark Suite (`packages/jaggu-eval`)
 - **Responsibility**: Headless test harness running 25 standardized SWE-bench style engineering tasks to scientifically evaluate Task Success Rate (TSR), test pass rate, latency, and token efficiency.
 
 ---

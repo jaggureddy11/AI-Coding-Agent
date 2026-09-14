@@ -2,7 +2,7 @@
 
 ## 1. Gateway Architecture & Provider Independence
 
-To prevent vendor lock-in and provide maximum developer flexibility, ForgeAI implements a strictly polymorphic **Model Gateway Layer** (`packages/forgeai-models`). The core agent logic never interacts directly with proprietary SDKs; all inference, streaming, and tool calls route through an abstract `IModelProvider` interface.
+To prevent vendor lock-in and provide maximum developer flexibility, JAGGU implements a strictly polymorphic **Model Gateway Layer** (`packages/jaggu-models`). The core agent logic never interacts directly with proprietary SDKs; all inference, streaming, and tool calls route through an abstract `IModelProvider` interface.
 
 ```
                               [Agent Core]
@@ -112,7 +112,7 @@ export interface IModelProvider {
 2. **Streaming Timeout Detection**:
    - If no token chunk is received for 15 consecutive seconds during an active stream, the gateway issues a reconnect request.
 3. **Provider Fallback**:
-   - If the primary provider suffers an unrecoverable outage, ForgeAI prompts the developer:
+   - If the primary provider suffers an unrecoverable outage, JAGGU prompts the developer:
      *"Anthropic API is currently returning 500 Overloaded. Switch to OpenAI GPT-4o for this task?"*
 4. **Cancellation**:
    - Every stream request links to an `AbortController`. When the developer hits `Escape` or the cancel button, the underlying HTTP socket is destroyed immediately, preventing wasted token billing.

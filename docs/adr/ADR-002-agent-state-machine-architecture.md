@@ -9,7 +9,7 @@ Autonomous agents can be architected either as:
 2. **Deterministic Finite State Machine (FSM)**: Work is partitioned into explicit cognitive phases (`UNDERSTAND` -> `PLAN` -> `APPROVAL` -> `EXECUTE` -> `EVALUATE` -> `DIAGNOSE` -> `COMPLETE`) with hard transition rules and loop limits.
 
 ## Decision
-ForgeAI implements a **Deterministic Finite State Machine (FSM)** with explicit loop termination counters and mandatory human-in-the-loop approval gates for mutating operations.
+JAGGU implements a **Deterministic Finite State Machine (FSM)** with explicit loop termination counters and mandatory human-in-the-loop approval gates for mutating operations.
 
 ## Alternatives Considered
 - **Unconstrained Autonomous Loop**:

@@ -7,7 +7,7 @@ Accepted
 AI models evolve at blinding speed. What is state of the art today (e.g. Claude 3.5 Sonnet) may be matched or surpassed tomorrow by GPT-5, Gemini 2.5, or open-weight models running on local hardware (DeepSeek, Llama). Hardcoding an application to a single vendor's SDK or proprietary endpoint leads to rapid obsolescence and creates enterprise adoption barriers.
 
 ## Decision
-ForgeAI defines a polymorphic `IModelProvider` abstraction in `packages/forgeai-models`. The agent core consumes a normalized stream of typed chunks (`TokenChunk`, `ToolCallChunk`, `UsageChunk`, `ErrorChunk`), completely decoupled from provider-specific SDK idiosyncrasies. ForgeAI natively ships adapters for Anthropic, OpenAI, Google Gemini, and local Ollama.
+JAGGU defines a polymorphic `IModelProvider` abstraction in `packages/jaggu-models`. The agent core consumes a normalized stream of typed chunks (`TokenChunk`, `ToolCallChunk`, `UsageChunk`, `ErrorChunk`), completely decoupled from provider-specific SDK idiosyncrasies. JAGGU natively ships adapters for Anthropic, OpenAI, Google Gemini, and local Ollama.
 
 ## Alternatives Considered
 - **Direct Anthropic SDK Hardcoding**:

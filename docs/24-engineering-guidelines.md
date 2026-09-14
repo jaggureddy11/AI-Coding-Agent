@@ -2,7 +2,7 @@
 
 ## 1. Core Engineering Principles
 
-These guidelines define the non-negotiable coding and architectural standards for developing ForgeAI. Every pull request and module must conform to these 17 invariants.
+These guidelines define the non-negotiable coding and architectural standards for developing JAGGU. Every pull request and module must conform to these 17 invariants.
 
 ---
 
@@ -70,8 +70,8 @@ These guidelines define the non-negotiable coding and architectural standards fo
 - Significant architectural choices (introducing a new subsystem, changing an IPC protocol, adding an external dependency) must be recorded as an ADR in `docs/adr/`.
 
 ### Invariant 15: Clean Separation of AI Logic and Editor Logic
-- AI-specific logic (prompts, tool schemas, token estimation, LLM clients) must reside in `packages/forgeai-core` and `packages/forgeai-models`, completely decoupled from VS Code APIs.
-- The VS Code package (`packages/forgeai-vscode`) serves purely as a thin host adapter. This ensures ForgeAI core can run headlessly in CI or CLI environments.
+- AI-specific logic (prompts, tool schemas, token estimation, LLM clients) must reside in `packages/jaggu-core` and `packages/jaggu-models`, completely decoupled from VS Code APIs.
+- The VS Code package (`packages/jaggu-vscode`) serves purely as a thin host adapter. This ensures JAGGU core can run headlessly in CI or CLI environments.
 
 ### Invariant 16: Never Leak Secrets into Prompts or Logs
 - All strings destined for model prompts or disk audit logs must pass through the `SecretSanitizer`.

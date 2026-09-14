@@ -6,11 +6,11 @@ Accepted (MVP Architectural Invariant)
 ## Context
 A central question in building an AI-native code editor inspired by Cursor is whether to:
 1. Immediately fork the ~2.5-million-line Visual Studio Code core codebase (`microsoft/vscode`), modifying the Monaco renderer and workbench directly.
-2. Implement ForgeAI primarily as a clean, decoupled VS Code Extension package using official extension APIs (Webviews, Custom Editors, LSP, Pseudoterminal, Decorations), and only selectively patch VS Code core where extension APIs prove fundamentally insufficient.
+2. Implement JAGGU primarily as a clean, decoupled VS Code Extension package using official extension APIs (Webviews, Custom Editors, LSP, Pseudoterminal, Decorations), and only selectively patch VS Code core where extension APIs prove fundamentally insufficient.
 
 ## Decision
 We adopt the **Dual-Ring Architecture**:
-- **Ring 0 (Primary / MVP)**: Build 80–90% of ForgeAI as a high-performance VS Code Extension accompanied by a decoupled Node.js agent engine.
+- **Ring 0 (Primary / MVP)**: Build 80–90% of JAGGU as a high-performance VS Code Extension accompanied by a decoupled Node.js agent engine.
 - **Ring 1 (Selective Post-MVP)**: Deep workbench modifications in a VS Code fork are strictly reserved for features that cannot be achieved via Extension APIs (such as native multi-file inline ghost-text diff projections directly in the Monaco text buffer).
 
 ## Alternatives Considered
@@ -21,8 +21,8 @@ We adopt the **Dual-Ring Architecture**:
 
 ## Reasoning
 1. **Speed to Value**: Extension APIs provide rich webviews, native terminals, full file access, and LSP integration out of the box.
-2. **Upstream Compatibility**: Users can install ForgeAI on their existing VS Code setup without migrating editors.
-3. **Decoupled Engine**: The core agent engine (`packages/forgeai-core`) remains independent of VS Code, allowing it to run headlessly in CI or CLI tools.
+2. **Upstream Compatibility**: Users can install JAGGU on their existing VS Code setup without migrating editors.
+3. **Decoupled Engine**: The core agent engine (`packages/jaggu-core`) remains independent of VS Code, allowing it to run headlessly in CI or CLI tools.
 
 ## Consequences
 - **Positive**: Blazing fast iteration; modular testability; zero upstream rebase overhead during early development; easy distribution via `.vsix`.

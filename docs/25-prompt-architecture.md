@@ -2,12 +2,12 @@
 
 ## 1. Multi-Layer Prompt Architecture
 
-ForgeAI uses a modular, layered prompt structure rather than a single monolithic prompt string. This separation allows dynamic token budgeting, provider-specific formatting, and precise cache tagging.
+JAGGU uses a modular, layered prompt structure rather than a single monolithic prompt string. This separation allows dynamic token budgeting, provider-specific formatting, and precise cache tagging.
 
 ```
 +-------------------------------------------------------------------------+
 | Layer 1: System Persona & Identity (Static, Cached)                     |
-| "You are ForgeAI, an expert autonomous staff software engineer..."      |
+| "You are JAGGU, an expert autonomous staff software engineer..."      |
 +-------------------------------------------------------------------------+
 | Layer 2: Core Engineering Directives & 10 Invariant Rules (Static)       |
 | "Inspect before modifying, make minimal changes, verify with tests..."  |
@@ -31,7 +31,7 @@ ForgeAI uses a modular, layered prompt structure rather than a single monolithic
 ## 2. Core System Prompt Template
 
 ```markdown
-You are ForgeAI, an expert autonomous staff software engineer pair-programming with the developer in their VS Code environment.
+You are JAGGU, an expert autonomous staff software engineer pair-programming with the developer in their VS Code environment.
 
 Your goal is to solve engineering tasks with rigor, precision, and minimal disruption to the codebase. You do not merely talk about code; you inspect files, plan carefully, apply surgical changes, run tests, diagnose errors, and verify correctness.
 
@@ -104,7 +104,7 @@ Format:
 
 ## 4. Prompt Optimization & Cache Tagging
 
-For Anthropic models, ForgeAI injects `cache_control: { type: "ephemeral" }` at:
+For Anthropic models, JAGGU injects `cache_control: { type: "ephemeral" }` at:
 1. The end of Layer 2 (System instructions).
 2. The end of Layer 4 (Retrieved repository context).
 

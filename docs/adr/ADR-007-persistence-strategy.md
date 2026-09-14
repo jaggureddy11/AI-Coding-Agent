@@ -7,11 +7,11 @@ Accepted
 Developers require conversation continuity across editor restarts, task auditability, and safety snapshots. However, bundling a heavy relational database engine (such as SQLite with native C++ bindings) inside a VS Code extension introduces cross-compilation headaches, native binary packaging failures across different OS architectures (Apple Silicon, Linux ARM, Windows x64), and unnecessary bloat.
 
 ## Decision
-ForgeAI implements a **Zero-Native-Dependency JSON File Store**:
-1. **Workspace Configuration & Sessions**: Stored as clean JSON files inside `.vscode/forgeai/sessions/`.
-2. **Audit Logging**: Stored as append-only Newline-Delimited JSON (NDJSON) in `.vscode/forgeai/audit.log`.
+JAGGU implements a **Zero-Native-Dependency JSON File Store**:
+1. **Workspace Configuration & Sessions**: Stored as clean JSON files inside `.vscode/jaggu/sessions/`.
+2. **Audit Logging**: Stored as append-only Newline-Delimited JSON (NDJSON) in `.vscode/jaggu/audit.log`.
 3. **Secret Storage**: API keys are stored exclusively in VS Code's encrypted OS keychain via `context.secrets.store()`.
-4. **Git Checkpoints**: Staged in standard Git stashes or temporary `.vscode/forgeai/snapshots/` directories.
+4. **Git Checkpoints**: Staged in standard Git stashes or temporary `.vscode/jaggu/snapshots/` directories.
 
 ## Alternatives Considered
 - **SQLite with better-sqlite3**:
@@ -21,8 +21,8 @@ ForgeAI implements a **Zero-Native-Dependency JSON File Store**:
 
 ## Reasoning
 1. **Zero Native Build Dependencies**: Pure JavaScript/TypeScript file I/O runs identically on macOS, Linux, and Windows with zero compilation risk.
-2. **Human-Inspectable**: Developers can inspect, backup, or delete `.vscode/forgeai/` at any time using standard file tools.
-3. **Git-Friendly**: `.vscode/forgeai/` is automatically added to `.gitignore`, keeping repo history clean.
+2. **Human-Inspectable**: Developers can inspect, backup, or delete `.vscode/jaggu/` at any time using standard file tools.
+3. **Git-Friendly**: `.vscode/jaggu/` is automatically added to `.gitignore`, keeping repo history clean.
 
 ## Consequences
 - **Positive**: Extremely fast, portable, zero-dependency storage; easy session restore.

@@ -1,6 +1,6 @@
-# ForgeAI — Architectural & Engineering Documentation Master Index
+# JAGGU — Architectural & Engineering Documentation Master Index
 
-Welcome to the comprehensive product, architecture, security, and engineering documentation suite for **ForgeAI**: an AI-native autonomous software engineering environment built on the Visual Studio Code foundation.
+Welcome to the comprehensive product, architecture, security, and engineering documentation suite for **JAGGU**: an AI-native autonomous software engineering environment built on the Visual Studio Code foundation.
 
 ---
 

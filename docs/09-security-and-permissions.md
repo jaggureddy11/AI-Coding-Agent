@@ -4,7 +4,7 @@
 
 An autonomous AI coding agent wields the potential to read sensitive information, overwrite critical files, and execute arbitrary commands in the user's local operating system. Without strict, defense-in-depth security controls, an agent could accidentally delete databases, execute malicious injected commands, or leak proprietary secrets to model providers.
 
-ForgeAI establishes a **Zero-Implicit-Trust Architecture**:
+JAGGU establishes a **Zero-Implicit-Trust Architecture**:
 1. Every tool call must pass through an automated risk evaluation gate before execution.
 2. Destructive operations require explicit, cryptographic/tokenized human consent.
 3. Environment variables, API keys, and credential stores are isolated and scrubbed.
@@ -55,7 +55,7 @@ ForgeAI establishes a **Zero-Implicit-Trust Architecture**:
 - **Permitted Operations**:
   - `create_file`, `write_file`, `apply_patch` (staged in shadow buffer first).
   - Standard test and build commands (`npm test`, `pytest`, `cargo test`, `go test`, `npm run build`).
-- **User Control**: By default, ForgeAI asks for approval once per plan, allowing the user to approve a batch of file edits and test runs. The user can toggle: *"Auto-apply file diffs during active plan"*.
+- **User Control**: By default, JAGGU asks for approval once per plan, allowing the user to approve a batch of file edits and test runs. The user can toggle: *"Auto-apply file diffs during active plan"*.
 
 ### 2.3 Tier 3: HIGH_RISK (Mandatory Human Authorization)
 - **Characteristics**: Destructive, irreversible, or affects system resources outside the workspace.
@@ -91,7 +91,7 @@ Commands matching common development toolchains are permitted under Tier 2:
 - `git (status|diff|log)`
 
 ### 3.3 Shell Argument Injection Prevention
-- Shell commands are never passed directly to raw shell strings if avoidable; ForgeAI invokes commands using structured argument arrays via `child_process.spawn(executable, args, { shell: false })`.
+- Shell commands are never passed directly to raw shell strings if avoidable; JAGGU invokes commands using structured argument arrays via `child_process.spawn(executable, args, { shell: false })`.
 - When shell piping is genuinely required, all file paths and user arguments are escaped with strict shell-quote sanitization.
 
 ---
@@ -99,16 +99,16 @@ Commands matching common development toolchains are permitted under Tier 2:
 ## 4. Secret Protection & Credential Isolation
 
 1. **Model Gateway Scrubbing**:
-   - Before prompt payloads are transmitted over the wire to Anthropic, OpenAI, or Gemini, ForgeAI runs an automated RegEx scrubber scanning for:
+   - Before prompt payloads are transmitted over the wire to Anthropic, OpenAI, or Gemini, JAGGU runs an automated RegEx scrubber scanning for:
      - AWS Access Keys (`AKIA[0-9A-Z]{16}`)
      - GitHub Tokens (`ghp_[a-zA-Z0-9]{36}`)
      - Private RSA Keys (`-----BEGIN RSA PRIVATE KEY-----`)
      - Generic API Keys (`api_key=[a-zA-Z0-9_\-]{20,}`)
    - Matched strings are replaced with redacted markers: `[REDACTED_SECRET_KEY]`.
 2. **Dotenv & Credentials Protection**:
-   - Files matching `.env*`, `*.pem`, `*.key`, `credentials.json`, or `.npmrc` are blocked from `read_file` by default unless the developer explicitly adds the file to an allowlist in `.vscode/forgeai/security.json`.
+   - Files matching `.env*`, `*.pem`, `*.key`, `credentials.json`, or `.npmrc` are blocked from `read_file` by default unless the developer explicitly adds the file to an allowlist in `.vscode/jaggu/security.json`.
 3. **Storage of API Keys**:
-   - ForgeAI never stores provider API keys in plaintext files, workspace settings, or git repositories. Keys are stored exclusively in VS Code's encrypted OS keyring via `ExtensionContext.secrets`.
+   - JAGGU never stores provider API keys in plaintext files, workspace settings, or git repositories. Keys are stored exclusively in VS Code's encrypted OS keyring via `ExtensionContext.secrets`.
 
 ---
 

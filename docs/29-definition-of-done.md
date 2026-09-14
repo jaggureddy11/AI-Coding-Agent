@@ -2,7 +2,7 @@
 
 ## 1. The Quality Invariant
 
-In ForgeAI, **a feature or task is NOT complete merely because the code compiles or a basic demo functions.**
+In JAGGU, **a feature or task is NOT complete merely because the code compiles or a basic demo functions.**
 
 Every feature, tool, parser, and milestone must satisfy an unbending set of engineering quality criteria before being considered done and ready for integration.
 
@@ -14,7 +14,7 @@ Every pull request and milestone must satisfy all 9 criteria:
 
 ```
 +-------------------------------------------------------------------------+
-|                      FORGEAI DEFINITION OF DONE (DoD)                   |
+|                      JAGGU DEFINITION OF DONE (DoD)                   |
 +---+----------------------------+----------------------------------------+
 | # | Dimension                  | Strict Verification Requirement        |
 +---+----------------------------+----------------------------------------+
@@ -77,4 +77,4 @@ Every pull request and milestone must satisfy all 9 criteria:
 
 ### 3.5 Standard 5: Security & Audit Audit
 - Passes verification against `SecretSanitizer` test vectors.
-- Tool commands audit to `.vscode/forgeai/audit.log` with sanitized arguments.
+- Tool commands audit to `.vscode/jaggu/audit.log` with sanitized arguments.

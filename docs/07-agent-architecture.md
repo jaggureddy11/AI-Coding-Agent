@@ -2,10 +2,10 @@
 
 ## 1. Overview & Core Philosophy
 
-The ForgeAI Agent is implemented as a **Deterministic Finite State Machine (FSM)** with explicit transitions, strict loop limits, and human-in-the-loop verification gates. Unlike naive ReAct loops that invoke tools unconstrained until context limits explode or cost spirals out of control, ForgeAI structures work into distinct cognitive phases:
+The JAGGU Agent is implemented as a **Deterministic Finite State Machine (FSM)** with explicit transitions, strict loop limits, and human-in-the-loop verification gates. Unlike naive ReAct loops that invoke tools unconstrained until context limits explode or cost spirals out of control, JAGGU structures work into distinct cognitive phases:
 
 ```
-                            FORGEAI AGENT STATE MACHINE
+                            JAGGU AGENT STATE MACHINE
                             
                                  [USER_REQUEST]
                                        │
@@ -140,7 +140,7 @@ export enum AgentState {
 
 ## 3. Loop Termination & Infinite Loop Prevention
 
-To eliminate runaway agent costs and stuck execution loops, ForgeAI enforces strict hard limits:
+To eliminate runaway agent costs and stuck execution loops, JAGGU enforces strict hard limits:
 
 ```typescript
 export interface LoopGuardLimits {

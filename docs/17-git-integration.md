@@ -2,10 +2,10 @@
 
 ## 1. Safety Invariant: No Unattended Commits
 
-ForgeAI treats the Git repository as the developer's sacred source of truth.
-> **Cardinal Invariant**: ForgeAI shall NEVER execute `git commit`, `git push`, `git checkout`, or `git reset` automatically without explicit, interactive developer authorization.
+JAGGU treats the Git repository as the developer's sacred source of truth.
+> **Cardinal Invariant**: JAGGU shall NEVER execute `git commit`, `git push`, `git checkout`, or `git reset` automatically without explicit, interactive developer authorization.
 
-The primary role of the Git subsystem in ForgeAI is **context awareness, safety snapshotting, and assisted commit generation**.
+The primary role of the Git subsystem in JAGGU is **context awareness, safety snapshotting, and assisted commit generation**.
 
 ---
 
@@ -13,7 +13,7 @@ The primary role of the Git subsystem in ForgeAI is **context awareness, safety 
 
 ```
 +-----------------------------------------------------------------------------------------+
-|                                FORGEAI GIT SUBSYSTEM                                    |
+|                                JAGGU GIT SUBSYSTEM                                    |
 |                                                                                         |
 |  [VS Code Git Extension API Bridge (`vscode.extensions.getExtension('vscode.git')`)]    |
 |                                       │                                                 |
@@ -30,10 +30,10 @@ The primary role of the Git subsystem in ForgeAI is **context awareness, safety 
 ### 2.1 Capability 1: Working Tree Context Sensing
 - **Branch & Remote Detection**: Identifies current branch (e.g., `feature/oauth-login`) and tracking status (ahead/behind remote).
 - **Modified & Untracked Files**: Queries `git status --porcelain` to determine if the workspace has uncommitted manual changes prior to agent task execution.
-- **Merge Conflict Detection**: If the working tree is in an active merge conflict (`<<<<<<< HEAD`), ForgeAI detects this state and can assist the developer in resolving conflicting hunks.
+- **Merge Conflict Detection**: If the working tree is in an active merge conflict (`<<<<<<< HEAD`), JAGGU detects this state and can assist the developer in resolving conflicting hunks.
 
 ### 2.2 Capability 2: Pre-Task Safety Checkpoints
-Before executing any mutating plan involving multiple files, ForgeAI creates an internal safety checkpoint:
+Before executing any mutating plan involving multiple files, JAGGU creates an internal safety checkpoint:
 ```typescript
 export interface GitCheckpoint {
   checkpointId: string;
@@ -43,10 +43,10 @@ export interface GitCheckpoint {
   modifiedFiles: string[];
 }
 ```
-If the agent fails or the developer clicks `"Revert All Agent Changes"`, ForgeAI can cleanly roll back modified files to the exact pre-task snapshot without affecting pre-existing uncommitted manual edits.
+If the agent fails or the developer clicks `"Revert All Agent Changes"`, JAGGU can cleanly roll back modified files to the exact pre-task snapshot without affecting pre-existing uncommitted manual edits.
 
 ### 2.3 Capability 3: Conventional Commit Message Generation
-Once a task is verified and diffs are accepted, ForgeAI can analyze the unified diff and generate a semantic Conventional Commit message:
+Once a task is verified and diffs are accepted, JAGGU can analyze the unified diff and generate a semantic Conventional Commit message:
 ```
 feat(auth): implement GitHub OAuth login flow with refresh token support
 
@@ -55,13 +55,13 @@ feat(auth): implement GitHub OAuth login flow with refresh token support
 - Add unit tests verifying token exchange and cookie serialization in tests/auth.test.ts
 - All 14 tests passing
 ```
-The developer can inspect, edit, and click `[Commit Changes]` directly from the ForgeAI UI.
+The developer can inspect, edit, and click `[Commit Changes]` directly from the JAGGU UI.
 
 ---
 
 ## 3. Integration Mechanism: VS Code Git API vs CLI Fallback
 
-ForgeAI uses a two-layer Git strategy:
+JAGGU uses a two-layer Git strategy:
 1. **Primary**: VS Code Built-in Git Extension API (`vscode.git` API version 1).
    - Provides clean reactive event listeners: `repository.state.onDidChange`.
    - Zero process spawning overhead.

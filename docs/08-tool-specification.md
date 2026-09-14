@@ -2,7 +2,7 @@
 
 ## 1. Overview & Schema Architecture
 
-All ForgeAI tools follow an invariant interface contract. Tools are strictly defined using TypeScript types and validated at runtime using **Zod schemas**. The agent receives tool definitions formatted as standard JSON Schemas conforming to OpenAI and Anthropic function-calling conventions.
+All JAGGU tools follow an invariant interface contract. Tools are strictly defined using TypeScript types and validated at runtime using **Zod schemas**. The agent receives tool definitions formatted as standard JSON Schemas conforming to OpenAI and Anthropic function-calling conventions.
 
 ### 1.1 Base Tool Interface
 ```typescript

@@ -2,14 +2,14 @@
 
 ## 1. Boundary Architecture
 
-Communication between the ForgeAI UI (Webview), Extension Host Controller, Agent Orchestrator, Context Engine, Model Gateway, and Tool Runtime is enforced via typed asynchronous message interfaces:
+Communication between the JAGGU UI (Webview), Extension Host Controller, Agent Orchestrator, Context Engine, Model Gateway, and Tool Runtime is enforced via typed asynchronous message interfaces:
 
 ```
 [UI Layer (Webview)]
         ↕ postMessage (WebviewRPCProtocol)
-[Extension Host Controller (`packages/forgeai-vscode`)]
+[Extension Host Controller (`packages/jaggu-vscode`)]
         ↕ Direct Asynchronous In-Memory Invocations (Node.js)
-[Agent Orchestrator (`packages/forgeai-core/agent`)]
+[Agent Orchestrator (`packages/jaggu-core/agent`)]
    ├── ↕ IContextEngine
    ├── ↕ IModelGateway
    └── ↕ IToolRuntime

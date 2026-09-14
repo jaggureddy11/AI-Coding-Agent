@@ -7,8 +7,8 @@ A common failure mode of AI coding extensions is premature adoption of heavy vec
 2. **Cold-Start Penalty**: Generating embeddings for a 100,000-line repository on startup takes minutes, spikes CPU, drains laptop battery, and consumes gigabytes of RAM.
 3. **Staleness & Cache Drift**: Every keystroke invalidates vector chunks, requiring complex incremental re-embedding logic.
 
-**ForgeAI MVP Architecture Decision:**
-> **For the MVP, ForgeAI relies on a Hybrid Lexical + Structural Indexing Engine combining native Ripgrep with VS Code Language Server Protocol (LSP) services. Vector embeddings are deliberately deferred to Phase 8+ post-MVP.**
+**JAGGU MVP Architecture Decision:**
+> **For the MVP, JAGGU relies on a Hybrid Lexical + Structural Indexing Engine combining native Ripgrep with VS Code Language Server Protocol (LSP) services. Vector embeddings are deliberately deferred to Phase 8+ post-MVP.**
 
 ---
 
@@ -26,7 +26,7 @@ A common failure mode of AI coding extensions is premature adoption of heavy vec
 
 ## 3. The Lexical + Structural Retrieval Architecture
 
-ForgeAI coordinates search through a lightweight **Hybrid Search Coordinator**:
+JAGGU coordinates search through a lightweight **Hybrid Search Coordinator**:
 
 ```
                               [Search Query]
@@ -52,20 +52,20 @@ ForgeAI coordinates search through a lightweight **Hybrid Search Coordinator**:
 ```
 
 ### 3.1 Subsystem 1: Bundled Ripgrep Engine
-- **Implementation**: ForgeAI bundles pre-compiled platform-specific `rg` binaries (`darwin-arm64`, `darwin-x64`, `linux-x64`, `win32-x64`) or uses VS Code's internal ripgrep module located in `@vscode/ripgrep`.
+- **Implementation**: JAGGU bundles pre-compiled platform-specific `rg` binaries (`darwin-arm64`, `darwin-x64`, `linux-x64`, `win32-x64`) or uses VS Code's internal ripgrep module located in `@vscode/ripgrep`.
 - **Search Execution**:
   - Automatically respects `.gitignore`, `.git/info/exclude`, and `.forgeignore`.
   - Automatically excludes binary files, SVG assets, lockfiles (`package-lock.json`, `pnpm-lock.yaml`, `Cargo.lock`), and minified bundles.
   - Returns structured line-indexed matches in JSON format.
 
 ### 3.2 Subsystem 2: VS Code LSP Integration
-Instead of bundling massive language parsers, ForgeAI piggybacks on the rich language servers already running in VS Code:
+Instead of bundling massive language parsers, JAGGU piggybacks on the rich language servers already running in VS Code:
 - TypeScript/JavaScript: `vscode.typescript-language-features`
 - Python: `ms-python.python` / Pylance
 - Rust: `rust-lang.rust-analyzer`
 - Go: `golang.go`
 
-ForgeAI accesses these servers via the standard VS Code command surface:
+JAGGU accesses these servers via the standard VS Code command surface:
 ```typescript
 // 1. Locate all workspace definitions of a symbol
 const symbols = await vscode.commands.executeCommand<vscode.SymbolInformation[]>(

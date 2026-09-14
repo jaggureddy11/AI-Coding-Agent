@@ -2,13 +2,13 @@
 
 ## 1. Event Bus Architecture
 
-ForgeAI utilizes a centralized, asynchronous **Event Bus** (`packages/forgeai-core/events`) inspired by the VS Code `Emitter<T>` and `Event<T>` pattern. Decoupling the orchestrator from UI renderers, logging engines, and telemetry sinks guarantees that new listeners can be registered without modifying core agent execution logic.
+JAGGU utilizes a centralized, asynchronous **Event Bus** (`packages/jaggu-core/events`) inspired by the VS Code `Emitter<T>` and `Event<T>` pattern. Decoupling the orchestrator from UI renderers, logging engines, and telemetry sinks guarantees that new listeners can be registered without modifying core agent execution logic.
 
 ```
                               [Agent Orchestrator]
                                        │
                                        ▼ (Emits)
-                             [ForgeAI Event Bus]
+                             [JAGGU Event Bus]
                                        │
          ┌─────────────────┬───────────┴───────────┬─────────────────┐
          ▼                 ▼                       ▼                 ▼
@@ -21,7 +21,7 @@ ForgeAI utilizes a centralized, asynchronous **Event Bus** (`packages/forgeai-co
 ## 2. Master Event Catalog & Payloads
 
 ```typescript
-export interface ForgeAIEvents {
+export interface JagguEvents {
   'agent.started': {
     taskId: string;
     conversationId: string;

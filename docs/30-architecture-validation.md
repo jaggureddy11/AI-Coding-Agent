@@ -43,14 +43,14 @@ By eliminating these redundant abstractions, we **cut estimated development effo
 - **Audit Verdict**: **REJECTED AS OVER-ENGINEERED**.
   - **Diff Review**: Do NOT build a custom Webview diff viewer! Monaco has the world's most advanced diff editor built-in. Use `vscode.commands.executeCommand('vscode.diff')`.
   - **Terminal Activity**: Do NOT build a custom Webview terminal emulator! Use Node.js `child_process` for agent background test runs, and pipe human-visible logs to a native `vscode.OutputChannel` or `vscode.Terminal`.
-  - **Custom Webview Scope**: Confine the custom Webview **strictly to the ForgeAI Sidebar (Chat + Plan + Approval Cards)**.
+  - **Custom Webview Scope**: Confine the custom Webview **strictly to the JAGGU Sidebar (Chat + Plan + Approval Cards)**.
 
 ### 6. Terminal Architecture: Background Runner vs Pseudoterminal
 - **Correction of Initial Assumption**: Early docs conflated `Pseudoterminal` with background agent execution.
 - **Audit Verdict**: `vscode.window.createTerminal({ pty })` is designed for human interactive display, not headless agent error capturing.
 - **Resolution**:
   - **Agent Tool Execution**: Use Node.js `child_process.spawn()` with non-blocking stream capture. This gives the agent direct, deterministic access to `stdout`, `stderr`, and `exitCode` without terminal escape sequence pollution.
-  - **User Visibility**: Stream the raw output to a dedicated native `OutputChannel` ("ForgeAI Task Trace") or open a standard terminal for user-interactive commands.
+  - **User Visibility**: Stream the raw output to a dedicated native `OutputChannel` ("JAGGU Task Trace") or open a standard terminal for user-interactive commands.
 
 ### 7. Git Integration Strategy
 - **Validation**: Approved with fallback.
@@ -70,9 +70,9 @@ By eliminating these redundant abstractions, we **cut estimated development effo
 - **Correction of Initial Assumption**: Initial documentation designed an elaborate virtual filesystem and manual Myers diff algorithm implementation.
 - **Audit Verdict**: **UNNECESSARY COMPLEXITY**.
 - **The Native VS Code Way**:
-  1. Register a virtual `TextDocumentContentProvider` for a URI scheme: `forgeai-shadow://`.
+  1. Register a virtual `TextDocumentContentProvider` for a URI scheme: `jaggu-shadow://`.
   2. When the agent stages a change, write the proposed string into a memory map: `virtualDocs.set(uri.toString(), proposedContent)`.
-  3. Invoke native VS Code diff: `vscode.commands.executeCommand('vscode.diff', diskUri, shadowUri, 'ForgeAI Diff: ' + fileName)`.
+  3. Invoke native VS Code diff: `vscode.commands.executeCommand('vscode.diff', diskUri, shadowUri, 'JAGGU Diff: ' + fileName)`.
   4. When the user approves: apply the change via `vscode.workspace.applyEdit(new vscode.WorkspaceEdit())`.
   5. **Benefit**: `WorkspaceEdit` automatically handles file dirty states, integrates with VS Code's native multi-level undo stack (`Cmd+Z`), and saves to disk cleanly.
 
@@ -85,7 +85,7 @@ By eliminating these redundant abstractions, we **cut estimated development effo
 - **Validation**: Fully approved. Direct SSE streaming to Anthropic, OpenAI, Gemini, and Ollama using standard Node.js `fetch` (native in Node 18+). Zero LangChain or external framework bloat.
 
 ### 13. Persistence Strategy
-- **Validation**: Fully approved. Pure JSON/NDJSON in `.vscode/forgeai/` eliminates native C++ compilation issues (e.g. SQLite / better-sqlite3 build failures). `context.secrets` handles API keys securely via OS keychain.
+- **Validation**: Fully approved. Pure JSON/NDJSON in `.vscode/jaggu/` eliminates native C++ compilation issues (e.g. SQLite / better-sqlite3 build failures). `context.secrets` handles API keys securely via OS keychain.
 
 ### 14. Security & Permission Model
 - **Validation**: Approved. Three-tier classification (Safe / Moderate / High-Risk) with regex secret scrubbing before model dispatch and a hard denylist for dangerous shell commands (`sudo`, `rm -rf`).
@@ -93,10 +93,10 @@ By eliminating these redundant abstractions, we **cut estimated development effo
 ### 15. Monorepo & Package Structure (Consolidation)
 - **Correction of Initial Assumption**: 6 separate packages for day 1 creates unnecessary workspace linking friction and build overhead.
 - **Consolidation to 4 Lean Packages**:
-  - `packages/forgeai-core`: Agent FSM, tools, context engine, model gateway, diff staging.
-  - `packages/forgeai-ui`: React 18 + Tailwind Sidebar Webview.
-  - `packages/forgeai-vscode`: VS Code Extension adapter, commands, LSP/Git bridges.
-  - `packages/forgeai-eval`: SWE-bench style benchmark runner.
+  - `packages/jaggu-core`: Agent FSM, tools, context engine, model gateway, diff staging.
+  - `packages/jaggu-ui`: React 18 + Tailwind Sidebar Webview.
+  - `packages/jaggu-vscode`: VS Code Extension adapter, commands, LSP/Git bridges.
+  - `packages/jaggu-eval`: SWE-bench style benchmark runner.
 
 ### 16. Dependency Audit (Banned Dependencies)
 - **Banned**: `@langchain/*` (too bloated), `better-sqlite3` (native build friction), `axios` (native `fetch` is standard), `tree-sitter` native node bindings (fragile on Apple Silicon/Windows).
@@ -113,24 +113,24 @@ By eliminating these redundant abstractions, we **cut estimated development effo
 - Corrected assumption that inline Monaco button widgets can be added via Extension API without core modifications.
 
 ### 19. Upstream VS Code Upgrade Resilience
-- Because Ring 0 builds 100% on official, stable `vscode.d.ts` APIs, **upstream VS Code upgrades will NEVER break ForgeAI**. Upstream changes can be pulled continuously without merge conflicts.
+- Because Ring 0 builds 100% on official, stable `vscode.d.ts` APIs, **upstream VS Code upgrades will NEVER break JAGGU**. Upstream changes can be pulled continuously without merge conflicts.
 
 ### 20. Standalone Distribution Path (The Production Strategy)
-- ForgeAI can be packaged as:
+- JAGGU can be packaged as:
   1. A standard `.vsix` extension installable on VS Code, Cursor, or VSCodium.
-  2. A fully branded standalone desktop application by cloning `Code - OSS`, pre-installing the ForgeAI extension in `extensions/`, and compiling Electron binaries with custom `product.json`.
+  2. A fully branded standalone desktop application by cloning `Code - OSS`, pre-installing the JAGGU extension in `extensions/`, and compiling Electron binaries with custom `product.json`.
 
 ---
 
 ## 3. Recommended Final Architecture
 
 ```
-forgeai/
+jaggu/
 ├── packages/
-│   ├── forgeai-core/       # Pure TypeScript agent engine (FSM, Model Gateway, Tools, Context)
-│   ├── forgeai-ui/         # React 18 + Tailwind Sidebar (Chat, Plan Cards, Approval Prompts)
-│   ├── forgeai-vscode/     # VS Code Extension Host adapter (Commands, TextDocumentContentProvider, LSP/Git)
-│   └── forgeai-eval/       # Benchmark runner (Benchmark-25 dataset, scoring metrics)
+│   ├── jaggu-core/       # Pure TypeScript agent engine (FSM, Model Gateway, Tools, Context)
+│   ├── jaggu-ui/         # React 18 + Tailwind Sidebar (Chat, Plan Cards, Approval Prompts)
+│   ├── jaggu-vscode/     # VS Code Extension Host adapter (Commands, TextDocumentContentProvider, LSP/Git)
+│   └── jaggu-eval/       # Benchmark runner (Benchmark-25 dataset, scoring metrics)
 ├── docs/                   # Complete architectural & engineering specification
 └── package.json            # Monorepo root workspace
 ```
