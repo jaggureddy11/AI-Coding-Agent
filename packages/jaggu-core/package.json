@@ -1,0 +1,16 @@
+{
+  "name": "@jaggu/core",
+  "version": "0.1.0",
+  "description": "Pure TypeScript core agent engine, FSM, and contracts for JAGGU",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "zod": "^3.24.1"
+  }
+}

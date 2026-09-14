@@ -1,0 +1,25 @@
+{
+  "name": "jaggu-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "JAGGU — AI Coding Agent built on the VS Code foundation",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "typecheck": "npm run typecheck --workspaces",
+    "lint": "eslint packages/*/src/**/*.{ts,tsx}",
+    "test": "vitest run",
+    "format": "prettier --write \"packages/*/src/**/*.{ts,tsx,json,css}\""
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.0",
+    "@typescript-eslint/eslint-plugin": "^8.20.0",
+    "@typescript-eslint/parser": "^8.20.0",
+    "eslint": "^9.18.0",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.8"
+  }
+}

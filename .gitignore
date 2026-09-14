@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+out/
+build/
+*.vsix
+
+# VS Code & Workspace
+.vscode/jaggu/
+.vscode-test/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db

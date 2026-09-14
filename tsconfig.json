@@ -1,0 +1,9 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./packages/jaggu-core" },
+    { "path": "./packages/jaggu-ui" },
+    { "path": "./packages/jaggu-vscode" },
+    { "path": "./packages/jaggu-eval" }
+  ]
+}

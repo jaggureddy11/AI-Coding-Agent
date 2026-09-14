@@ -1,0 +1,63 @@
+{
+  "name": "jaggu-vscode",
+  "displayName": "JAGGU",
+  "description": "JAGGU — Autonomous AI Coding Agent for VS Code",
+  "version": "0.1.0",
+  "publisher": "jaggu",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "AI",
+    "Programming Languages",
+    "Machine Learning"
+  ],
+  "main": "./dist/extension.js",
+  "type": "module",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "jaggu-activity-bar",
+          "title": "JAGGU",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "jaggu-activity-bar": [
+        {
+          "type": "webview",
+          "id": "jaggu.sidebarView",
+          "name": "JAGGU Assistant"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "jaggu.startSession",
+        "title": "JAGGU: Start New Session",
+        "category": "JAGGU"
+      },
+      {
+        "command": "jaggu.cancelSession",
+        "title": "JAGGU: Cancel Active Task",
+        "category": "JAGGU"
+      }
+    ]
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@jaggu/core": "*"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.90.0"
+  }
+}
