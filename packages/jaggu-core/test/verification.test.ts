@@ -34,7 +34,7 @@ describe('VerificationEngine', () => {
     expect(cmd).toBe('npm test -- auth.test.ts');
   });
 
-  it('should infer verification command from package.json and modified files', () => {
+  it('should infer targeted verification command when filtering runner is detected', () => {
     fs.writeFileSync(
       path.join(tmpDir, 'package.json'),
       JSON.stringify({ scripts: { test: 'vitest run' } }),
@@ -42,6 +42,16 @@ describe('VerificationEngine', () => {
 
     const cmd = engine.determineVerificationCommand(undefined, ['src/auth/login.test.ts']);
     expect(cmd).toBe('npm test -- src/auth/login.test.ts');
+  });
+
+  it('should NOT append test file arguments when non-filtering runner is used', () => {
+    fs.writeFileSync(
+      path.join(tmpDir, 'package.json'),
+      JSON.stringify({ scripts: { test: 'node test/userService.test.js' } }),
+    );
+
+    const cmd = engine.determineVerificationCommand(undefined, ['src/userService.ts', 'test/userService.test.js']);
+    expect(cmd).toBe('npm test');
   });
 
   it('should parse Vitest/Jest output summary', () => {

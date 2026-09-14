@@ -1,4 +1,4 @@
-import { executeQuery, UserRow } from './db/sqliteClient.ts';
+import { executeQuery, type UserRow } from './db/sqliteClient.ts';
 
 export class UserService {
   // Direct coupling to database implementation

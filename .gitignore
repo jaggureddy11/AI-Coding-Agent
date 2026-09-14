@@ -7,6 +7,7 @@ dist/
 out/
 build/
 *.vsix
+*.tsbuildinfo
 
 # VS Code & Workspace
 .vscode/jaggu/

@@ -40,9 +40,22 @@ export class VerificationEngine {
       try {
         const pkg = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf-8'));
         if (pkg.scripts && pkg.scripts.test) {
-          // If specific test file was modified, check if targeted test can be run
+          const testScript = String(pkg.scripts.test).trim();
+          // Check if test runner or dependencies explicitly indicate a runner that accepts file target arguments via `-- <file>`
+          const isFilteringRunner =
+            /(jest|vitest|mocha|ava|playwright|cypress)\b/i.test(testScript) ||
+            Boolean(
+              pkg.devDependencies?.jest ||
+              pkg.devDependencies?.vitest ||
+              pkg.devDependencies?.mocha ||
+              pkg.dependencies?.jest ||
+              pkg.dependencies?.vitest ||
+              pkg.dependencies?.mocha
+            );
+
+          // If specific test file was modified and runner supports targeted arguments, pass file target
           const testFile = modifiedFiles?.find((f) => f.includes('.test.') || f.includes('.spec.'));
-          if (testFile) {
+          if (testFile && isFilteringRunner) {
             return `npm test -- ${testFile}`;
           }
           return 'npm test';

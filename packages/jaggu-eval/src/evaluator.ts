@@ -485,10 +485,15 @@ export class BenchmarkEvaluator {
 
     // Save aggregate scorecard
     fs.writeFileSync(
-      path.join(this.resultsDir, 'scorecard-baseline.json'),
+      path.join(this.resultsDir, 'scorecard-hardened.json'),
       JSON.stringify(scorecard, null, 2),
       'utf-8',
     );
+    // Write scorecard-baseline.json for backward compatibility if not present
+    const baselinePath = path.join(this.resultsDir, 'scorecard-baseline.json');
+    if (!fs.existsSync(baselinePath)) {
+      fs.writeFileSync(baselinePath, JSON.stringify(scorecard, null, 2), 'utf-8');
+    }
 
     return scorecard;
   }

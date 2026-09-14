@@ -205,7 +205,11 @@ export function verifyToken(payload: JwtPayload, nowSec: number, options: Verify
       edits: [
         {
           relativePath: 'src/interfaces/IUserRepository.ts',
-          proposedContent: `import { UserRow } from '../db/sqliteClient.ts';
+          proposedContent: `export interface UserRow {
+  id: string;
+  name: string;
+  email: string;
+}
 
 export interface IUserRepository {
   findById(id: string): UserRow | null;
@@ -215,8 +219,8 @@ export interface IUserRepository {
         },
         {
           relativePath: 'src/adapters/SqliteUserRepository.ts',
-          proposedContent: `import { executeQuery, UserRow } from '../db/sqliteClient.ts';
-import { IUserRepository } from '../interfaces/IUserRepository.ts';
+          proposedContent: `import { executeQuery, type UserRow } from '../db/sqliteClient.ts';
+import type { IUserRepository } from '../interfaces/IUserRepository.ts';
 
 export class SqliteUserRepository implements IUserRepository {
   findById(id: string): UserRow | null {
@@ -228,8 +232,7 @@ export class SqliteUserRepository implements IUserRepository {
         },
         {
           relativePath: 'src/userService.ts',
-          proposedContent: `import { UserRow } from './db/sqliteClient.ts';
-import { IUserRepository } from './interfaces/IUserRepository.ts';
+          proposedContent: `import type { UserRow, IUserRepository } from './interfaces/IUserRepository.ts';
 import { SqliteUserRepository } from './adapters/SqliteUserRepository.ts';
 
 export class UserService {

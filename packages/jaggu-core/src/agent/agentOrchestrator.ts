@@ -221,6 +221,32 @@ export class AgentOrchestrator {
       // Prompt model to produce the concrete changes for the plan
       const editInputs = await this.generateProposedChanges(userPrompt, plan, contextPackage, providerId, options.model, abortSignal);
 
+      // --- 4.1 READ-ONLY TASK FAST-PATH ---
+      if (editInputs.length === 0) {
+        this.onActivity?.('Read-only inquiry completed — no file modifications required.');
+        fsm.transitionTo(AgentState.COMPLETED);
+
+        const summary = `Read-only task completed.\n- Goal: ${plan.goal}\n- Files modified: 0 (read-only)`;
+        this.eventBus.emit('agent.completed', {
+          taskId,
+          summary,
+          totalFilesChanged: 0,
+          durationMs: 0,
+          tokensUsed: 0,
+          timestamp: Date.now(),
+        });
+
+        return {
+          success: true,
+          taskId,
+          plan,
+          appliedFiles: [],
+          summary,
+          repairCount: 0,
+          baseline,
+        };
+      }
+
       // Scope check
       const unplannedFiles = editInputs.filter((f) => !approvedFiles.has(f.relativePath)).map((f) => f.relativePath);
       if (unplannedFiles.length > 0) {

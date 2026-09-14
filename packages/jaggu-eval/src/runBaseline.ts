@@ -42,6 +42,7 @@ async function main() {
     console.log(`| ${id} | ${arch} | ${res} | ${fas} | ${rep} | ${tst} | ${dia} | ${scp} | ${uch} |`);
   }
   console.log('---------------------------------------------------------------\n');
+  process.exit(0);
 }
 
 main().catch((err) => {
