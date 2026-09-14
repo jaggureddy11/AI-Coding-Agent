@@ -1,0 +1,162 @@
+# 22 — Phased Implementation Plan (Milestones M0 through M16)
+
+## 1. Implementation Phasing Strategy
+
+ForgeAI is implemented in 17 rigorous, sequentially verifiable milestones (M0–M16). Every milestone produces working, testable code with defined rollback strategies. No milestone begins until its predecessor satisfies 100% of its acceptance criteria.
+
+---
+
+## 2. Detailed Milestone Specifications
+
+### M0: Repository Architecture & Package Scaffolding
+- **Goal**: Establish the monorepo workspace, TypeScript configs, ESLint/Prettier rules, and documentation package.
+- **Affected Packages**: Root configuration, `package.json`, `tsconfig.json`, `docs/`.
+- **Steps**: Initialize pnpm/npm monorepo structure with `packages/forgeai-core`, `packages/forgeai-models`, `packages/forgeai-context`, `packages/forgeai-ui`, `packages/forgeai-vscode`.
+- **Tests**: Monorepo build script executes with zero errors.
+- **Acceptance Criteria**: `npm run build` cleanly compiles all packages.
+- **Dependencies**: Node.js v20+, TypeScript 5.4+.
+- **Rollback**: Delete package directories.
+
+### M1: Basic ForgeAI Extension Shell & Webview UI
+- **Goal**: Scaffold the VS Code Extension shell, Activity Bar icon, and React Webview sidebar.
+- **Affected Packages**: `packages/forgeai-vscode`, `packages/forgeai-ui`.
+- **Steps**: Register `forgeai.activityBar` view container; render React 18 UI with VS Code theme CSS variables.
+- **Tests**: Extension activates in Extension Development Host; sidebar loads within 150ms.
+- **Acceptance Criteria**: Clicking Activity Bar icon reveals styled ForgeAI sidebar with status pill.
+- **Dependencies**: M0.
+- **Rollback**: Revert `package.json` contributes block.
+
+### M2: Multi-Provider Model Gateway
+- **Goal**: Implement `IModelProvider` abstraction supporting Anthropic, OpenAI, Gemini, and Ollama.
+- **Affected Packages**: `packages/forgeai-models`.
+- **Steps**: Implement SSE streaming parsers, tool-call chunk assemblers, and secret token manager.
+- **Tests**: Mock stream tests verify token chunking and exponential backoff retry.
+- **Acceptance Criteria**: Unit tests pass against recorded HTTP responses for all 4 providers.
+- **Dependencies**: M0.
+- **Rollback**: Drop provider adapters.
+
+### M3: Streaming AI Chat Experience
+- **Goal**: Connect Webview UI to Model Gateway via Webview RPC for interactive conversation.
+- **Affected Packages**: `packages/forgeai-ui`, `packages/forgeai-vscode`.
+- **Steps**: Implement markdown message rendering, code syntax highlighting, copy-to-clipboard, cancel button.
+- **Tests**: Send prompt -> stream tokens -> hit cancel -> verify socket disconnects.
+- **Acceptance Criteria**: Real-time token streaming rendered with zero UI lag (<16ms frame render).
+- **Dependencies**: M1, M2.
+- **Rollback**: Disconnect RPC message handler.
+
+### M4: Fast Ripgrep Repository Search
+- **Goal**: Embed native ripgrep binary and implement file and content search services.
+- **Affected Packages**: `packages/forgeai-context`.
+- **Steps**: Integrate `@vscode/ripgrep`; build async regex search worker with `.gitignore` filtering.
+- **Tests**: Benchmark search across 20,000 files completes in <50ms.
+- **Acceptance Criteria**: Returns structured JSON matches with line numbers and file paths.
+- **Dependencies**: M0.
+- **Rollback**: Disable native binary spawn.
+
+### M5: Context Engine & Token Budgeter
+- **Goal**: Implement multi-tier priority ranking and token compaction for prompt assembly.
+- **Affected Packages**: `packages/forgeai-context`.
+- **Steps**: Integrate active editor harvesting, LSP symbol lookup, and sliding-window token trimmer.
+- **Tests**: Context budget enforcer guarantees payload stays under 12,000 tokens.
+- **Acceptance Criteria**: Prompt payload includes active file, selection, and top 5 relevant symbols.
+- **Dependencies**: M4.
+- **Rollback**: Revert to raw active file context.
+
+### M6: File Operation Tools
+- **Goal**: Implement `read_file`, `write_file`, `create_file`, `delete_file`, `list_directory`.
+- **Affected Packages**: `packages/forgeai-core/tools`.
+- **Steps**: Build Zod runtime schemas; implement directory traversal protection; wire in-memory shadow buffer.
+- **Tests**: Unit tests verify malicious paths (`../../etc/passwd`) are blocked with security errors.
+- **Acceptance Criteria**: Agent safely reads and stages file modifications in memory.
+- **Dependencies**: M0.
+- **Rollback**: Unregister tool schemas.
+
+### M7: Native VS Code Diff Review & Virtual Document Staging
+- **Goal**: Provide native side-by-side and inline diff review using VS Code's built-in diff editor.
+- **Affected Packages**: `packages/forgeai-core`, `packages/forgeai-vscode`.
+- **Steps**: Register `TextDocumentContentProvider` with `forgeai-shadow://` scheme; hook `vscode.diff`; implement `WorkspaceEdit` on approval.
+- **Tests**: Unit tests confirm virtual document resolution; opening diff triggers native Monaco diff tab.
+- **Acceptance Criteria**: User reviews staged edits in native diff editor; clicking "Accept" applies clean `WorkspaceEdit` with `Cmd+Z` undo support.
+- **Dependencies**: M6.
+- **Rollback**: Revert to single-file edit application.
+
+### M8: Agent State Machine & Autonomous Planner
+- **Goal**: Implement the deterministic FSM (`IDLE` -> `THINKING` -> `PLANNING` -> `APPROVAL` -> `EXECUTING` -> `VERIFYING`).
+- **Affected Packages**: `packages/forgeai-core`.
+- **Steps**: Build FSM transition coordinator; generate structured plan cards; enforce loop limits (max 20 steps).
+- **Tests**: FSM transitions sequentially through mock plan; terminates cleanly on complete or cancel.
+- **Acceptance Criteria**: Complex prompt generates an interactive step-by-step plan card in UI.
+- **Dependencies**: M3, M6, M7.
+- **Rollback**: Revert to single-turn prompt-response mode.
+
+### M9: Background Command Runner & Test Execution Tool
+- **Goal**: Enable ForgeAI to execute test runners and build commands via Node `child_process.spawn()` with non-blocking stream capture.
+- **Affected Packages**: `packages/forgeai-core`, `packages/forgeai-vscode`.
+- **Steps**: Implement command runner with timeout (default 60s); capture stdout, stderr, and exit codes; pipe output to `Output -> ForgeAI Task Trace`.
+- **Tests**: Executes `node -e "console.log('test')"` and captures exit code 0; enforces timeout kill with `SIGTERM`/`SIGKILL`.
+- **Acceptance Criteria**: Background test suite runs autonomously; exit code and failure trace captured cleanly for agent diagnosis.
+- **Dependencies**: M8.
+- **Rollback**: Disable command runner tool.
+
+### M10: Three-Tier Permission & Safety System
+- **Goal**: Implement human-in-the-loop approvals, command allowlist/denylist, and secret scrubbing.
+- **Affected Packages**: `packages/forgeai-core/security`.
+- **Steps**: Wire approval modal; implement regex command blocker; sanitize secrets before prompt dispatch.
+- **Tests**: Destructive commands (`rm -rf`) are blocked; file deletions require manual confirmation modal.
+- **Acceptance Criteria**: High-risk actions cannot execute without explicit developer authorization.
+- **Dependencies**: M8, M9.
+- **Rollback**: Default to manual confirmation on all actions.
+
+### M11: Self-Healing Debugging Loop
+- **Goal**: Enable the agent to run tests, parse failures, patch code, and iterate autonomously.
+- **Affected Packages**: `packages/forgeai-core/agent`, `packages/forgeai-core/runtime`.
+- **Steps**: Wire stack trace parser; implement diagnostic injection prompt; limit repair loop to 3 attempts.
+- **Tests**: Failing unit test is autonomously diagnosed and fixed in under 2 iterations.
+- **Acceptance Criteria**: Task completes with green test pass badge without developer manual editing.
+- **Dependencies**: M9, M10.
+- **Rollback**: Stop execution on first test failure.
+
+### M12: Git Integration & Safety Checkpoints
+- **Goal**: Automatic pre-task working tree snapshotting and assisted commit generation.
+- **Affected Packages**: `packages/forgeai-core/git`.
+- **Steps**: Connect to `vscode.git`; create temporary git stash snapshot; generate Conventional Commit text.
+- **Tests**: "Revert All Agent Changes" restores working tree to pristine pre-task state.
+- **Acceptance Criteria**: Developer can inspect git diff and commit with one click.
+- **Dependencies**: M11.
+- **Rollback**: Disable automatic snapshotting.
+
+### M13: Scientific Evaluation & Benchmark Harness
+- **Goal**: Implement `packages/forgeai-eval` with SWE-bench style automated evaluation tasks.
+- **Affected Packages**: `packages/forgeai-eval`.
+- **Steps**: Create 25 benchmark tasks; automate headless runner; generate scorecard report.
+- **Tests**: Benchmark harness executes 5 test tasks and outputs valid `eval-report.json`.
+- **Acceptance Criteria**: Task success rate and latency metrics tracked automatically.
+- **Dependencies**: M11.
+- **Rollback**: Run manual verification scripts.
+
+### M14: Performance Optimization & Token Caching
+- **Goal**: Optimize startup time, enable Anthropic prompt caching, and throttle stream rendering.
+- **Affected Packages**: All packages.
+- **Steps**: Implement micro-batch rendering (16ms); add `cache_control` tags; pool ripgrep workers.
+- **Tests**: First-token latency drops below 800ms; UI maintains solid 60 FPS under heavy streaming.
+- **Acceptance Criteria**: Profiling shows zero dropped frames during active code generation.
+- **Dependencies**: M13.
+- **Rollback**: Disable rendering throttle.
+
+### M15: UX Polish & Inline Editor Integrations
+- **Goal**: Implement floating prompt (`Cmd+K`), editor gutter status indicators, and keyboard shortcuts.
+- **Affected Packages**: `packages/forgeai-vscode`, `packages/forgeai-ui`.
+- **Steps**: Register Monaco inline editor actions; bind `Cmd+K` floating widget; refine animations.
+- **Tests**: User selects code, presses `Cmd+K`, types prompt, and sees inline diff preview.
+- **Acceptance Criteria**: Smooth, frictionless inline editing experience matching modern commercial tools.
+- **Dependencies**: M14.
+- **Rollback**: Fall back to sidebar-only interaction.
+
+### M16: Production Hardening, Packaging & Distribution
+- **Goal**: Finalize packaging, automated regression testing, telemetry, documentation, and `.vsix` build.
+- **Affected Packages**: Root, CI/CD workflows.
+- **Steps**: Configure `vsce package`; set up GitHub Actions CI; audit package dependencies and licenses.
+- **Tests**: Clean `.vsix` installs and executes successfully on clean VS Code test environment.
+- **Acceptance Criteria**: Production-ready `.vsix` artifact generated and verified.
+- **Dependencies**: M0–M15.
+- **Rollback**: Revert package version.
