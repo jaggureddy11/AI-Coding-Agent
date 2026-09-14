@@ -2,28 +2,35 @@
 
 ## 1. Overview & Schema Architecture
 
-All JAGGU tools follow an invariant interface contract. Tools are strictly defined using TypeScript types and validated at runtime using **Zod schemas**. The agent receives tool definitions formatted as standard JSON Schemas conforming to OpenAI and Anthropic function-calling conventions.
+All JAGGU tools follow an invariant interface contract. Tools are strictly defined using TypeScript types and validated at runtime using **Zod schemas**. The agent receives tool definitions formatted as standard JSON Schemas conforming to OpenAI, Anthropic, Gemini, and Ollama tool-calling conventions.
 
-### 1.1 Base Tool Interface
+### 1.1 Base Tool Interface (Implemented in `@jaggu/core`)
 ```typescript
-export type PermissionTier = 'SAFE' | 'MODERATE' | 'HIGH_RISK';
+export type PermissionTier = 'SAFE' | 'MUTATING' | 'EXECUTION';
 
-export interface ITool<TInput, TOutput> {
-  readonly name: string;
-  readonly description: string;
-  readonly permissionTier: PermissionTier;
-  readonly timeoutMs: number;
-  
-  validateArgs(args: unknown): TInput;
-  execute(args: TInput, context: IToolExecutionContext): Promise<TOutput>;
-  cancel?(): Promise<void>;
+export interface IToolExecutionContext {
+  readonly taskId: string;
+  readonly workspaceRoot: string;
+  readonly workspaceRoots?: string[];
+  readonly abortSignal: AbortSignal;
 }
 
 export interface IToolResult<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
-  executionTimeMs: number;
+  executionDurationMs: number;
+}
+
+export interface ITool<TInput = unknown, TOutput = unknown> {
+  readonly name: string;
+  readonly description: string;
+  readonly permissionTier: PermissionTier;
+  readonly schema: z.ZodType<TInput>;
+  readonly timeoutMs: number;
+
+  execute(args: TInput, context: IToolExecutionContext): Promise<IToolResult<TOutput>>;
+  toModelToolDefinition(): ModelToolDefinition;
 }
 ```
 

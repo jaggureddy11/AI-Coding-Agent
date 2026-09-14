@@ -61,6 +61,7 @@ export function activate(context: vscode.ExtensionContext): {
     modelGateway,
     credentialManager,
     contextEngine,
+    docStore,
   );
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(
@@ -69,7 +70,35 @@ export function activate(context: vscode.ExtensionContext): {
     ),
   );
 
-  // 3. Register Core & Model Commands
+  // 6. Register Review Diff & Edit Commands (M4)
+  context.subscriptions.push(
+    vscode.commands.registerCommand('jaggu.reviewDiff', async (filePath: string) => {
+      const originalUri = vscode.Uri.file(filePath);
+      const shadowUri = vscode.Uri.parse(`jaggu-shadow:${filePath}`);
+      const title = `${filePath} (Working Tree ↔ Proposed Changes)`;
+      await vscode.commands.executeCommand('vscode.diff', originalUri, shadowUri, title);
+    }),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('jaggu.approveEdit', async (proposalId: string) => {
+      await sidebarProvider.handleIncomingMessage({
+        type: 'agent.approve',
+        payload: { proposalId },
+      });
+    }),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('jaggu.rejectEdit', async (proposalId: string) => {
+      await sidebarProvider.handleIncomingMessage({
+        type: 'agent.reject',
+        payload: { proposalId },
+      });
+    }),
+  );
+
+  // 7. Register Core & Model Commands
   context.subscriptions.push(
     vscode.commands.registerCommand('jaggu.openChat', () => {
       vscode.commands.executeCommand('jaggu.sidebarView.focus');

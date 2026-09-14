@@ -38,6 +38,14 @@ export class ContextEngine {
     return this._repoMap;
   }
 
+  public getDiscovery(): WorkspaceDiscovery {
+    return this.discovery;
+  }
+
+  public getWorkspaceRoots(): string[] {
+    return this.discovery.getRoots();
+  }
+
   public setWorkspaceRoots(roots: string[]): void {
     this.discovery.setRoots(roots);
     this._repoMap.clear();

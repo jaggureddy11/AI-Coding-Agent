@@ -164,6 +164,100 @@ export interface JagguEvents {
     error: string;
     timestamp: number;
   };
+
+  // Tool Lifecycle Events (M4)
+  'tool.requested': {
+    taskId: string;
+    toolCallId: string;
+    toolName: string;
+    arguments: Record<string, unknown>;
+    timestamp: number;
+  };
+  'tool.validation_failed': {
+    taskId: string;
+    toolCallId: string;
+    toolName: string;
+    error: string;
+    timestamp: number;
+  };
+  'tool.permission_required': {
+    taskId: string;
+    toolCallId: string;
+    toolName: string;
+    permissionTier: string;
+    description: string;
+    timestamp: number;
+  };
+  'tool.started': {
+    taskId: string;
+    toolCallId: string;
+    toolName: string;
+    timestamp: number;
+  };
+  'tool.progress': {
+    taskId: string;
+    toolCallId: string;
+    toolName: string;
+    message: string;
+    timestamp: number;
+  };
+  'tool.completed': {
+    taskId: string;
+    toolCallId: string;
+    toolName: string;
+    success: boolean;
+    durationMs: number;
+    timestamp: number;
+  };
+  'tool.failed': {
+    taskId: string;
+    toolCallId: string;
+    toolName: string;
+    error: string;
+    timestamp: number;
+  };
+  'tool.cancelled': {
+    taskId: string;
+    toolCallId: string;
+    toolName: string;
+    timestamp: number;
+  };
+
+  // Edit Lifecycle Events (M4)
+  'edit.proposed': {
+    taskId: string;
+    proposalId: string;
+    filePath: string;
+    diffSummary: string;
+    timestamp: number;
+  };
+  'edit.approved': {
+    taskId: string;
+    proposalId: string;
+    filePath: string;
+    timestamp: number;
+  };
+  'edit.rejected': {
+    taskId: string;
+    proposalId: string;
+    filePath: string;
+    reason?: string;
+    timestamp: number;
+  };
+  'edit.applied': {
+    taskId: string;
+    proposalId: string;
+    filePath: string;
+    linesChanged: number;
+    timestamp: number;
+  };
+  'edit.conflict': {
+    taskId: string;
+    proposalId: string;
+    filePath: string;
+    reason: string;
+    timestamp: number;
+  };
 }
 
 export type EventKey = keyof JagguEvents;

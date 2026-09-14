@@ -13,6 +13,9 @@ export type WebviewToExtensionMessage =
   | { type: 'agent.cancel'; payload?: { taskId?: string } }
   | { type: 'ui.ready'; payload?: { timestamp: number } }
   | { type: 'ui.clear'; payload?: Record<string, never> }
+  | { type: 'agent.approve'; payload: { proposalId: string } }
+  | { type: 'agent.reject'; payload: { proposalId: string; reason?: string } }
+  | { type: 'agent.review_diff'; payload: { filePath: string } }
   // Extended types for future plan approvals
   | { type: 'SUBMIT_PROMPT'; payload: { prompt: string } }
   | { type: 'CANCEL_ACTIVE_TASK'; payload: { taskId: string } }
@@ -27,6 +30,8 @@ export type ExtensionToWebviewMessage =
   | { type: 'token.delta'; payload: { text: string; messageId: string } }
   | { type: 'token.complete'; payload: { messageId: string; fullText: string; tokensUsed?: number; provenance?: ContextSnippetSummary[] } }
   | { type: 'context.assembled'; payload: { taskId: string; filesCount: number; totalTokens: number; provenance: ContextSnippetSummary[] } }
+  | { type: 'agent.approval_requested'; payload: { proposalId: string; filePath: string; diffSummary: string; timestamp: number } }
+  | { type: 'agent.activity'; payload: { message: string } }
   | { type: 'AGENT_STATE_CHANGED'; payload: { state: AgentState; detail?: string } }
   | { type: 'TOKEN_STREAM_CHUNK'; payload: { text: string } }
   | { type: 'PLAN_GENERATED'; payload: Plan }
@@ -72,6 +77,18 @@ export function isValidWebviewMessage(msg: unknown): msg is WebviewToExtensionMe
       const p = candidate.payload as { taskId?: unknown };
       return typeof p === 'object' && p !== null && typeof p.taskId === 'string';
     }
+    case 'agent.approve': {
+      const p = candidate.payload as { proposalId?: unknown };
+      return typeof p === 'object' && p !== null && typeof p.proposalId === 'string';
+    }
+    case 'agent.reject': {
+      const p = candidate.payload as { proposalId?: unknown };
+      return typeof p === 'object' && p !== null && typeof p.proposalId === 'string';
+    }
+    case 'agent.review_diff': {
+      const p = candidate.payload as { filePath?: unknown };
+      return typeof p === 'object' && p !== null && typeof p.filePath === 'string';
+    }
     case 'APPROVE_PLAN': {
       const p = candidate.payload as { planId?: unknown };
       return typeof p === 'object' && p !== null && typeof p.planId === 'string';
@@ -106,6 +123,8 @@ export function isValidExtensionMessage(msg: unknown): msg is ExtensionToWebview
     'token.delta',
     'token.complete',
     'context.assembled',
+    'agent.approval_requested',
+    'agent.activity',
     'AGENT_STATE_CHANGED',
     'TOKEN_STREAM_CHUNK',
     'PLAN_GENERATED',

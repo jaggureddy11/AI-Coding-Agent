@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import type { UiAgentStatus, ContextSnippetSummary } from '@jaggu/core';
 import { StatusPill } from './components/StatusPill.js';
 import { ContextPill } from './components/ContextPill.js';
+import { ApprovalCard } from './components/ApprovalCard.js';
 import {
   VsCodeApi,
   ChatMessage,
@@ -15,6 +16,13 @@ export interface AppProps {
   initialMessages?: ChatMessage[];
 }
 
+export interface ProposalItem {
+  proposalId: string;
+  filePath: string;
+  diffSummary: string;
+  status: 'pending' | 'approved' | 'rejected';
+}
+
 export const App: React.FC<AppProps> = ({
   vscode,
   initialStatus = 'IDLE',
@@ -23,6 +31,7 @@ export const App: React.FC<AppProps> = ({
   const [status, setStatus] = useState<UiAgentStatus>(initialStatus);
   const [statusDetail, setStatusDetail] = useState<string | undefined>();
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
+  const [proposals, setProposals] = useState<ProposalItem[]>([]);
   const [input, setInput] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [activeConfig, setActiveConfig] = useState<{ provider: string; model: string }>({
@@ -127,6 +136,20 @@ export const App: React.FC<AppProps> = ({
           });
           break;
         }
+        case 'agent.approval_requested': {
+          const { proposalId, filePath, diffSummary } = msg.payload;
+          setProposals((prev) => {
+            const filtered = prev.filter((p) => p.proposalId !== proposalId);
+            return [
+              ...filtered,
+              { proposalId, filePath, diffSummary, status: 'pending' },
+            ];
+          });
+          break;
+        }
+        case 'agent.activity':
+          setStatusDetail(msg.payload.message);
+          break;
         case 'agent.config':
           setActiveConfig(msg.payload);
           break;
@@ -190,12 +213,40 @@ export const App: React.FC<AppProps> = ({
 
   const handleClear = () => {
     setMessages([]);
+    setProposals([]);
     setErrorMessage(null);
     setStatus('IDLE');
     setStatusDetail(undefined);
     vscode?.postMessage({
       type: 'ui.clear',
       payload: {},
+    });
+  };
+
+  const handleReviewDiff = (filePath: string) => {
+    vscode?.postMessage({
+      type: 'agent.review_diff',
+      payload: { filePath },
+    });
+  };
+
+  const handleApproveProposal = (proposalId: string) => {
+    setProposals((prev) =>
+      prev.map((p) => (p.proposalId === proposalId ? { ...p, status: 'approved' } : p))
+    );
+    vscode?.postMessage({
+      type: 'agent.approve',
+      payload: { proposalId },
+    });
+  };
+
+  const handleRejectProposal = (proposalId: string) => {
+    setProposals((prev) =>
+      prev.map((p) => (p.proposalId === proposalId ? { ...p, status: 'rejected' } : p))
+    );
+    vscode?.postMessage({
+      type: 'agent.reject',
+      payload: { proposalId },
     });
   };
 
@@ -405,6 +456,32 @@ export const App: React.FC<AppProps> = ({
               )}
             </div>
           ))
+        )}
+
+        {/* Pending / recent proposed edits requiring user review */}
+        {proposals.length > 0 && (
+          <div
+            data-testid="proposals-container"
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px',
+              margin: '4px 0',
+            }}
+          >
+            {proposals.map((prop) => (
+              <ApprovalCard
+                key={prop.proposalId}
+                proposalId={prop.proposalId}
+                filePath={prop.filePath}
+                diffSummary={prop.diffSummary}
+                status={prop.status}
+                onReviewDiff={handleReviewDiff}
+                onApprove={handleApproveProposal}
+                onReject={handleRejectProposal}
+              />
+            ))}
+          </div>
         )}
 
         {/* Status detail when processing */}

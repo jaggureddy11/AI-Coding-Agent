@@ -28,4 +28,8 @@ export * from './context/repoMap.js';
 export * from './context/promptInjection.js';
 export * from './context/engine.js';
 
+// Tool Execution, File Editing & Workspace Mutation (M4)
+export * from './tools/index.js';
+
+
 

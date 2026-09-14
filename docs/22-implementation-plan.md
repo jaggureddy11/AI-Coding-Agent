@@ -33,21 +33,21 @@ JAGGU is implemented in 17 rigorous, sequentially verifiable milestones (M0–M1
 - **Acceptance Criteria**: Normalized stream parsing, tool calling abstraction, capability querying, hardware cancellation, and zero-leak credential storage verified.
 - **Record**: See [`docs/implementation/M2-model-gateway.md`](file:///Users/apple/Desktop/PROJECTS/Coding%20Agent/docs/implementation/M2-model-gateway.md).
 
-### M3: Streaming AI Chat Experience
-- **Goal**: Connect Webview UI to Model Gateway via Webview RPC for interactive conversation.
-- **Affected Packages**: `packages/jaggu-ui`, `packages/jaggu-vscode`.
-- **Steps**: Implement markdown message rendering, code syntax highlighting, copy-to-clipboard, cancel button.
-- **Tests**: Send prompt -> stream tokens -> hit cancel -> verify socket disconnects.
-- **Acceptance Criteria**: Real-time token streaming rendered with zero UI lag (<16ms frame render).
-- **Dependencies**: M1, M2.
-- **Rollback**: Disconnect RPC message handler.
+### M3: Repository Context & Code Intelligence *(COMPLETED - Sep 14, 2026)*
+- **Goal**: Turn JAGGU into a repository-aware AI coding assistant that discovers, indexes, and retrieves bounded workspace context.
+- **Affected Packages**: `packages/jaggu-core`, `packages/jaggu-vscode`, `packages/jaggu-ui`.
+- **Implementation Details**: Multi-root workspace discovery, native `@vscode/ripgrep` search with in-memory fallback, lightweight `RepositoryMap` with incremental `markDirty` invalidation, `ContextEngine` deterministic ranking (recency, filename matching, symbol matching, ripgrep density), strict context budget enforcement (6 files, 32KB/file, 128KB total, 12k tokens max), full provenance metadata tracking, and active prompt-injection defense with XML boundaries.
+- **Tests**: 10 test suites passed, 58/58 unit & integration tests passing (`npm test`).
+- **Acceptance Criteria**: Grounded answers referencing actual workspace files with verified provenance.
+- **Record**: See [`docs/implementation/M3-repository-context.md`](file:///Users/apple/Desktop/PROJECTS/Coding%20Agent/docs/implementation/M3-repository-context.md).
 
-### M4: Fast Ripgrep Repository Search
-- **Goal**: Embed native ripgrep binary and implement file and content search services.
-- **Affected Packages**: `packages/jaggu-context`.
-- **Steps**: Integrate `@vscode/ripgrep`; build async regex search worker with `.gitignore` filtering.
-- **Tests**: Benchmark search across 20,000 files completes in <50ms.
-- **Acceptance Criteria**: Returns structured JSON matches with line numbers and file paths.
+### M4: Tool Execution, File Editing & Safe Workspace Mutation *(COMPLETED - Sep 14, 2026)*
+- **Goal**: Implement provider-independent tool architecture, ToolExecutor, workspace security, shadow document staging, native VS Code diff review, explicit user approval flow, concurrent conflict detection, controlled test runner, and bounded agent loop.
+- **Affected Packages**: `packages/jaggu-core`, `packages/jaggu-vscode`, `packages/jaggu-ui`.
+- **Implementation Details**: Standardized `ITool` interface with Zod schema validation; `PermissionTier` (`SAFE`, `MUTATING`, `EXECUTION`); `read_file`, `search_code`, `list_directory`, `propose_edit`, `apply_edit`, `run_tests`; `ToolExecutor` with lifecycle event bus; `resolveAndValidateWorkspacePath` with null-byte, `../` traversal, and macOS symlink canonicalization; `jaggu-shadow://` virtual document staging; native `vscode.diff` review; approval card UI; base SHA-256 hash conflict detection on apply; controlled test runner policy blocking dangerous commands; bounded agent loop with 20 tool calls / 10 iterations limits and first-class cancellation.
+- **Tests**: 11 test suites passed, 78/78 unit & integration tests passing (`npm test`).
+- **Acceptance Criteria**: Full vertical slice verified ("Add input validation to this API endpoint" -> search -> read -> propose edit -> review diff -> approve -> apply -> run tests -> final summary).
+- **Record**: See [`docs/implementation/M4-tool-execution.md`](file:///Users/apple/Desktop/PROJECTS/Coding%20Agent/docs/implementation/M4-tool-execution.md).
 - **Dependencies**: M0.
 - **Rollback**: Disable native binary spawn.
 

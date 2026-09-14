@@ -6,24 +6,37 @@ import {
   ModelRequestOptions,
   ModelStreamChunk,
   ModelError,
+  ModelErrorCode,
 } from '../types/models.js';
+
+export interface MockTurn {
+  toolCall?: {
+    id: string;
+    name: string;
+    arguments: Record<string, unknown>;
+  };
+  text?: string;
+  simulateError?: ModelErrorCode;
+}
 
 export interface MockProviderOptions {
   mockResponseText?: string;
   chunks?: string[];
   chunkDelayMs?: number;
-  simulateError?: 'AUTH_FAILURE' | 'RATE_LIMIT' | 'TIMEOUT' | 'NETWORK_ERROR' | 'MALFORMED';
+  simulateError?: ModelErrorCode;
   simulateToolCall?: {
     id: string;
     name: string;
     arguments: Record<string, unknown>;
   };
+  turns?: MockTurn[];
 }
 
 export class MockModelProvider implements IModelProvider {
   public readonly id = 'mock' as const;
   public readonly name = 'Mock Provider';
   public readonly defaultModel = 'mock-fast';
+  private _turnIndex = 0;
 
   public readonly supportedModels: ModelMetadata[] = [
     {
@@ -72,8 +85,27 @@ export class MockModelProvider implements IModelProvider {
       throw new ModelError('Mock request timed out', 'TIMEOUT', this.id, 408, true);
     } else if (this.config.simulateError === 'NETWORK_ERROR') {
       throw new ModelError('Mock network socket error', 'NETWORK_ERROR', this.id, undefined, true);
-    } else if (this.config.simulateError === 'MALFORMED') {
+    } else if (this.config.simulateError === 'MALFORMED_RESPONSE') {
       throw new ModelError('Unexpected payload schema from mock server', 'MALFORMED_RESPONSE', this.id, 500, false);
+    }
+
+    // Multi-turn simulation if configured
+    if (this.config.turns && this.config.turns.length > 0) {
+      const turn = this.config.turns[this._turnIndex] || this.config.turns[this.config.turns.length - 1];
+      this._turnIndex++;
+      if (turn?.simulateError) {
+        throw new ModelError('Mock error in turn', turn.simulateError, this.id);
+      }
+      if (turn?.toolCall) {
+        yield { type: 'tool_call_start', id: turn.toolCall.id, name: turn.toolCall.name };
+        yield { type: 'tool_call_complete', id: turn.toolCall.id, name: turn.toolCall.name, arguments: turn.toolCall.arguments };
+        return;
+      }
+      if (turn?.text) {
+        yield { type: 'token', text: turn.text };
+        yield { type: 'usage', promptTokens: 10, completionTokens: 10 };
+        return;
+      }
     }
 
     // Tool call streaming simulation if configured
