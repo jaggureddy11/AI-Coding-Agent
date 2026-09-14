@@ -52,7 +52,42 @@
         "title": "JAGGU: Cancel Active Task",
         "category": "JAGGU"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "JAGGU",
+      "properties": {
+        "jaggu.provider": {
+          "type": "string",
+          "default": "mock",
+          "description": "Active AI provider for JAGGU ('mock', 'ollama', 'openai-compatible', 'openai', 'anthropic', 'gemini')"
+        },
+        "jaggu.model": {
+          "type": "string",
+          "default": "mock-fast",
+          "description": "Active AI model ID"
+        },
+        "jaggu.ollama.endpoint": {
+          "type": "string",
+          "default": "http://localhost:11434",
+          "description": "Base URL for local Ollama server"
+        },
+        "jaggu.openaiCompatible.endpoint": {
+          "type": "string",
+          "default": "http://localhost:1234/v1",
+          "description": "Base URL for local or custom OpenAI-compatible server (vLLM, LM Studio, etc.)"
+        },
+        "jaggu.model.contextLimit": {
+          "type": "number",
+          "default": 0,
+          "description": "Manual override for max context window tokens (0 = use model default)"
+        },
+        "jaggu.temperature": {
+          "type": "number",
+          "default": 0.2,
+          "description": "Sampling temperature for model generation"
+        }
+      }
+    }
   },
   "scripts": {
     "build": "tsc -b",

@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import type { UiAgentStatus, ContextSnippetSummary } from '@jaggu/core';
+import type { UiAgentStatus, ContextSnippetSummary, ModelDescriptor } from '@jaggu/core';
 import { StatusPill } from './components/StatusPill.js';
 import { ContextPill } from './components/ContextPill.js';
 import { ApprovalCard, ApprovalFileItem } from './components/ApprovalCard.js';
 import { PlanCard, PlanStepItem } from './components/PlanCard.js';
+import { ModelSelector } from './components/ModelSelector.js';
 import {
   VsCodeApi,
   ChatMessage,
@@ -57,6 +58,8 @@ export const App: React.FC<AppProps> = ({
     provider: 'mock',
     model: 'mock-fast',
   });
+  const [availableModels, setAvailableModels] = useState<ModelDescriptor[]>([]);
+  const [activeModelId, setActiveModelId] = useState<string>('mock-fast');
 
   const activeProvenanceRef = useRef<ContextSnippetSummary[] | undefined>();
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -201,8 +204,21 @@ export const App: React.FC<AppProps> = ({
           setStatusDetail(msg.payload.message);
           break;
         case 'agent.config':
-          setActiveConfig(msg.payload);
+          setActiveConfig({ provider: msg.payload.provider, model: msg.payload.model });
+          if (msg.payload.model) {
+            setActiveModelId(msg.payload.model);
+          }
+          if (Array.isArray(msg.payload.models) && msg.payload.models.length > 0) {
+            setAvailableModels(msg.payload.models);
+          }
           break;
+        case 'model.health_changed': {
+          const { modelId, health, detail } = msg.payload;
+          setAvailableModels((prev) =>
+            prev.map((m) => (m.id === modelId ? { ...m, health, healthDetail: detail } : m)),
+          );
+          break;
+        }
         case 'agent.error':
           setErrorMessage(msg.payload.message);
           setStatus('ERROR');
@@ -226,6 +242,20 @@ export const App: React.FC<AppProps> = ({
       window.removeEventListener('message', handleMessage);
     };
   }, [vscode]);
+
+  const handleModelSelect = (newModelId: string) => {
+    setActiveModelId(newModelId);
+    vscode?.postMessage({
+      type: 'model.select',
+      payload: { modelId: newModelId },
+    });
+  };
+
+  const handleRefreshHealth = () => {
+    vscode?.postMessage({
+      type: 'models.refresh_health',
+    });
+  };
 
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -410,6 +440,14 @@ export const App: React.FC<AppProps> = ({
           >
             {activeConfig.provider}
           </span>
+          {availableModels.length > 0 && (
+            <ModelSelector
+              models={availableModels}
+              activeModelId={activeModelId}
+              onSelectModel={handleModelSelect}
+              onRefreshHealth={handleRefreshHealth}
+            />
+          )}
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>

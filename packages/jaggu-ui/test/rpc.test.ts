@@ -36,6 +36,26 @@ describe('RPC Message Validation', () => {
       expect(isValidWebviewMessage({ type: 'unknown.action', payload: {} })).toBe(false);
     });
 
+    it('should accept valid model.select message', () => {
+      expect(
+        isValidWebviewMessage({
+          type: 'model.select',
+          payload: { modelId: 'qwen2.5-coder:7b' },
+        }),
+      ).toBe(true);
+      expect(
+        isValidWebviewMessage({
+          type: 'model.select',
+          payload: { modelId: '' }, // empty ID rejected
+        }),
+      ).toBe(false);
+    });
+
+    it('should accept valid models.refresh_health message', () => {
+      expect(isValidWebviewMessage({ type: 'models.refresh_health' })).toBe(true);
+      expect(isValidWebviewMessage({ type: 'models.refresh_health', payload: {} })).toBe(true);
+    });
+
     it('should reject malformed user.submit missing text or id', () => {
       expect(isValidWebviewMessage({ type: 'user.submit', payload: { id: '1' } })).toBe(false);
       expect(isValidWebviewMessage({ type: 'user.submit', payload: { text: 'hello' } })).toBe(false);
@@ -64,6 +84,14 @@ describe('RPC Message Validation', () => {
         payload: { code: 'FAIL', message: 'Something went wrong' },
       };
       expect(isValidExtensionMessage(errorMsg)).toBe(true);
+    });
+
+    it('should accept valid model.health_changed message', () => {
+      const healthMsg = {
+        type: 'model.health_changed',
+        payload: { modelId: 'qwen2.5-coder:7b', health: 'available' },
+      };
+      expect(isValidExtensionMessage(healthMsg)).toBe(true);
     });
 
     it('should reject unrecognized extension messages', () => {

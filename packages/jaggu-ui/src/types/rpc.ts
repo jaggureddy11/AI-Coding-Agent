@@ -1,4 +1,13 @@
-import type { AgentState, Plan, PlanStep, ApprovalRequest, UiAgentStatus, ContextSnippetSummary } from '@jaggu/core';
+import type {
+  AgentState,
+  Plan,
+  PlanStep,
+  ApprovalRequest,
+  UiAgentStatus,
+  ContextSnippetSummary,
+  ModelDescriptor,
+  ModelHealthStatus,
+} from '@jaggu/core';
 
 export interface ChatMessage {
   id: string;
@@ -13,6 +22,8 @@ export type WebviewToExtensionMessage =
   | { type: 'agent.cancel'; payload?: { taskId?: string } }
   | { type: 'ui.ready'; payload?: { timestamp: number } }
   | { type: 'ui.clear'; payload?: Record<string, never> }
+  | { type: 'model.select'; payload: { modelId: string } }
+  | { type: 'models.refresh_health'; payload?: Record<string, never> }
   | { type: 'agent.approve'; payload: { proposalId: string } }
   | { type: 'agent.reject'; payload: { proposalId: string; reason?: string } }
   | { type: 'agent.review_diff'; payload: { filePath: string } }
@@ -32,7 +43,8 @@ export type ExtensionToWebviewMessage =
   | { type: 'agent.status'; payload: { state: UiAgentStatus; detail?: string } }
   | { type: 'agent.message'; payload: ChatMessage }
   | { type: 'agent.error'; payload: { code?: string; message: string } }
-  | { type: 'agent.config'; payload: { provider: string; model: string } }
+  | { type: 'agent.config'; payload: { provider: string; model: string; models?: ModelDescriptor[] } }
+  | { type: 'model.health_changed'; payload: { modelId: string; health: ModelHealthStatus; detail?: string } }
   | { type: 'token.delta'; payload: { text: string; messageId: string } }
   | { type: 'token.complete'; payload: { messageId: string; fullText: string; tokensUsed?: number; provenance?: ContextSnippetSummary[] } }
   | { type: 'context.assembled'; payload: { taskId: string; filesCount: number; totalTokens: number; provenance: ContextSnippetSummary[] } }
@@ -77,7 +89,12 @@ export function isValidWebviewMessage(msg: unknown): msg is WebviewToExtensionMe
     case 'agent.cancel':
     case 'ui.ready':
     case 'ui.clear':
+    case 'models.refresh_health':
       return candidate.payload === undefined || (typeof candidate.payload === 'object' && candidate.payload !== null);
+    case 'model.select': {
+      const p = candidate.payload as { modelId?: unknown };
+      return typeof p === 'object' && p !== null && typeof p.modelId === 'string' && p.modelId.trim().length > 0;
+    }
     case 'SUBMIT_PROMPT': {
       const p = candidate.payload as { prompt?: unknown };
       return typeof p === 'object' && p !== null && typeof p.prompt === 'string';
@@ -148,6 +165,7 @@ export function isValidExtensionMessage(msg: unknown): msg is ExtensionToWebview
     'agent.message',
     'agent.error',
     'agent.config',
+    'model.health_changed',
     'token.delta',
     'token.complete',
     'context.assembled',

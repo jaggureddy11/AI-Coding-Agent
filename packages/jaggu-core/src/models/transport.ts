@@ -136,8 +136,8 @@ export async function* parseSseStream(response: Response, abortSignal?: AbortSig
   try {
     while (true) {
       if (abortSignal?.aborted) {
-        await reader.cancel();
-        return;
+        await reader.cancel().catch(() => {});
+        throw new ModelError('Request was cancelled by user', 'CANCELLED', 'transport', undefined, false);
       }
 
       const { done, value } = await reader.read();
@@ -183,8 +183,8 @@ export async function* parseNdjsonStream<T = unknown>(response: Response, abortS
   try {
     while (true) {
       if (abortSignal?.aborted) {
-        await reader.cancel();
-        return;
+        await reader.cancel().catch(() => {});
+        throw new ModelError('Request was cancelled by user', 'CANCELLED', 'transport', undefined, false);
       }
 
       const { done, value } = await reader.read();

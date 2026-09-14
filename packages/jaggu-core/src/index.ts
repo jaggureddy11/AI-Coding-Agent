@@ -6,12 +6,15 @@ export * from './agent/fsm.js';
 
 // Subsystem Contracts & Models
 export * from './types/models.js';
+export * from './types/modelRegistry.js';
 export * from './models/transport.js';
 export * from './models/openai.js';
 export * from './models/anthropic.js';
 export * from './models/gemini.js';
 export * from './models/ollama.js';
+export * from './models/openaiCompatible.js';
 export * from './models/mock.js';
+export * from './models/registry.js';
 export * from './models/gateway.js';
 
 // Tools, Context, Task, Diff

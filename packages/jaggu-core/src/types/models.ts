@@ -7,10 +7,12 @@ export interface ModelCapabilities {
   maxOutputTokens: number;
 }
 
+export type ModelProviderId = 'openai' | 'anthropic' | 'gemini' | 'ollama' | 'openai-compatible' | 'mock' | (string & {});
+
 export interface ModelMetadata {
   id: string;
   displayName: string;
-  providerId: 'openai' | 'anthropic' | 'gemini' | 'ollama' | 'mock';
+  providerId: ModelProviderId;
   capabilities: ModelCapabilities;
 }
 
@@ -76,7 +78,7 @@ export class ModelError extends Error {
 }
 
 export interface IModelProvider {
-  readonly id: 'openai' | 'anthropic' | 'gemini' | 'ollama' | 'mock';
+  readonly id: ModelProviderId;
   readonly name: string;
   readonly defaultModel: string;
   readonly supportedModels: ModelMetadata[];
@@ -89,4 +91,15 @@ export interface IModelProvider {
   ): AsyncIterable<ModelStreamChunk>;
 
   estimateTokens(text: string): number;
+
+  checkHealth?(
+    baseUrlOrOptions?: string | { baseUrl?: string; apiKey?: string; abortSignal?: AbortSignal },
+    explicitApiKeyOrSignal?: string | AbortSignal,
+    explicitAbortSignal?: AbortSignal,
+  ): Promise<{
+    reachable: boolean;
+    models?: string[];
+    error?: string;
+    detail?: string;
+  }>;
 }

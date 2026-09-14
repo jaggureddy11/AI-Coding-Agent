@@ -10,7 +10,9 @@ import { OpenAIProvider } from './openai.js';
 import { AnthropicProvider } from './anthropic.js';
 import { GeminiProvider } from './gemini.js';
 import { OllamaProvider } from './ollama.js';
+import { OpenAICompatibleProvider } from './openaiCompatible.js';
 import { MockModelProvider } from './mock.js';
+import { ModelRegistry } from './registry.js';
 
 export interface ModelTelemetry {
   provider: string;
@@ -25,13 +27,20 @@ export interface ModelTelemetry {
 
 export class ModelGateway {
   private readonly providers = new Map<string, IModelProvider>();
+  private readonly modelRegistry: ModelRegistry;
 
-  constructor() {
+  constructor(modelRegistry?: ModelRegistry) {
+    this.modelRegistry = modelRegistry ?? new ModelRegistry();
     this.registerProvider(new OpenAIProvider());
     this.registerProvider(new AnthropicProvider());
     this.registerProvider(new GeminiProvider());
     this.registerProvider(new OllamaProvider());
+    this.registerProvider(new OpenAICompatibleProvider());
     this.registerProvider(new MockModelProvider());
+  }
+
+  public getModelRegistry(): ModelRegistry {
+    return this.modelRegistry;
   }
 
   public registerProvider(provider: IModelProvider): void {

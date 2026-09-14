@@ -127,6 +127,21 @@ export class AgentOrchestrator {
         taskId,
       );
 
+      // --- Capability & Context Window Check ---
+      const activeModelId = options.model;
+      const modelDescriptor = activeModelId
+        ? this.modelGateway.getModelRegistry().findModel(activeModelId)
+        : undefined;
+
+      if (modelDescriptor && !modelDescriptor.capabilities.toolCalling) {
+        this.onActivity?.(`Model ${modelDescriptor.displayName} does not support native tool calling. Using structured schema validation.`);
+      }
+
+      const maxContextTokens = modelDescriptor?.contextWindow ?? 32768;
+      if (contextPackage.totalEstimatedTokens > maxContextTokens * 0.85) {
+        this.onActivity?.(`Context size (${contextPackage.totalEstimatedTokens} tokens) approaching model limit (${maxContextTokens}).`);
+      }
+
       // --- 2. PLANNING ---
       fsm.transitionTo(AgentState.PLANNING);
       this.onActivity?.('Formulating engineering plan…');

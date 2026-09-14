@@ -47,6 +47,8 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
   private _statusResetTimer?: NodeJS.Timeout;
   private _contextEngine?: ContextEngine;
   private _activeTaskId?: string;
+  private _activeProviderId?: string;
+  private _activeModelId?: string;
   private readonly _docStore: InMemoryVirtualDocStore;
   private readonly _proposalRegistry = new Map<string, ProposedEditRecord>();
   private readonly _proposeEditTool: ProposeEditTool;
@@ -236,6 +238,111 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
   }
 
   /**
+   * Probes health of local runtimes and credential status for registered models.
+   */
+  public async checkRuntimesHealth(): Promise<void> {
+    const registry = this._modelGateway.getModelRegistry();
+    const ollamaProvider = this._modelGateway.getProvider('ollama');
+    const openaiCompatProvider = this._modelGateway.getProvider('openai-compatible');
+
+    // 1. Probe Ollama local runtime
+    const ollamaBaseUrl = this._credentialManager?.getOllamaBaseUrl();
+    if (ollamaProvider && typeof ollamaProvider.checkHealth === 'function') {
+      try {
+        const res = await ollamaProvider.checkHealth({ baseUrl: ollamaBaseUrl });
+        const ollamaModels = registry.listByProvider('ollama');
+        for (const m of ollamaModels) {
+          const status = res.reachable ? 'available' : 'unreachable';
+          const detail = res.detail || res.error;
+          registry.updateModelHealth(m.id, status, detail);
+          this.postMessageToWebview({
+            type: 'model.health_changed',
+            payload: {
+              modelId: m.id,
+              health: status,
+              detail,
+            },
+          });
+        }
+      } catch (err: unknown) {
+        const ollamaModels = registry.listByProvider('ollama');
+        const detail = err instanceof Error ? err.message : String(err);
+        for (const m of ollamaModels) {
+          registry.updateModelHealth(m.id, 'unreachable', detail);
+          this.postMessageToWebview({
+            type: 'model.health_changed',
+            payload: {
+              modelId: m.id,
+              health: 'unreachable',
+              detail,
+            },
+          });
+        }
+      }
+    }
+
+    // 2. Probe OpenAI-compatible local runtime
+    const openaiCompatBaseUrl = this._credentialManager?.getOpenAICompatibleBaseUrl();
+    if (openaiCompatProvider && typeof openaiCompatProvider.checkHealth === 'function') {
+      try {
+        const res = await openaiCompatProvider.checkHealth({ baseUrl: openaiCompatBaseUrl });
+        const compatModels = registry.listByProvider('openai-compatible');
+        for (const m of compatModels) {
+          const status = res.reachable ? 'available' : 'unreachable';
+          const detail = res.detail || res.error;
+          registry.updateModelHealth(m.id, status, detail);
+          this.postMessageToWebview({
+            type: 'model.health_changed',
+            payload: {
+              modelId: m.id,
+              health: status,
+              detail,
+            },
+          });
+        }
+      } catch (err: unknown) {
+        const compatModels = registry.listByProvider('openai-compatible');
+        const detail = err instanceof Error ? err.message : String(err);
+        for (const m of compatModels) {
+          registry.updateModelHealth(m.id, 'unreachable', detail);
+          this.postMessageToWebview({
+            type: 'model.health_changed',
+            payload: {
+              modelId: m.id,
+              health: 'unreachable',
+              detail,
+            },
+          });
+        }
+      }
+    }
+
+    // 3. Probe Cloud provider credentials (non-secret availability check)
+    const cloudProviders = ['openai', 'anthropic', 'gemini'] as const;
+    for (const p of cloudProviders) {
+      try {
+        const key = await this._credentialManager?.getApiKey(p);
+        const models = registry.listByProvider(p);
+        for (const m of models) {
+          const status = key ? 'available' : 'missing_credentials';
+          const detail = key ? undefined : `Missing API key in VS Code SecretStorage for [${p}]`;
+          registry.updateModelHealth(m.id, status, detail);
+          this.postMessageToWebview({
+            type: 'model.health_changed',
+            payload: {
+              modelId: m.id,
+              health: status,
+              detail,
+            },
+          });
+        }
+      } catch {
+        // ignore
+      }
+    }
+  }
+
+  /**
    * Dispatches and handles incoming RPC messages from the Webview with strict schema validation.
    */
   public async handleIncomingMessage(rawMessage: unknown): Promise<void> {
@@ -254,16 +361,44 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
 
     switch (message.type) {
       case 'ui.ready': {
-        const providerId = this._credentialManager?.getActiveProvider() || 'mock';
-        const modelId = this._credentialManager?.getActiveModel() || '';
+        const providerId = this._activeProviderId || this._credentialManager?.getActiveProvider() || 'mock';
+        const modelId = this._activeModelId || this._credentialManager?.getActiveModel() || 'mock-fast';
+        const models = this._modelGateway.getModelRegistry().listModels();
         this.postMessageToWebview({
           type: 'agent.config',
-          payload: { provider: providerId, model: modelId },
+          payload: { provider: providerId, model: modelId, models },
         });
         this.postMessageToWebview({
           type: 'agent.status',
           payload: { state: this._currentStatus, detail: 'Ready' },
         });
+        // Check health of local runtimes in background without blocking
+        this.checkRuntimesHealth().catch(() => {});
+        break;
+      }
+
+      case 'model.select': {
+        const { modelId } = message.payload;
+        const descriptor = this._modelGateway.getModelRegistry().findModel(modelId);
+        if (descriptor) {
+          this._activeModelId = descriptor.id;
+          this._activeProviderId = descriptor.providerId;
+          await this._credentialManager?.setActiveModel(descriptor.id);
+          await this._credentialManager?.setActiveProvider(descriptor.providerId);
+          this.postMessageToWebview({
+            type: 'agent.config',
+            payload: {
+              provider: descriptor.providerId,
+              model: descriptor.id,
+              models: this._modelGateway.getModelRegistry().listModels(),
+            },
+          });
+        }
+        break;
+      }
+
+      case 'models.refresh_health': {
+        await this.checkRuntimesHealth();
         break;
       }
 
@@ -526,8 +661,8 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
     }
 
     // 5. Resolve active provider and credentials
-    const providerId = this._credentialManager?.getActiveProvider() || 'mock';
-    const model = this._credentialManager?.getActiveModel() || undefined;
+    const providerId = this._activeProviderId || this._credentialManager?.getActiveProvider() || 'mock';
+    const model = this._activeModelId || this._credentialManager?.getActiveModel() || undefined;
     let apiKey: string | undefined;
 
     try {
@@ -536,12 +671,12 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
       // ignore
     }
 
-    if (!apiKey && providerId !== 'mock' && providerId !== 'ollama') {
+    if (!apiKey && providerId !== 'mock' && providerId !== 'ollama' && providerId !== 'openai-compatible') {
       this.postMessageToWebview({
         type: 'agent.error',
         payload: {
           code: 'MISSING_API_KEY',
-          message: `API key for [${providerId}] is not configured. Use command "JAGGU: Set API Key" or switch to "mock" provider.`,
+          message: `API key for [${providerId}] is not configured. Use command "JAGGU: Set API Key" or switch to a local or "mock" model.`,
         },
       });
       this._setStatus('ERROR', 'API key missing');
@@ -595,16 +730,25 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
         let currentToolCall: { id: string; name: string; arguments: Record<string, unknown> } | undefined;
         let turnTokens = '';
 
+        const activeModel = model || this._modelGateway.getProvider(providerId).defaultModel;
+        const descriptor = this._modelGateway.getModelRegistry().findModel(activeModel);
+        const supportsTools = descriptor ? descriptor.capabilities.toolCalling : true;
+
         const stream = this._modelGateway.streamChat(
           providerId,
           messages,
           {
-            model: model || this._modelGateway.getProvider(providerId).defaultModel,
+            model: activeModel,
             apiKey,
-            baseUrl: providerId === 'ollama' ? this._credentialManager?.getOllamaBaseUrl() : undefined,
+            baseUrl:
+              providerId === 'ollama'
+                ? this._credentialManager?.getOllamaBaseUrl()
+                : providerId === 'openai-compatible'
+                ? this._credentialManager?.getOpenAICompatibleBaseUrl()
+                : undefined,
             temperature: this._credentialManager?.getTemperature() ?? 0.2,
             abortSignal,
-            tools: this._toolExecutor.toModelToolDefinitions(),
+            tools: supportsTools ? this._toolExecutor.toModelToolDefinitions() : undefined,
           },
           this._eventBus,
           id,
