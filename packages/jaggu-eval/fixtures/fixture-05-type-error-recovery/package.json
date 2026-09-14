@@ -1,0 +1,8 @@
+{
+  "name": "fixture-type-error-recovery",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "node test/client.test.js"
+  }
+}

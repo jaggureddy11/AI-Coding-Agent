@@ -8,7 +8,8 @@
   "scripts": {
     "build": "tsc -b",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "eval": "node dist/runBaseline.js"
   },
   "dependencies": {
     "@jaggu/core": "*"

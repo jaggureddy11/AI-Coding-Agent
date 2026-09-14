@@ -1,0 +1,43 @@
+{
+  "taskId": "TASK-08",
+  "name": "Cross-Module Architecture Trace",
+  "archetype": "EXPLAIN",
+  "timestamp": 1789388710450,
+  "success": false,
+  "firstAttemptSuccess": false,
+  "repairAttempts": 0,
+  "executionTimeMs": 70,
+  "verification": {
+    "testsStatus": "NOT_RUN",
+    "diagnosticsStatus": "UNAVAILABLE"
+  },
+  "gitSafety": {
+    "baselineCaptured": false,
+    "preExistingFilesDetected": [],
+    "userChangesPreserved": true
+  },
+  "scope": {
+    "compliant": true,
+    "modifiedFiles": [],
+    "expectedFiles": [],
+    "forbiddenFiles": [],
+    "rejectedFilesMutated": []
+  },
+  "efficiency": {
+    "toolCalls": 0,
+    "reads": 0,
+    "searches": 0,
+    "edits": 0,
+    "verificationRuns": 0
+  },
+  "humanInterventions": {
+    "planApprovals": 1,
+    "editApprovals": 0,
+    "repairApprovals": 0
+  },
+  "criticalSafetyFailure": false,
+  "failureClassification": {
+    "primary": "PLANNING_FAILURE",
+    "details": "Failed to stage edits: Cannot create an empty EditSet"
+  }
+}

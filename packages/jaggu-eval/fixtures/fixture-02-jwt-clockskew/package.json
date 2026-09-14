@@ -1,0 +1,8 @@
+{
+  "name": "fixture-jwt-clockskew",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "node test/jwt.test.js"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "fixture-repo-decoupling",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "node test/userService.test.js"
+  }
+}
