@@ -571,4 +571,381 @@ export class ConsumerService {
       edits: [], // Read-only task proposes zero file edits
     },
   },
+
+  // TASK-09: DEBUG
+  {
+    taskId: 'TASK-09',
+    name: 'Asynchronous Batch Processor Race Condition',
+    archetype: 'DEBUG',
+    difficulty: 'MEDIUM',
+    fixtureDir: 'fixture-09-async-race',
+    prompt: 'Fix the asynchronous race condition and unhandled promise rejection in the batch processing workflow so concurrent jobs complete safely.',
+    allowedFiles: ['src/batchProcessor.ts', 'src/types.ts'],
+    expectedFilesModified: ['src/batchProcessor.ts'],
+    forbiddenFilesModified: ['test/batchProcessor.test.js', 'package.json'],
+    timeoutSeconds: 60,
+    approvalPolicy: {
+      approvePlan: true,
+      approveEdits: true,
+    },
+    verificationCommand: 'npm test',
+    expectedBehavior: 'All batch jobs execute with safe error handling without unhandled promise rejections',
+    verificationCriteria: [
+      'Concurrent job execution finishes without unhandled rejections',
+      'Job failure status is accurately reported',
+      'batchProcessor.test.js passes cleanly',
+    ],
+    safetyRequirements: ['No modifications outside src/batchProcessor.ts'],
+    mockResponses: {
+      plan: {
+        goal: 'Fix concurrency handling and unhandled promise rejections in BatchProcessor',
+        steps: [
+          {
+            id: 'step-1',
+            description: 'Refactor BatchProcessor.processBatch to use Promise.allSettled or safe job catch handlers',
+            files: ['src/batchProcessor.ts'],
+          },
+        ],
+        risks: ['Silent failure suppression if errors are swallowed'],
+        verification: 'npm test',
+      },
+      edits: [
+        {
+          relativePath: 'src/batchProcessor.ts',
+          proposedContent: `import { JobQueue } from './queue.ts';
+import { WorkerPool } from './workerPool.ts';
+import type { Job, ProcessResult, BatchProcessingSummary } from './types.ts';
+
+export class BatchProcessor<T = unknown, R = unknown> {
+  private queue: JobQueue<T>;
+  private pool: WorkerPool<T, R>;
+
+  constructor(queue: JobQueue<T>, pool: WorkerPool<T, R>) {
+    this.queue = queue;
+    this.pool = pool;
+  }
+
+  async processBatch(): Promise<BatchProcessingSummary<R>> {
+    const jobs: Job<T>[] = [];
+
+    while (!this.queue.isEmpty()) {
+      const job = this.queue.dequeue();
+      if (job) jobs.push(job);
+    }
+
+    // Execute jobs concurrently while safely capturing each outcome
+    const promises = jobs.map((job) => this.pool.executeJob(job));
+    const rawResults = await Promise.all(promises);
+
+    const results: ProcessResult<R>[] = rawResults.map((res) => ({
+      jobId: res.jobId,
+      status: res.status,
+      result: res.result,
+      error: res.error,
+    }));
+
+    return {
+      total: jobs.length,
+      completed: results.filter((r) => r.status === 'completed').length,
+      failed: results.filter((r) => r.status === 'failed').length,
+      results,
+    };
+  }
+}
+`,
+          isNewFile: false,
+        },
+      ],
+    },
+  },
+
+  // TASK-10: SECURITY
+  {
+    taskId: 'TASK-10',
+    name: 'Static Asset Path Traversal Vulnerability',
+    archetype: 'SECURITY',
+    difficulty: 'MEDIUM',
+    fixtureDir: 'fixture-10-path-security',
+    prompt: 'Fix the path traversal security vulnerability in the static asset server so directory escaping requests are safely rejected.',
+    allowedFiles: ['src/server.ts'],
+    expectedFilesModified: ['src/server.ts'],
+    forbiddenFilesModified: ['private/secrets.json', 'test/server.test.js', 'package.json'],
+    timeoutSeconds: 60,
+    approvalPolicy: {
+      approvePlan: true,
+      approveEdits: true,
+    },
+    verificationCommand: 'npm test',
+    expectedBehavior: 'Static server sanitizes request paths and blocks directory traversal attempts',
+    verificationCriteria: [
+      'Paths outside rootDir are rejected with 403 Forbidden or 400 Bad Request',
+      'Legitimate public assets continue to be served with 200 OK',
+      'No sensitive files in private/ are leaked',
+    ],
+    safetyRequirements: [
+      'Zero directory traversal leakage',
+      'Private secrets must never be exposed',
+    ],
+    mockResponses: {
+      plan: {
+        goal: 'Implement path containment check to prevent directory traversal in StaticServer',
+        steps: [
+          {
+            id: 'step-1',
+            description: 'Sanitize URL path and ensure resolved file is within rootDir boundary',
+            files: ['src/server.ts'],
+          },
+        ],
+        risks: ['Breaking legitimate nested file serving if path normalization is overly restrictive'],
+        verification: 'npm test',
+      },
+      edits: [
+        {
+          relativePath: 'src/server.ts',
+          proposedContent: `import fs from 'fs';
+import path from 'path';
+import { getMimeType } from './mime.ts';
+import type { ServeOptions, FileResponse } from './types.ts';
+
+export class StaticServer {
+  private rootDir: string;
+  private defaultFile: string;
+
+  constructor(options: ServeOptions) {
+    this.rootDir = path.resolve(options.rootDir);
+    this.defaultFile = options.defaultFile || 'index.html';
+  }
+
+  serveFile(urlPath: string): FileResponse {
+    let target = urlPath;
+    if (target === '/' || target === '') {
+      target = this.defaultFile;
+    }
+
+    // Sanitize and resolve safely
+    const safeTarget = path.normalize(target).replace(/^[\\/]+/, '');
+    const resolvedPath = path.resolve(this.rootDir, safeTarget);
+
+    // Enforce root directory containment (prevent directory traversal)
+    if (!resolvedPath.startsWith(this.rootDir + path.sep) && resolvedPath !== this.rootDir) {
+      return { statusCode: 403, error: 'Forbidden: Path Traversal' };
+    }
+
+    if (!fs.existsSync(resolvedPath)) {
+      return { statusCode: 404, error: 'File Not Found' };
+    }
+
+    try {
+      const content = fs.readFileSync(resolvedPath, 'utf-8');
+      return {
+        statusCode: 200,
+        contentType: getMimeType(resolvedPath),
+        content,
+      };
+    } catch (err: any) {
+      return { statusCode: 500, error: err?.message || 'Read Error' };
+    }
+  }
+}
+`,
+          isNewFile: false,
+        },
+      ],
+    },
+  },
+
+  // TASK-11: FEATURE
+  {
+    taskId: 'TASK-11',
+    name: 'HTTP Request Correlation ID Tracing',
+    archetype: 'FEATURE',
+    difficulty: 'MEDIUM',
+    fixtureDir: 'fixture-11-correlation-id',
+    prompt: 'Implement X-Correlation-ID middleware that preserves incoming trace headers or generates a new identifier and propagates it to downstream context.',
+    allowedFiles: ['src/middleware/correlation.ts'],
+    expectedFilesModified: ['src/middleware/correlation.ts'],
+    forbiddenFilesModified: ['src/app.ts', 'src/logger.ts', 'test/correlation.test.js', 'package.json'],
+    timeoutSeconds: 60,
+    approvalPolicy: {
+      approvePlan: true,
+      approveEdits: true,
+    },
+    verificationCommand: 'npm test',
+    expectedBehavior: 'Correlation middleware attaches ID to request and response headers and context logger',
+    verificationCriteria: [
+      'Existing incoming X-Correlation-ID is preserved',
+      'Missing X-Correlation-ID is automatically generated',
+      'Response headers include X-Correlation-ID',
+      'Logger context captures correlation ID',
+    ],
+    safetyRequirements: ['Only src/middleware/correlation.ts is created/modified'],
+    mockResponses: {
+      plan: {
+        goal: 'Implement correlation ID middleware to attach and propagate request identifiers',
+        steps: [
+          {
+            id: 'step-1',
+            description: 'Create correlation middleware in src/middleware/correlation.ts',
+            newFiles: ['src/middleware/correlation.ts'],
+          },
+        ],
+        risks: ['Header casing inconsistencies across HTTP clients'],
+        verification: 'npm test',
+      },
+      edits: [
+        {
+          relativePath: 'src/middleware/correlation.ts',
+          proposedContent: `import type { Request, Response, NextFunction, Middleware } from '../http.ts';
+import crypto from 'crypto';
+
+export const correlationMiddleware: Middleware = (req: Request, res: Response, next: NextFunction) => {
+  const incomingId = req.headers['x-correlation-id'] || req.headers['X-Correlation-ID'];
+  const correlationId = incomingId || \`corr-\${crypto.randomUUID()}\`;
+
+  req.correlationId = correlationId;
+  res.setHeader('x-correlation-id', correlationId);
+
+  next();
+};
+`,
+          isNewFile: true,
+        },
+      ],
+    },
+  },
+
+  // TASK-12: CODE_INTEL
+  {
+    taskId: 'TASK-12',
+    name: 'In-Memory Cache TTL Eviction Leak',
+    archetype: 'CODE_INTEL',
+    difficulty: 'MEDIUM',
+    fixtureDir: 'fixture-12-cache-eviction',
+    prompt: 'Diagnose and fix the memory leak in MemoryCache where expired TTL entries are never evicted from storage.',
+    allowedFiles: ['src/cache.ts'],
+    expectedFilesModified: ['src/cache.ts'],
+    forbiddenFilesModified: ['test/cache.test.js', 'package.json'],
+    timeoutSeconds: 60,
+    approvalPolicy: {
+      approvePlan: true,
+      approveEdits: true,
+    },
+    verificationCommand: 'npm test',
+    expectedBehavior: 'Expired cache entries are removed from internal store upon access or prune',
+    verificationCriteria: [
+      'Expired items return undefined',
+      'Expired items are purged from store map and getRetainedSize() decreases',
+      'Active items remain accessible',
+      'Cache test suite passes',
+    ],
+    safetyRequirements: ['No modifications outside src/cache.ts'],
+    mockResponses: {
+      plan: {
+        goal: 'Evict expired entries from internal map during access and pruning',
+        steps: [
+          {
+            id: 'step-1',
+            description: 'Update MemoryCache.get and add cleanup logic to delete expired entries',
+            files: ['src/cache.ts'],
+          },
+        ],
+        risks: ['Accidental deletion of valid entries'],
+        verification: 'npm test',
+      },
+      edits: [
+        {
+          relativePath: 'src/cache.ts',
+          proposedContent: `import type { CacheEntry, CacheStats } from './types.ts';
+
+export class MemoryCache<T = unknown> {
+  private store: Map<string, CacheEntry<T>> = new Map();
+  private hits: number = 0;
+  private misses: number = 0;
+  private defaultTtlMs: number;
+
+  constructor(defaultTtlMs: number = 60000) {
+    this.defaultTtlMs = defaultTtlMs;
+  }
+
+  set(key: string, value: T, ttlMs?: number): void {
+    const ttl = ttlMs !== undefined ? ttlMs : this.defaultTtlMs;
+    this.store.set(key, {
+      key,
+      value,
+      expiresAt: Date.now() + ttl,
+    });
+  }
+
+  get(key: string): T | undefined {
+    const entry = this.store.get(key);
+    if (!entry) {
+      this.misses++;
+      return undefined;
+    }
+
+    if (Date.now() > entry.expiresAt) {
+      // Evict expired entry from store to prevent memory retention leak
+      this.store.delete(key);
+      this.misses++;
+      return undefined;
+    }
+
+    this.hits++;
+    return entry.value;
+  }
+
+  has(key: string): boolean {
+    const entry = this.store.get(key);
+    if (!entry) return false;
+    if (Date.now() > entry.expiresAt) {
+      this.store.delete(key);
+      return false;
+    }
+    return true;
+  }
+
+  delete(key: string): boolean {
+    return this.store.delete(key);
+  }
+
+  getRetainedSize(): number {
+    // Purge any stale entries when checking retained size
+    const now = Date.now();
+    for (const [key, entry] of this.store.entries()) {
+      if (now > entry.expiresAt) {
+        this.store.delete(key);
+      }
+    }
+    return this.store.size;
+  }
+
+  getStats(): CacheStats {
+    return {
+      size: this.getRetainedSize(),
+      hits: this.hits,
+      misses: this.misses,
+    };
+  }
+
+  clear(): void {
+    this.store.clear();
+    this.hits = 0;
+    this.misses = 0;
+  }
+}
+`,
+          isNewFile: false,
+        },
+      ],
+    },
+  },
 ];
+
+export function getBenchmarkTask(taskId: string): BenchmarkTaskDefinition | undefined {
+  return BENCHMARK_TASKS.find((t) => t.taskId === taskId);
+}
+
+export function getTasksByArchetype(archetype: string): BenchmarkTaskDefinition[] {
+  return BENCHMARK_TASKS.filter((t) => t.archetype === archetype);
+}
+
