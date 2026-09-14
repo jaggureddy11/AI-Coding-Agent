@@ -40,3 +40,9 @@ export * from './diff/editSetManager.js';
 export * from './types/verification.js';
 export * from './verification/verificationEngine.js';
 export * from './agent/agentOrchestrator.js';
+
+// Code Intelligence, Git Safety & Developer Feedback (M6)
+export * from './types/diagnostics.js';
+export * from './types/git.js';
+export * from './git/gitService.js';
+export * from './git/taskCheckpointManager.js';

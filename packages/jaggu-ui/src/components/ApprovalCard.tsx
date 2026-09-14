@@ -12,7 +12,7 @@ export interface ApprovalCardProps {
   files?: ApprovalFileItem[];
   diffSummary?: string;
   onReviewDiff: (filePath: string) => void;
-  onApprove: (proposalId: string) => void;
+  onApprove: (proposalId: string, approvedFiles?: string[]) => void;
   onReject: (proposalId: string) => void;
   status?: 'pending' | 'approved' | 'rejected';
 }
@@ -29,6 +29,29 @@ export const ApprovalCard: React.FC<ApprovalCardProps> = ({
 }) => {
   const fileList = files && files.length > 0 ? files : filePath ? [{ relativePath: filePath }] : [];
   const primaryPath = filePath || (fileList[0]?.relativePath ?? '');
+
+  const [selectedFiles, setSelectedFiles] = React.useState<Set<string>>(
+    () => new Set(fileList.map((f) => f.relativePath)),
+  );
+
+  React.useEffect(() => {
+    setSelectedFiles(new Set(fileList.map((f) => f.relativePath)));
+  }, [files, filePath]);
+
+  const toggleFile = (relPath: string) => {
+    setSelectedFiles((prev) => {
+      const next = new Set(prev);
+      if (next.has(relPath)) {
+        next.delete(relPath);
+      } else {
+        next.add(relPath);
+      }
+      return next;
+    });
+  };
+
+  const isAllSelected = selectedFiles.size === fileList.length;
+  const isNoneSelected = selectedFiles.size === 0;
 
   return (
     <div
@@ -88,54 +111,74 @@ export const ApprovalCard: React.FC<ApprovalCardProps> = ({
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '10px' }}>
-        {fileList.map((item) => (
-          <div
-            key={item.relativePath}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '5px 8px',
-              backgroundColor: 'var(--vscode-editor-background, #1e1e1e)',
-              borderRadius: '4px',
-              border: '1px solid var(--vscode-widget-border, #333333)',
-              fontSize: '12px',
-              fontFamily: 'var(--vscode-editor-font-family, monospace)',
-            }}
-          >
-            <span style={{ wordBreak: 'break-all', display: 'flex', alignItems: 'center', gap: '5px' }}>
-              📄 {item.relativePath}
-              {item.isNew && (
-                <span
-                  style={{
-                    fontSize: '10px',
-                    color: 'var(--vscode-charts-green, #89d185)',
-                    border: '1px solid rgba(137, 209, 133, 0.3)',
-                    padding: '0 4px',
-                    borderRadius: '3px',
-                  }}
-                >
-                  NEW
-                </span>
-              )}
-            </span>
-            <button
-              type="button"
-              onClick={() => onReviewDiff(item.relativePath)}
+        {fileList.map((item) => {
+          const isSelected = selectedFiles.has(item.relativePath);
+          return (
+            <div
+              key={item.relativePath}
               style={{
-                background: 'transparent',
-                border: 'none',
-                color: 'var(--vscode-textLink-foreground, #3794ff)',
-                cursor: 'pointer',
-                fontSize: '11px',
-                padding: '2px 6px',
-                textDecoration: 'underline',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '5px 8px',
+                backgroundColor: isSelected
+                  ? 'var(--vscode-editor-background, #1e1e1e)'
+                  : 'rgba(255, 255, 255, 0.03)',
+                borderRadius: '4px',
+                border: isSelected
+                  ? '1px solid var(--vscode-widget-border, #333333)'
+                  : '1px dashed rgba(255, 255, 255, 0.15)',
+                fontSize: '12px',
+                fontFamily: 'var(--vscode-editor-font-family, monospace)',
+                opacity: status === 'pending' && !isSelected ? 0.6 : 1,
               }}
             >
-              Review Diff
-            </button>
-          </div>
-        ))}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
+                {status === 'pending' && fileList.length > 1 && (
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => toggleFile(item.relativePath)}
+                    title={`Select ${item.relativePath} for approval`}
+                    style={{ cursor: 'pointer' }}
+                  />
+                )}
+                <span style={{ wordBreak: 'break-all', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  📄 {item.relativePath}
+                  {item.isNew && (
+                    <span
+                      style={{
+                        fontSize: '10px',
+                        color: 'var(--vscode-charts-green, #89d185)',
+                        border: '1px solid rgba(137, 209, 133, 0.3)',
+                        padding: '0 4px',
+                        borderRadius: '3px',
+                      }}
+                    >
+                      NEW
+                    </span>
+                  )}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => onReviewDiff(item.relativePath)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--vscode-textLink-foreground, #3794ff)',
+                  cursor: 'pointer',
+                  fontSize: '11px',
+                  padding: '2px 6px',
+                  textDecoration: 'underline',
+                  flexShrink: 0,
+                }}
+              >
+                Review Diff
+              </button>
+            </div>
+          );
+        })}
       </div>
 
       {diffSummary && (
@@ -172,19 +215,25 @@ export const ApprovalCard: React.FC<ApprovalCardProps> = ({
           <div style={{ marginLeft: 'auto', display: 'flex', gap: '6px' }}>
             <button
               type="button"
-              onClick={() => onApprove(proposalId)}
+              disabled={isNoneSelected}
+              onClick={() => onApprove(proposalId, Array.from(selectedFiles))}
               style={{
-                backgroundColor: 'var(--vscode-button-background, #0e639c)',
+                backgroundColor: isNoneSelected
+                  ? 'var(--vscode-button-secondaryBackground, #3a3d41)'
+                  : 'var(--vscode-button-background, #0e639c)',
                 color: 'var(--vscode-button-foreground, #ffffff)',
                 border: 'none',
                 padding: '4px 12px',
                 borderRadius: '3px',
                 fontSize: '11px',
                 fontWeight: 600,
-                cursor: 'pointer',
+                cursor: isNoneSelected ? 'not-allowed' : 'pointer',
+                opacity: isNoneSelected ? 0.5 : 1,
               }}
             >
-              Approve Changes
+              {fileList.length > 1 && !isAllSelected && !isNoneSelected
+                ? `Approve Selected (${selectedFiles.size})`
+                : 'Approve Changes'}
             </button>
             <button
               type="button"

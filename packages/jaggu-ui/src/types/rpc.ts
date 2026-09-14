@@ -18,7 +18,7 @@ export type WebviewToExtensionMessage =
   | { type: 'agent.review_diff'; payload: { filePath: string } }
   | { type: 'agent.plan_approve'; payload: { planId: string } }
   | { type: 'agent.plan_reject'; payload: { planId: string; reason?: string } }
-  | { type: 'agent.editset_approve'; payload: { editSetId: string } }
+  | { type: 'agent.editset_approve'; payload: { editSetId: string; approvedFiles?: string[]; rejectedFiles?: string[] } }
   | { type: 'agent.editset_reject'; payload: { editSetId: string; reason?: string } }
   | { type: 'agent.scope_approve'; payload?: { taskId?: string } }
   | { type: 'agent.scope_reject'; payload?: { taskId?: string } }

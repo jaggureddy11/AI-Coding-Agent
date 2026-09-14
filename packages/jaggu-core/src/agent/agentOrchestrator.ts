@@ -10,8 +10,11 @@ import { Planner } from '../planning/planner.js';
 import { ContextEngine } from '../context/engine.js';
 import { EventBus } from '../events/eventBus.js';
 import { Plan } from '../types/plan.js';
-import { EditSet } from '../types/editSet.js';
+import { EditSet, EditApprovalDecision } from '../types/editSet.js';
 import { VerificationResult } from '../types/verification.js';
+import { IDiagnosticsProvider, DiagnosticsSummary, summarizeDiagnostics } from '../types/diagnostics.js';
+import { TaskCheckpointManager } from '../git/taskCheckpointManager.js';
+import { TaskGitBaseline, TaskGitDiffSummary } from '../types/git.js';
 
 export interface AgentOrchestratorOptions {
   modelGateway: ModelGateway;
@@ -23,8 +26,10 @@ export interface AgentOrchestratorOptions {
   eventBus: EventBus;
   workspaceRoots: string[];
   limits?: LoopGuardLimits;
+  diagnosticsProvider?: IDiagnosticsProvider;
+  taskCheckpointManager?: TaskCheckpointManager;
   onRequestPlanApproval: (plan: Plan) => Promise<boolean>;
-  onRequestEditApproval: (editSet: EditSet) => Promise<boolean>;
+  onRequestEditApproval: (editSet: EditSet) => Promise<boolean | EditApprovalDecision>;
   onRequestScopeApproval?: (unplannedFiles: string[]) => Promise<boolean>;
   onActivity?: (activity: string) => void;
 }
@@ -34,7 +39,12 @@ export interface AgentTaskResult {
   taskId: string;
   plan?: Plan;
   appliedFiles: string[];
+  rejectedFiles?: string[];
   verificationResult?: VerificationResult;
+  diagnosticsSummary?: DiagnosticsSummary;
+  taskGitSummary?: TaskGitDiffSummary;
+  suggestedCommitMessage?: string;
+  baseline?: TaskGitBaseline;
   summary: string;
   repairCount: number;
 }
@@ -49,8 +59,10 @@ export class AgentOrchestrator {
   private readonly eventBus: EventBus;
   private readonly workspaceRoots: string[];
   private readonly limits: LoopGuardLimits;
+  private readonly diagnosticsProvider?: IDiagnosticsProvider;
+  private readonly taskCheckpointManager?: TaskCheckpointManager;
   private readonly onRequestPlanApproval: (plan: Plan) => Promise<boolean>;
-  private readonly onRequestEditApproval: (editSet: EditSet) => Promise<boolean>;
+  private readonly onRequestEditApproval: (editSet: EditSet) => Promise<boolean | EditApprovalDecision>;
   private readonly onRequestScopeApproval?: (unplannedFiles: string[]) => Promise<boolean>;
   private readonly onActivity?: (activity: string) => void;
 
@@ -64,6 +76,8 @@ export class AgentOrchestrator {
     this.eventBus = options.eventBus;
     this.workspaceRoots = options.workspaceRoots;
     this.limits = options.limits ?? DEFAULT_LOOP_LIMITS;
+    this.diagnosticsProvider = options.diagnosticsProvider;
+    this.taskCheckpointManager = options.taskCheckpointManager;
     this.onRequestPlanApproval = options.onRequestPlanApproval;
     this.onRequestEditApproval = options.onRequestEditApproval;
     this.onRequestScopeApproval = options.onRequestScopeApproval;
@@ -183,6 +197,21 @@ export class AgentOrchestrator {
         (s.newFiles || []).forEach((f: string) => approvedFiles.add(f));
       }
 
+      // --- 3.5. GIT BASELINE CHECKPOINT ---
+      let baseline: TaskGitBaseline | undefined;
+      if (this.taskCheckpointManager) {
+        this.onActivity?.('Capturing Git task baseline & inspecting worktree…');
+        try {
+          baseline = await this.taskCheckpointManager.captureBaseline(taskId);
+          const preExisting = this.taskCheckpointManager.detectPreExistingModifications(Array.from(approvedFiles), baseline);
+          if (preExisting.hasPreExistingChanges) {
+            this.onActivity?.(`⚠️ Notice: ${preExisting.preExistingFiles.length} planned file(s) had pre-existing user modifications: ${preExisting.preExistingFiles.join(', ')}`);
+          }
+        } catch (err) {
+          this.onActivity?.(`Git baseline skipped: ${err instanceof Error ? err.message : String(err)}`);
+        }
+      }
+
       // --- 4. EXECUTING (Generate Changes) ---
       fsm.transitionTo(AgentState.EXECUTING);
       this.onActivity?.('Generating proposed modifications…');
@@ -213,6 +242,7 @@ export class AgentOrchestrator {
               appliedFiles: [],
               summary: `Scope change rejected by user for files: ${unplannedFiles.join(', ')}`,
               repairCount: 0,
+              baseline,
             };
           }
         }
@@ -229,16 +259,33 @@ export class AgentOrchestrator {
           appliedFiles: [],
           summary: `Failed to stage edits: ${staged.error}`,
           repairCount: 0,
+          baseline,
         };
       }
 
       let activeEditSet = staged.editSet;
 
-      // --- 5. EDIT_REVIEW ---
+      // --- 5. EDIT_REVIEW (Selective / Partial Approval) ---
       fsm.transitionTo(AgentState.EDIT_REVIEW);
       this.onActivity?.(`Changes proposed for ${activeEditSet.files.length} file(s) — review required`);
 
-      const editApproved = await this.onRequestEditApproval(activeEditSet);
+      const editApprovalRaw = await this.onRequestEditApproval(activeEditSet);
+      let editApproved = false;
+      let approvedFilesFilter: string[] | undefined;
+      let rejectedFilesList: string[] = [];
+
+      if (typeof editApprovalRaw === 'boolean') {
+        editApproved = editApprovalRaw;
+      } else if (editApprovalRaw && typeof editApprovalRaw === 'object') {
+        editApproved = editApprovalRaw.approved;
+        if (editApprovalRaw.approvedFiles && editApprovalRaw.approvedFiles.length > 0) {
+          approvedFilesFilter = editApprovalRaw.approvedFiles;
+        }
+        if (editApprovalRaw.rejectedFiles && editApprovalRaw.rejectedFiles.length > 0) {
+          rejectedFilesList = editApprovalRaw.rejectedFiles;
+        }
+      }
+
       if (!editApproved) {
         this.editSetManager.rejectEditSet(activeEditSet.id, 'User rejected edit set');
         fsm.transitionTo(AgentState.EXECUTING);
@@ -249,6 +296,7 @@ export class AgentOrchestrator {
           appliedFiles: [],
           summary: 'Task was halted because the proposed edits were rejected.',
           repairCount: 0,
+          baseline,
         };
       }
 
@@ -257,11 +305,11 @@ export class AgentOrchestrator {
         timestamp: Date.now(),
       });
 
-      // --- 6. APPLYING ---
+      // --- 6. APPLYING (Selective Application) ---
       fsm.transitionTo(AgentState.APPLYING);
-      this.onActivity?.('Applying changes atomically to workspace…');
+      this.onActivity?.('Applying approved changes to workspace…');
 
-      const applyResult = this.editSetManager.applyEditSet(activeEditSet.id, true);
+      const applyResult = this.editSetManager.applyEditSet(activeEditSet.id, true, approvedFilesFilter);
       if (!applyResult.success) {
         fsm.transitionTo(AgentState.FAILED);
         return {
@@ -271,10 +319,77 @@ export class AgentOrchestrator {
           appliedFiles: [],
           summary: `Failed to apply changes: ${applyResult.error}`,
           repairCount: 0,
+          baseline,
         };
       }
 
       const allAppliedFiles = [...applyResult.appliedFiles];
+      const allRejectedFiles = [...(applyResult.rejectedFiles ?? rejectedFilesList)];
+
+      if (allRejectedFiles.length > 0) {
+        this.onActivity?.(`Applied ${allAppliedFiles.length} file(s); preserved/skipped ${allRejectedFiles.length} rejected file(s).`);
+      }
+
+      // --- 6.5. LSP DIAGNOSTICS & DIAGNOSTIC REPAIR ---
+      let diagnosticsSummary: DiagnosticsSummary | undefined;
+      let repairCount = 0;
+
+      if (this.diagnosticsProvider && allAppliedFiles.length > 0) {
+        this.onActivity?.('Collecting compiler diagnostics for modified files…');
+        try {
+          const rawDiags = await this.diagnosticsProvider.getDiagnostics(allAppliedFiles);
+          diagnosticsSummary = summarizeDiagnostics(rawDiags);
+          if (diagnosticsSummary.errorCount > 0 && fsm.getRepairAttempts() < this.limits.maxRepairAttempts) {
+            fsm.transitionTo(AgentState.DIAGNOSING);
+            this.onActivity?.(`Compiler reported ${diagnosticsSummary.errorCount} error(s) — diagnosing and formulating fix…`);
+
+            if (abortSignal?.aborted) throw new Error('Task cancelled');
+
+            const diagnosticRepairEdits = await this.generateDiagnosticRepairChanges(
+              plan,
+              diagnosticsSummary,
+              allAppliedFiles,
+              providerId,
+              options.model,
+              abortSignal,
+            );
+
+            if (diagnosticRepairEdits.length > 0) {
+              fsm.transitionTo(AgentState.EXECUTING);
+              repairCount++;
+
+              const diagStaged = this.editSetManager.createEditSet(diagnosticRepairEdits, plan.id);
+              if (diagStaged.success && diagStaged.editSet) {
+                const diagEditSet = diagStaged.editSet;
+                fsm.transitionTo(AgentState.EDIT_REVIEW);
+                this.onActivity?.(`Diagnostic corrective changes proposed for ${diagEditSet.files.length} file(s) — review required`);
+
+                const diagApprovedRaw = await this.onRequestEditApproval(diagEditSet);
+                const diagApproved = typeof diagApprovedRaw === 'boolean' ? diagApprovedRaw : diagApprovedRaw?.approved;
+                const diagApprovedFilter = typeof diagApprovedRaw === 'object' ? diagApprovedRaw?.approvedFiles : undefined;
+
+                if (diagApproved) {
+                  fsm.transitionTo(AgentState.APPLYING);
+                  this.onActivity?.('Applying diagnostic correction…');
+                  const diagApply = this.editSetManager.applyEditSet(diagEditSet.id, true, diagApprovedFilter);
+                  if (diagApply.success) {
+                    for (const daf of diagApply.appliedFiles) {
+                      if (!allAppliedFiles.includes(daf)) allAppliedFiles.push(daf);
+                    }
+                    // Refresh diagnostics after applying correction
+                    const postDiags = await this.diagnosticsProvider.getDiagnostics(allAppliedFiles);
+                    diagnosticsSummary = summarizeDiagnostics(postDiags);
+                  }
+                } else {
+                  this.editSetManager.rejectEditSet(diagEditSet.id, 'User rejected diagnostic repair');
+                }
+              }
+            }
+          }
+        } catch (err) {
+          this.onActivity?.(`Diagnostics check skipped: ${err instanceof Error ? err.message : String(err)}`);
+        }
+      }
 
       // --- 7. VERIFYING ---
       fsm.transitionTo(AgentState.VERIFYING);
@@ -282,8 +397,6 @@ export class AgentOrchestrator {
 
       const verifyCmd = this.verificationEngine.determineVerificationCommand(plan.verification, allAppliedFiles);
       let verifyResult = await this.verificationEngine.runVerification(verifyCmd, abortSignal);
-
-      let repairCount = 0;
 
       // --- 8. TEST FAILURE / DIAGNOSIS & REPAIR LOOP ---
       while (verifyResult.status === 'FAIL' && fsm.getRepairAttempts() < this.limits.maxRepairAttempts) {
@@ -319,7 +432,10 @@ export class AgentOrchestrator {
         fsm.transitionTo(AgentState.EDIT_REVIEW);
         this.onActivity?.(`Repair changes ready for ${activeEditSet.files.length} file(s) — review required`);
 
-        const repairApproved = await this.onRequestEditApproval(activeEditSet);
+        const repairApprovedRaw = await this.onRequestEditApproval(activeEditSet);
+        const repairApproved = typeof repairApprovedRaw === 'boolean' ? repairApprovedRaw : repairApprovedRaw?.approved;
+        const repairApprovedFilter = typeof repairApprovedRaw === 'object' ? repairApprovedRaw?.approvedFiles : undefined;
+
         if (!repairApproved) {
           this.editSetManager.rejectEditSet(activeEditSet.id, 'User rejected repair edit set');
           break;
@@ -328,7 +444,7 @@ export class AgentOrchestrator {
         fsm.transitionTo(AgentState.APPLYING);
         this.onActivity?.('Applying corrective repair changes…');
 
-        const repairApply = this.editSetManager.applyEditSet(activeEditSet.id, true);
+        const repairApply = this.editSetManager.applyEditSet(activeEditSet.id, true, repairApprovedFilter);
         if (!repairApply.success) {
           break;
         }
@@ -343,11 +459,24 @@ export class AgentOrchestrator {
         verifyResult = await this.verificationEngine.runVerification(verifyCmd, abortSignal);
       }
 
+      // Calculate Git task diff summary and suggested commit message
+      let taskGitSummary: TaskGitDiffSummary | undefined;
+      let suggestedCommitMessage: string | undefined;
+
+      if (this.taskCheckpointManager && baseline) {
+        try {
+          taskGitSummary = this.taskCheckpointManager.calculateTaskSummary(baseline, allAppliedFiles);
+          suggestedCommitMessage = this.taskCheckpointManager.generateSuggestedCommitMessage(plan.goal, allAppliedFiles);
+        } catch {
+          // Non-fatal if git error
+        }
+      }
+
       if (verifyResult.status === 'PASS') {
         fsm.transitionTo(AgentState.COMPLETED);
         this.onActivity?.('Task completed successfully.');
 
-        const summary = `Task completed successfully.\n- Plan: ${plan.goal}\n- Files modified: ${allAppliedFiles.join(', ')}\n- Verification: ${verifyResult.summary || 'Tests passed'}`;
+        const summary = `Task completed successfully.\n- Plan: ${plan.goal}\n- Files modified: ${allAppliedFiles.join(', ')}\n- Verification: ${verifyResult.summary || 'Tests passed'}${suggestedCommitMessage ? `\n- Suggested Commit: ${suggestedCommitMessage}` : ''}`;
         this.eventBus.emit('agent.completed', {
           taskId,
           summary,
@@ -362,7 +491,12 @@ export class AgentOrchestrator {
           taskId,
           plan,
           appliedFiles: allAppliedFiles,
+          rejectedFiles: allRejectedFiles.length > 0 ? allRejectedFiles : undefined,
           verificationResult: verifyResult,
+          diagnosticsSummary,
+          taskGitSummary,
+          suggestedCommitMessage,
+          baseline,
           summary,
           repairCount,
         };
@@ -374,7 +508,12 @@ export class AgentOrchestrator {
           taskId,
           plan,
           appliedFiles: allAppliedFiles,
+          rejectedFiles: allRejectedFiles.length > 0 ? allRejectedFiles : undefined,
           verificationResult: verifyResult,
+          diagnosticsSummary,
+          taskGitSummary,
+          suggestedCommitMessage,
+          baseline,
           summary: `Task failed verification: ${verifyResult.summary || verifyResult.stderr}`,
           repairCount,
         };
@@ -494,6 +633,67 @@ Output a JSON array of file edits:
 
     const messages: ModelMessage[] = [
       { role: 'system', content: 'You are JAGGU diagnosing a test failure. Output ONLY a valid JSON array of corrective file edits.' },
+      { role: 'user', content: prompt },
+    ];
+
+    let content = '';
+    const stream = this.modelGateway.streamChat(
+      providerId,
+      messages,
+      {
+        model: model || this.modelGateway.getProvider(providerId).defaultModel,
+        temperature: 0.1,
+        abortSignal,
+      },
+      this.eventBus,
+    );
+
+    for await (const chunk of stream) {
+      if (chunk.type === 'token' && typeof chunk.text === 'string') {
+        content += chunk.text;
+      }
+    }
+
+    try {
+      const parsed = this.extractJsonArray(content);
+      if (Array.isArray(parsed)) {
+        return parsed as CreateEditFileInput[];
+      }
+    } catch {
+      // fallback
+    }
+
+    return [];
+  }
+
+  private async generateDiagnosticRepairChanges(
+    plan: Plan,
+    diagnostics: DiagnosticsSummary,
+    _modifiedFiles: string[],
+    providerId: string,
+    model?: string,
+    abortSignal?: AbortSignal,
+  ): Promise<CreateEditFileInput[]> {
+    const errorList = diagnostics.diagnostics
+      .filter((d) => d.severity === 'error')
+      .map((d) => `- ${d.file}:${d.line}:${d.column}: [${d.source ?? 'compiler'}] ${d.message}`)
+      .join('\n');
+
+    const prompt = `Compiler diagnostics reported errors after applying edits for plan "${plan.goal}":
+${errorList}
+
+Please propose corrective changes to resolve these compiler diagnostic errors.
+Output a JSON array of file edits:
+[
+  {
+    "relativePath": "path/to/file.ts",
+    "proposedContent": "complete updated content",
+    "isNewFile": false
+  }
+]`;
+
+    const messages: ModelMessage[] = [
+      { role: 'system', content: 'You are JAGGU diagnosing compiler diagnostic errors. Output ONLY a valid JSON array of corrective file edits.' },
       { role: 'user', content: prompt },
     ];
 

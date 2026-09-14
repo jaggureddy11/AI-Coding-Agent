@@ -1,3 +1,5 @@
+import { DiagnosticsSummary } from './diagnostics.js';
+
 export type VerificationStatus = 'PASS' | 'FAIL' | 'CANCELLED' | 'TIMEOUT' | 'ERROR';
 
 export interface VerificationResult {
@@ -9,5 +11,6 @@ export interface VerificationResult {
   durationMs: number;
   testsPassed?: number;
   testsFailed?: number;
+  diagnostics?: DiagnosticsSummary;
   summary?: string;
 }

@@ -64,6 +64,7 @@ export class EditSetManager {
           baseContentHash,
           isNewFile: isNew,
           shadowUri,
+          status: 'PENDING',
         });
       } catch (err) {
         // Evict any already staged files in this batch
@@ -135,10 +136,11 @@ export class EditSetManager {
 
   /**
    * Atomically applies an approved EditSet.
-   * Enforces SHA-256 pre-validation across ALL files.
-   * If any file fails validation or has changed on disk, rejects the whole set without writing anything.
+   * Supports selective partial file approval via approvedFilesFilter.
+   * Enforces SHA-256 pre-validation across approved files.
+   * If any file fails validation or has changed on disk, rejects without writing anything.
    */
-  public applyEditSet(id: string, approved: boolean): EditSetApplyResult {
+  public applyEditSet(id: string, approved: boolean, approvedFilesFilter?: string[]): EditSetApplyResult {
     const editSet = this.editSets.get(id);
     if (!editSet) {
       return { success: false, editSetId: id, appliedFiles: [], error: `EditSet "${id}" not found` };
@@ -152,8 +154,48 @@ export class EditSetManager {
       return { success: false, editSetId: id, appliedFiles: [], error: `EditSet is in status "${editSet.status}", cannot apply` };
     }
 
-    // --- PHASE 1: PRE-VALIDATION ACROSS ALL FILES ---
-    for (const f of editSet.files) {
+    // Determine target files based on selective approval filter
+    let filesToApply = editSet.files;
+    const rejectedFiles: string[] = [];
+
+    if (approvedFilesFilter) {
+      const approvedSet = new Set(approvedFilesFilter);
+      filesToApply = [];
+      for (const f of editSet.files) {
+        if (approvedSet.has(f.relativePath)) {
+          f.status = 'APPROVED';
+          filesToApply.push(f);
+        } else {
+          f.status = 'REJECTED';
+          rejectedFiles.push(f.relativePath);
+          // Delete virtual shadow document for rejected file so memory stays clean
+          this.docStore.delete(f.shadowUri);
+        }
+      }
+    } else {
+      for (const f of editSet.files) {
+        f.status = 'APPROVED';
+      }
+    }
+
+    if (filesToApply.length === 0) {
+      editSet.status = 'REJECTED';
+      this.eventBus.emit('editset.rejected', {
+        editSetId: id,
+        reason: 'All proposed files were excluded or rejected by user',
+        timestamp: Date.now(),
+      });
+      return {
+        success: false,
+        editSetId: id,
+        appliedFiles: [],
+        rejectedFiles,
+        error: 'No files were approved for application in this EditSet',
+      };
+    }
+
+    // --- PHASE 1: PRE-VALIDATION ACROSS ALL APPROVED FILES ---
+    for (const f of filesToApply) {
       // 1. Re-validate workspace containment
       try {
         resolveAndValidateWorkspacePath(f.relativePath, this.workspaceRoots);
@@ -169,6 +211,7 @@ export class EditSetManager {
           success: false,
           editSetId: id,
           appliedFiles: [],
+          rejectedFiles,
           failedFile: f.relativePath,
           error: `Security boundary validation failed for "${f.relativePath}"`,
         };
@@ -188,6 +231,7 @@ export class EditSetManager {
             success: false,
             editSetId: id,
             appliedFiles: [],
+            rejectedFiles,
             failedFile: f.relativePath,
             error: `File declared as new already exists on disk: "${f.relativePath}"`,
           };
@@ -205,6 +249,7 @@ export class EditSetManager {
             success: false,
             editSetId: id,
             appliedFiles: [],
+            rejectedFiles,
             failedFile: f.relativePath,
             error: `Target file was deleted on disk: "${f.relativePath}"`,
           };
@@ -225,6 +270,7 @@ export class EditSetManager {
             success: false,
             editSetId: id,
             appliedFiles: [],
+            rejectedFiles,
             failedFile: f.relativePath,
             error: `Conflict detected on file "${f.relativePath}": disk contents modified since proposal`,
           };
@@ -235,7 +281,7 @@ export class EditSetManager {
     // --- PHASE 2: WRITE WITH ROLLBACK RECOVERY ---
     const writtenFiles: { path: string; isNew: boolean; originalContent: string }[] = [];
 
-    for (const f of editSet.files) {
+    for (const f of filesToApply) {
       try {
         const dir = path.dirname(f.absolutePath);
         if (!fs.existsSync(dir)) {
@@ -249,7 +295,7 @@ export class EditSetManager {
           originalContent: f.originalContent,
         });
       } catch (err) {
-        // Rollback all files written so far
+        // Rollback all files written so far in this set
         for (const w of writtenFiles) {
           try {
             if (w.isNew) {
@@ -269,6 +315,7 @@ export class EditSetManager {
           success: false,
           editSetId: id,
           appliedFiles: [],
+          rejectedFiles,
           failedFile: f.relativePath,
           error: `I/O error applying changes to "${f.relativePath}": ${err instanceof Error ? err.message : String(err)}`,
           rolledBack: true,
@@ -276,8 +323,9 @@ export class EditSetManager {
       }
     }
 
-    // Clean up virtual doc store
-    for (const f of editSet.files) {
+    // Clean up virtual doc store for applied files
+    for (const f of filesToApply) {
+      f.status = 'APPLIED';
       this.docStore.delete(f.shadowUri);
     }
 
@@ -285,15 +333,16 @@ export class EditSetManager {
 
     this.eventBus.emit('editset.applied', {
       editSetId: id,
-      appliedCount: editSet.files.length,
-      files: editSet.files.map((f) => f.relativePath),
+      appliedCount: filesToApply.length,
+      files: filesToApply.map((f) => f.relativePath),
       timestamp: Date.now(),
     });
 
     return {
       success: true,
       editSetId: id,
-      appliedFiles: editSet.files.map((f) => f.relativePath),
+      appliedFiles: filesToApply.map((f) => f.relativePath),
+      rejectedFiles,
     };
   }
 }

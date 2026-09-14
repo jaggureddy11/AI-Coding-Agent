@@ -314,18 +314,18 @@ export const App: React.FC<AppProps> = ({
     });
   };
 
-  const handleApproveProposal = (proposalId: string) => {
+  const handleApproveProposal = (proposalId: string, approvedFiles?: string[]) => {
     setProposals((prev) =>
       prev.map((p) => (p.proposalId === proposalId ? { ...p, status: 'approved' } : p))
     );
-    // Support both single proposalId and multi-file editSetId
+    // Support both single proposalId and multi-file editSetId with selective approval
     vscode?.postMessage({
       type: 'agent.approve',
       payload: { proposalId },
     });
     vscode?.postMessage({
       type: 'agent.editset_approve',
-      payload: { editSetId: proposalId },
+      payload: { editSetId: proposalId, approvedFiles },
     });
   };
 

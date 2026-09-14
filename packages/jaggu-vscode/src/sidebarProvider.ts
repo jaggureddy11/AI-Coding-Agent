@@ -28,6 +28,8 @@ import {
   VerificationEngine,
   Plan,
   EditSet,
+  EditApprovalDecision,
+  TaskCheckpointManager,
 } from '@jaggu/core';
 import {
   isValidWebviewMessage,
@@ -35,6 +37,7 @@ import {
   ExtensionToWebviewMessage,
 } from '@jaggu/ui';
 import { CredentialManager } from './credentials.js';
+import { VSCodeDiagnosticsProvider } from './diagnostics/vscodeDiagnosticsProvider.js';
 
 export class JagguSidebarProvider implements vscode.WebviewViewProvider {
   public static readonly VIEW_ID = 'jaggu.sidebarView';
@@ -51,7 +54,7 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
   private readonly _toolExecutor: ToolExecutor;
   private readonly _pendingApprovals = new Map<string, (approved: boolean) => void>();
   private readonly _pendingPlanApprovals = new Map<string, (approved: boolean) => void>();
-  private readonly _pendingEditSetApprovals = new Map<string, (approved: boolean) => void>();
+  private readonly _pendingEditSetApprovals = new Map<string, (decision: boolean | EditApprovalDecision) => void>();
   private readonly _pendingScopeApprovals = new Map<string, (approved: boolean) => void>();
 
   private readonly _onDidChangeStatus = new vscode.EventEmitter<{
@@ -124,6 +127,12 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
       eventBus: this._eventBus,
       workspaceRoots,
     });
+    const diagnosticsProvider = new VSCodeDiagnosticsProvider({
+      workspaceRoot: workspaceRoots[0] || '',
+    });
+    const taskCheckpointManager = new TaskCheckpointManager({
+      workspaceRoots,
+    });
 
     return new AgentOrchestrator({
       modelGateway: this._modelGateway,
@@ -134,6 +143,8 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
       contextEngine: this.getContextEngine(),
       eventBus: this._eventBus,
       workspaceRoots,
+      diagnosticsProvider,
+      taskCheckpointManager,
       onRequestPlanApproval: async (plan: Plan) => {
         this._setStatus('PROCESSING', 'Engineering plan ready — awaiting user approval');
         this.postMessageToWebview({
@@ -171,7 +182,7 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
           },
         });
 
-        return new Promise<boolean>((resolve) => {
+        return new Promise<boolean | EditApprovalDecision>((resolve) => {
           this._pendingEditSetApprovals.set(editSet.id, resolve);
         });
       },
@@ -354,10 +365,14 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
       }
 
       case 'agent.editset_approve': {
-        const { editSetId } = message.payload;
+        const { editSetId, approvedFiles, rejectedFiles } = message.payload;
         const resolver = this._pendingEditSetApprovals.get(editSetId);
         if (resolver) {
-          resolver(true);
+          resolver({
+            approved: true,
+            approvedFiles,
+            rejectedFiles,
+          });
           this._pendingEditSetApprovals.delete(editSetId);
         }
         this._eventBus.emit('editset.approved', {
@@ -371,7 +386,9 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
         const { editSetId, reason } = message.payload;
         const resolver = this._pendingEditSetApprovals.get(editSetId);
         if (resolver) {
-          resolver(false);
+          resolver({
+            approved: false,
+          });
           this._pendingEditSetApprovals.delete(editSetId);
         }
         this._eventBus.emit('editset.rejected', {

@@ -61,14 +61,15 @@ JAGGU is implemented in 17 rigorous, sequentially verifiable milestones (M0–M1
 - **Dependencies**: M0, M1, M2, M3, M4.
 - **Rollback**: Halt task or reject plan/editset.
 
-### M6: File Operation Tools
-- **Goal**: Implement `read_file`, `write_file`, `create_file`, `delete_file`, `list_directory`.
-- **Affected Packages**: `packages/jaggu-core/tools`.
-- **Steps**: Build Zod runtime schemas; implement directory traversal protection; wire in-memory shadow buffer.
-- **Tests**: Unit tests verify malicious paths (`../../etc/passwd`) are blocked with security errors.
-- **Acceptance Criteria**: Agent safely reads and stages file modifications in memory.
-- **Dependencies**: M0.
-- **Rollback**: Unregister tool schemas.
+### M6: Code Intelligence, Git Safety & Developer Feedback *(COMPLETED - Sep 14, 2026)*
+- **Goal**: Add LSP-based compiler diagnostics, Git-aware task checkpoints with pre-existing user change preservation, selective/partial file approval, post-apply diagnostic repair loop, and suggested commit message generation.
+- **Affected Packages**: `packages/jaggu-core`, `packages/jaggu-vscode`, `packages/jaggu-ui`.
+- **Implementation Details**: Implemented abstract `IDiagnosticsProvider` and `VSCodeDiagnosticsProvider` (`vscode.languages.getDiagnostics`); post-apply diagnostic harvesting and bounded self-repair ($\le 3$ attempts); `GitCliService` with strict read-only query whitelist disallowing mutating verbs (`commit`, `push`, `reset`, `checkout`, `clean`, `rebase`, `stash`); `TaskCheckpointManager` capturing pre-existing user changes and generating Conventional Commit proposals; selective `EditSet` approval allowing file-level selection where rejected files are never written to disk; Webview `ApprovalCard` with interactive checkboxes and dynamic approval actions.
+- **Tests**: 19 test suites passed, 117/117 unit & integration tests passing (`npm test`).
+- **Acceptance Criteria**: Full M6 vertical slice verified ("Add authentication rate limiting and tests" -> understand -> plan -> approve plan -> Git checkpoint -> 3-file proposal -> reject 1 file -> apply approved files -> LSP diagnostic error -> diagnose -> repair -> pass -> test verification -> final Git summary -> suggested commit message).
+- **Record**: See [`docs/implementation/M6-code-intelligence-git-safety.md`](file:///Users/apple/Desktop/PROJECTS/Coding%20Agent/docs/implementation/M6-code-intelligence-git-safety.md).
+- **Dependencies**: M0, M1, M2, M3, M4, M5.
+- **Rollback**: Disable diagnostic collector or fallback to binary EditSet approval.
 
 ### M7: Native VS Code Diff Review & Virtual Document Staging
 - **Goal**: Provide native side-by-side and inline diff review using VS Code's built-in diff editor.

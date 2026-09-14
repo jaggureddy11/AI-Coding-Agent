@@ -24,7 +24,7 @@ export class AgentStateMachine {
     [AgentState.PLAN_REVIEW]: new Set([AgentState.EXECUTING, AgentState.PLANNING, AgentState.FAILED, AgentState.CANCELLED]),
     [AgentState.EXECUTING]: new Set([AgentState.EDIT_REVIEW, AgentState.VERIFYING, AgentState.COMPLETED, AgentState.FAILED, AgentState.CANCELLED]),
     [AgentState.EDIT_REVIEW]: new Set([AgentState.APPLYING, AgentState.EXECUTING, AgentState.FAILED, AgentState.CANCELLED]),
-    [AgentState.APPLYING]: new Set([AgentState.VERIFYING, AgentState.EXECUTING, AgentState.COMPLETED, AgentState.FAILED, AgentState.CANCELLED]),
+    [AgentState.APPLYING]: new Set([AgentState.VERIFYING, AgentState.DIAGNOSING, AgentState.EXECUTING, AgentState.COMPLETED, AgentState.FAILED, AgentState.CANCELLED]),
     [AgentState.VERIFYING]: new Set([AgentState.COMPLETED, AgentState.DIAGNOSING, AgentState.EXECUTING, AgentState.FAILED, AgentState.CANCELLED]),
     [AgentState.DIAGNOSING]: new Set([AgentState.EXECUTING, AgentState.PLANNING, AgentState.FAILED, AgentState.CANCELLED]),
     [AgentState.COMPLETED]: new Set([AgentState.IDLE]),

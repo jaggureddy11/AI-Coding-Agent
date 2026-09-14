@@ -1,4 +1,5 @@
 export type EditSetStatus = 'PROPOSED' | 'APPROVED' | 'REJECTED' | 'APPLIED' | 'CONFLICT';
+export type EditFileStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'APPLIED' | 'CONFLICT';
 
 export interface ProposedFileEdit {
   relativePath: string;
@@ -8,6 +9,7 @@ export interface ProposedFileEdit {
   baseContentHash: string;
   isNewFile: boolean;
   shadowUri: string;
+  status?: EditFileStatus;
 }
 
 export interface EditSet {
@@ -18,10 +20,17 @@ export interface EditSet {
   createdAt: number;
 }
 
+export interface EditApprovalDecision {
+  approved: boolean;
+  approvedFiles?: string[];
+  rejectedFiles?: string[];
+}
+
 export interface EditSetApplyResult {
   success: boolean;
   editSetId: string;
   appliedFiles: string[];
+  rejectedFiles?: string[];
   failedFile?: string;
   error?: string;
   rolledBack?: boolean;
