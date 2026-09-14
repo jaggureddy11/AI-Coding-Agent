@@ -34,6 +34,9 @@ export function classifyHttpStatus(status: number, providerId: string, statusTex
   } else if (status === 400 && bodyText?.toLowerCase().includes('context_length')) {
     code = 'CONTEXT_LENGTH_EXCEEDED';
     retryable = false;
+  } else if (status === 404) {
+    code = 'MODEL_NOT_FOUND';
+    retryable = false;
   } else if (status >= 400 && status < 500) {
     code = 'MALFORMED_RESPONSE';
     retryable = false;
@@ -140,7 +143,17 @@ export async function* parseSseStream(response: Response, abortSignal?: AbortSig
         throw new ModelError('Request was cancelled by user', 'CANCELLED', 'transport', undefined, false);
       }
 
-      const { done, value } = await reader.read();
+      let readResult: Awaited<ReturnType<typeof reader.read>>;
+      try {
+        readResult = await reader.read();
+      } catch (err: unknown) {
+        if (abortSignal?.aborted || (err instanceof Error && err.name === 'AbortError')) {
+          throw new ModelError('Request was cancelled by user', 'CANCELLED', 'transport', undefined, false);
+        }
+        throw err;
+      }
+
+      const { done, value } = readResult;
       if (done) {
         break;
       }
@@ -187,7 +200,17 @@ export async function* parseNdjsonStream<T = unknown>(response: Response, abortS
         throw new ModelError('Request was cancelled by user', 'CANCELLED', 'transport', undefined, false);
       }
 
-      const { done, value } = await reader.read();
+      let readResult: Awaited<ReturnType<typeof reader.read>>;
+      try {
+        readResult = await reader.read();
+      } catch (err: unknown) {
+        if (abortSignal?.aborted || (err instanceof Error && err.name === 'AbortError')) {
+          throw new ModelError('Request was cancelled by user', 'CANCELLED', 'transport', undefined, false);
+        }
+        throw err;
+      }
+
+      const { done, value } = readResult;
       if (done) {
         break;
       }

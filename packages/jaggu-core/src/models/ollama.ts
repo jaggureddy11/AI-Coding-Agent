@@ -119,7 +119,7 @@ export class OllamaProvider implements IModelProvider {
       if (err instanceof ModelError && err.status === 404) {
         throw new ModelError(
           `Model "${options.model || this.defaultModel}" is not installed in local Ollama. Run "ollama pull ${options.model || this.defaultModel}" first.`,
-          'MALFORMED_RESPONSE',
+          'MODEL_NOT_FOUND',
           this.id,
           404,
           false,

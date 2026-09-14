@@ -60,6 +60,7 @@ export type ModelErrorCode =
   | 'NETWORK_ERROR'
   | 'SERVER_ERROR'
   | 'MALFORMED_RESPONSE'
+  | 'MODEL_NOT_FOUND'
   | 'CONTEXT_LENGTH_EXCEEDED'
   | 'CANCELLED'
   | 'UNKNOWN';
