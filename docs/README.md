@@ -100,3 +100,4 @@ Welcome to the comprehensive product, architecture, security, and engineering do
 - [Milestone M2: JAGGU Multi-Provider Model Gateway](file:///Users/apple/Desktop/PROJECTS/Coding%20Agent/docs/implementation/M2-model-gateway.md)
 - [Milestone M3: JAGGU Repository Context & Code Intelligence](file:///Users/apple/Desktop/PROJECTS/Coding%20Agent/docs/implementation/M3-repository-context.md)
 - [Milestone M4: JAGGU Tool Execution, File Editing & Safe Workspace Mutation](file:///Users/apple/Desktop/PROJECTS/Coding%20Agent/docs/implementation/M4-tool-execution.md)
+- [Milestone M5: JAGGU Agent Planning, Multi-File Changes & Verification](file:///Users/apple/Desktop/PROJECTS/Coding%20Agent/docs/implementation/M5-agent-planning-and-verification.md)

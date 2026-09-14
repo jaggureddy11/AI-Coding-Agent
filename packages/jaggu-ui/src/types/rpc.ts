@@ -16,6 +16,12 @@ export type WebviewToExtensionMessage =
   | { type: 'agent.approve'; payload: { proposalId: string } }
   | { type: 'agent.reject'; payload: { proposalId: string; reason?: string } }
   | { type: 'agent.review_diff'; payload: { filePath: string } }
+  | { type: 'agent.plan_approve'; payload: { planId: string } }
+  | { type: 'agent.plan_reject'; payload: { planId: string; reason?: string } }
+  | { type: 'agent.editset_approve'; payload: { editSetId: string } }
+  | { type: 'agent.editset_reject'; payload: { editSetId: string; reason?: string } }
+  | { type: 'agent.scope_approve'; payload?: { taskId?: string } }
+  | { type: 'agent.scope_reject'; payload?: { taskId?: string } }
   // Extended types for future plan approvals
   | { type: 'SUBMIT_PROMPT'; payload: { prompt: string } }
   | { type: 'CANCEL_ACTIVE_TASK'; payload: { taskId: string } }
@@ -31,6 +37,9 @@ export type ExtensionToWebviewMessage =
   | { type: 'token.complete'; payload: { messageId: string; fullText: string; tokensUsed?: number; provenance?: ContextSnippetSummary[] } }
   | { type: 'context.assembled'; payload: { taskId: string; filesCount: number; totalTokens: number; provenance: ContextSnippetSummary[] } }
   | { type: 'agent.approval_requested'; payload: { proposalId: string; filePath: string; diffSummary: string; timestamp: number } }
+  | { type: 'agent.plan_requested'; payload: { taskId: string; planId: string; goal: string; steps: Array<{ id: string; description: string; files: string[] }>; risks: string[]; verification: string[] } }
+  | { type: 'agent.editset_requested'; payload: { taskId: string; editSetId: string; files: Array<{ relativePath: string; shadowUri: string; isNew?: boolean }> } }
+  | { type: 'agent.scope_change_requested'; payload: { taskId: string; unplannedFiles: string[]; reason: string } }
   | { type: 'agent.activity'; payload: { message: string } }
   | { type: 'AGENT_STATE_CHANGED'; payload: { state: AgentState; detail?: string } }
   | { type: 'TOKEN_STREAM_CHUNK'; payload: { text: string } }
@@ -89,6 +98,25 @@ export function isValidWebviewMessage(msg: unknown): msg is WebviewToExtensionMe
       const p = candidate.payload as { filePath?: unknown };
       return typeof p === 'object' && p !== null && typeof p.filePath === 'string';
     }
+    case 'agent.plan_approve': {
+      const p = candidate.payload as { planId?: unknown };
+      return typeof p === 'object' && p !== null && typeof p.planId === 'string';
+    }
+    case 'agent.plan_reject': {
+      const p = candidate.payload as { planId?: unknown };
+      return typeof p === 'object' && p !== null && typeof p.planId === 'string';
+    }
+    case 'agent.editset_approve': {
+      const p = candidate.payload as { editSetId?: unknown };
+      return typeof p === 'object' && p !== null && typeof p.editSetId === 'string';
+    }
+    case 'agent.editset_reject': {
+      const p = candidate.payload as { editSetId?: unknown };
+      return typeof p === 'object' && p !== null && typeof p.editSetId === 'string';
+    }
+    case 'agent.scope_approve':
+    case 'agent.scope_reject':
+      return candidate.payload === undefined || (typeof candidate.payload === 'object' && candidate.payload !== null);
     case 'APPROVE_PLAN': {
       const p = candidate.payload as { planId?: unknown };
       return typeof p === 'object' && p !== null && typeof p.planId === 'string';
@@ -124,6 +152,9 @@ export function isValidExtensionMessage(msg: unknown): msg is ExtensionToWebview
     'token.complete',
     'context.assembled',
     'agent.approval_requested',
+    'agent.plan_requested',
+    'agent.editset_requested',
+    'agent.scope_change_requested',
     'agent.activity',
     'AGENT_STATE_CHANGED',
     'TOKEN_STREAM_CHUNK',

@@ -51,14 +51,15 @@ JAGGU is implemented in 17 rigorous, sequentially verifiable milestones (M0–M1
 - **Dependencies**: M0.
 - **Rollback**: Disable native binary spawn.
 
-### M5: Context Engine & Token Budgeter
-- **Goal**: Implement multi-tier priority ranking and token compaction for prompt assembly.
-- **Affected Packages**: `packages/jaggu-context`.
-- **Steps**: Integrate active editor harvesting, LSP symbol lookup, and sliding-window token trimmer.
-- **Tests**: Context budget enforcer guarantees payload stays under 12,000 tokens.
-- **Acceptance Criteria**: Prompt payload includes active file, selection, and top 5 relevant symbols.
-- **Dependencies**: M4.
-- **Rollback**: Revert to raw active file context.
+### M5: Agent Planning, Multi-File Changes & Verification *(COMPLETED - Sep 14, 2026)*
+- **Goal**: Make JAGGU behave like a serious software-engineering agent: grounded repository planning, explicit plan approval, atomic multi-file change sets (`EditSet`), native unified diff review, conflict detection, verification engine with targeted testing heuristics, bounded self-healing diagnosis/repair loop ($\le 3$ attempts), and transparent task progression.
+- **Affected Packages**: `packages/jaggu-core`, `packages/jaggu-vscode`, `packages/jaggu-ui`.
+- **Implementation Details**: Strict Zod `PlanSchema` and `PlanStepSchema`; `PlanValidator` with workspace containment, file existence/creation checks, and dependency DAG cycle detection; `PLAN_REVIEW` state with compact `PlanCard` in Webview; `EditSetManager` with SHA-256 base hashes, `jaggu-shadow://` multi-file staging, and atomic apply rollback; `VerificationEngine` with framework-aware test runners; self-healing diagnosis loop; 12-state `AgentFSM`; dedicated `AgentOrchestrator` decoupled from VS Code UI; typed lifecycle events (`plan.*`, `editset.*`, `verification.*`, `agent.*`).
+- **Tests**: 15 test suites passed, 103/103 unit & integration tests passing (`npm test`).
+- **Acceptance Criteria**: Full vertical slice verified: understand -> plan -> approve plan -> edit 2 files -> review diff -> approve edit set -> atomic apply -> run tests -> diagnosis -> repair -> pass -> final summary.
+- **Record**: See [`docs/implementation/M5-agent-planning-and-verification.md`](file:///Users/apple/Desktop/PROJECTS/Coding%20Agent/docs/implementation/M5-agent-planning-and-verification.md).
+- **Dependencies**: M0, M1, M2, M3, M4.
+- **Rollback**: Halt task or reject plan/editset.
 
 ### M6: File Operation Tools
 - **Goal**: Implement `read_file`, `write_file`, `create_file`, `delete_file`, `list_directory`.

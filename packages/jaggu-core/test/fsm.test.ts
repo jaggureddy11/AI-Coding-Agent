@@ -63,6 +63,69 @@ describe('AgentStateMachine', () => {
 
     expect(fsm.getState()).toBe(AgentState.FAILED);
   });
+
+  it('should transition through full M5 state workflow', () => {
+    const eventBus = new EventBus();
+    const transitions: AgentState[] = [];
+    eventBus.on('agent.state_changed', (e) => {
+      transitions.push(e.currentState);
+    });
+
+    const fsm = new AgentStateMachine('task_m5', eventBus);
+    fsm.transitionTo(AgentState.UNDERSTANDING);
+    fsm.transitionTo(AgentState.PLANNING);
+    fsm.transitionTo(AgentState.PLAN_REVIEW);
+    fsm.transitionTo(AgentState.EXECUTING);
+    fsm.transitionTo(AgentState.EDIT_REVIEW);
+    fsm.transitionTo(AgentState.APPLYING);
+    fsm.transitionTo(AgentState.VERIFYING);
+    fsm.transitionTo(AgentState.DIAGNOSING);
+    fsm.transitionTo(AgentState.EXECUTING);
+    fsm.transitionTo(AgentState.EDIT_REVIEW);
+    fsm.transitionTo(AgentState.APPLYING);
+    fsm.transitionTo(AgentState.VERIFYING);
+    fsm.transitionTo(AgentState.COMPLETED);
+
+    expect(fsm.getState()).toBe(AgentState.COMPLETED);
+    expect(fsm.getRepairAttempts()).toBe(1);
+    expect(transitions).toContain(AgentState.PLAN_REVIEW);
+    expect(transitions).toContain(AgentState.EDIT_REVIEW);
+    expect(transitions).toContain(AgentState.DIAGNOSING);
+  });
+
+  it('should trigger FAILED when max repair attempts are exceeded in DIAGNOSING', () => {
+    const eventBus = new EventBus();
+    const fsm = new AgentStateMachine('task_repair', eventBus, {
+      maxIterations: 20,
+      maxRepairAttempts: 2,
+      maxPlanAttempts: 2,
+      maxRepeatedToolCalls: 2,
+      taskTimeoutSeconds: 60,
+    });
+
+    fsm.transitionTo(AgentState.UNDERSTANDING);
+    fsm.transitionTo(AgentState.PLANNING);
+    fsm.transitionTo(AgentState.PLAN_REVIEW);
+    fsm.transitionTo(AgentState.EXECUTING);
+    fsm.transitionTo(AgentState.VERIFYING);
+
+    // Repair 1
+    fsm.transitionTo(AgentState.DIAGNOSING);
+    fsm.transitionTo(AgentState.EXECUTING);
+    expect(fsm.getRepairAttempts()).toBe(1);
+    fsm.transitionTo(AgentState.VERIFYING);
+
+    // Repair 2
+    fsm.transitionTo(AgentState.DIAGNOSING);
+    fsm.transitionTo(AgentState.EXECUTING);
+    expect(fsm.getRepairAttempts()).toBe(2);
+    fsm.transitionTo(AgentState.VERIFYING);
+
+    // Repair 3 -> Exceeds max 2 -> transitions to FAILED
+    fsm.transitionTo(AgentState.DIAGNOSING);
+    fsm.transitionTo(AgentState.EXECUTING);
+    expect(fsm.getState()).toBe(AgentState.FAILED);
+  });
 });
 
 describe('InMemoryVirtualDocStore', () => {

@@ -98,6 +98,43 @@ export function activate(context: vscode.ExtensionContext): {
     }),
   );
 
+  // M5: Plan & EditSet commands
+  context.subscriptions.push(
+    vscode.commands.registerCommand('jaggu.approvePlan', async (planId: string) => {
+      await sidebarProvider.handleIncomingMessage({
+        type: 'agent.plan_approve',
+        payload: { planId },
+      });
+    }),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('jaggu.rejectPlan', async (planId: string) => {
+      await sidebarProvider.handleIncomingMessage({
+        type: 'agent.plan_reject',
+        payload: { planId },
+      });
+    }),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('jaggu.approveEditSet', async (editSetId: string) => {
+      await sidebarProvider.handleIncomingMessage({
+        type: 'agent.editset_approve',
+        payload: { editSetId },
+      });
+    }),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('jaggu.rejectEditSet', async (editSetId: string) => {
+      await sidebarProvider.handleIncomingMessage({
+        type: 'agent.editset_reject',
+        payload: { editSetId },
+      });
+    }),
+  );
+
   // 7. Register Core & Model Commands
   context.subscriptions.push(
     vscode.commands.registerCommand('jaggu.openChat', () => {

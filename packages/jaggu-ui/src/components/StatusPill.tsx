@@ -61,6 +61,13 @@ export const StatusPill: React.FC<StatusPillProps> = ({ state }) => {
           bg: 'rgba(133, 133, 133, 0.18)',
           fg: 'var(--vscode-descriptionForeground, #858585)',
         };
+      default:
+        return {
+          label: String(normalizedStatus),
+          dotColor: 'var(--vscode-charts-blue, #3794ff)',
+          bg: 'rgba(55, 148, 255, 0.18)',
+          fg: 'var(--vscode-charts-blue, #3794ff)',
+        };
     }
   };
 

@@ -1,20 +1,8 @@
 import { AgentState } from './state.js';
 import { PermissionTier } from './tools.js';
+import { Plan, PlanStep } from './plan.js';
 
-export interface PlanStep {
-  stepIndex: number;
-  description: string;
-  targetFiles: string[];
-  status: 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'SKIPPED';
-}
-
-export interface Plan {
-  id: string;
-  taskId: string;
-  title: string;
-  steps: PlanStep[];
-  approved: boolean;
-}
+export type { Plan, PlanStep };
 
 export interface Task {
   id: string;

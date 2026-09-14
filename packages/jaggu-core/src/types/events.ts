@@ -258,6 +258,110 @@ export interface JagguEvents {
     reason: string;
     timestamp: number;
   };
+
+  // Plan Events (M5)
+  'plan.created': {
+    planId: string;
+    goal: string;
+    stepCount: number;
+    timestamp: number;
+  };
+  'plan.validated': {
+    planId: string;
+    valid: boolean;
+    timestamp: number;
+  };
+  'plan.approval_requested': {
+    taskId: string;
+    planId: string;
+    goal: string;
+    steps: Array<{ id: string; description: string; files: string[] }>;
+    risks: string[];
+    verification: string[];
+    timestamp: number;
+  };
+  'plan.approved': {
+    taskId: string;
+    planId: string;
+    timestamp: number;
+  };
+  'plan.rejected': {
+    taskId: string;
+    planId: string;
+    reason?: string;
+    timestamp: number;
+  };
+  'plan.changed': {
+    taskId: string;
+    planId: string;
+    reason: string;
+    timestamp: number;
+  };
+
+  // EditSet Events (M5)
+  'editset.created': {
+    editSetId: string;
+    planId?: string;
+    fileCount: number;
+    files: string[];
+    timestamp: number;
+  };
+  'editset.review_requested': {
+    editSetId: string;
+    files: Array<{ relativePath: string; shadowUri: string; isNew?: boolean }>;
+    timestamp: number;
+  };
+  'editset.approved': {
+    editSetId: string;
+    timestamp: number;
+  };
+  'editset.rejected': {
+    editSetId: string;
+    reason?: string;
+    timestamp: number;
+  };
+  'editset.applied': {
+    editSetId: string;
+    appliedCount: number;
+    files: string[];
+    timestamp: number;
+  };
+  'editset.conflict': {
+    editSetId: string;
+    conflictedFile?: string;
+    reason: string;
+    timestamp: number;
+  };
+
+  // Verification Events (M5)
+  'verification.started': {
+    command: string;
+    timestamp: number;
+  };
+  'verification.completed': {
+    command: string;
+    status: string;
+    testsPassed?: number;
+    durationMs: number;
+    timestamp: number;
+  };
+  'verification.failed': {
+    command: string;
+    status: string;
+    exitCode?: number;
+    error?: string;
+    testsFailed?: number;
+    durationMs: number;
+    timestamp: number;
+  };
+
+  // Scope Events (M5)
+  'agent.scope_change_requested': {
+    taskId: string;
+    unplannedFiles: string[];
+    reason: string;
+    timestamp: number;
+  };
 }
 
 export type EventKey = keyof JagguEvents;

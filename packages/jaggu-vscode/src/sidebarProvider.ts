@@ -22,6 +22,12 @@ import {
   InMemoryVirtualDocStore,
   ProposedEditRecord,
   IToolExecutionContext,
+  AgentOrchestrator,
+  Planner,
+  EditSetManager,
+  VerificationEngine,
+  Plan,
+  EditSet,
 } from '@jaggu/core';
 import {
   isValidWebviewMessage,
@@ -44,6 +50,9 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
   private readonly _applyEditTool: ApplyEditTool;
   private readonly _toolExecutor: ToolExecutor;
   private readonly _pendingApprovals = new Map<string, (approved: boolean) => void>();
+  private readonly _pendingPlanApprovals = new Map<string, (approved: boolean) => void>();
+  private readonly _pendingEditSetApprovals = new Map<string, (approved: boolean) => void>();
+  private readonly _pendingScopeApprovals = new Map<string, (approved: boolean) => void>();
 
   private readonly _onDidChangeStatus = new vscode.EventEmitter<{
     state: UiAgentStatus;
@@ -101,6 +110,93 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
       this._contextEngine = new ContextEngine(discovery);
     }
     return this._contextEngine;
+  }
+
+  public createOrchestrator(workspaceRoots: string[]): AgentOrchestrator {
+    const editSetManager = new EditSetManager(this._docStore, this._eventBus, workspaceRoots);
+    const verificationEngine = new VerificationEngine({
+      toolExecutor: this._toolExecutor,
+      eventBus: this._eventBus,
+      workspaceRoots,
+    });
+    const planner = new Planner({
+      modelGateway: this._modelGateway,
+      eventBus: this._eventBus,
+      workspaceRoots,
+    });
+
+    return new AgentOrchestrator({
+      modelGateway: this._modelGateway,
+      toolExecutor: this._toolExecutor,
+      editSetManager,
+      verificationEngine,
+      planner,
+      contextEngine: this.getContextEngine(),
+      eventBus: this._eventBus,
+      workspaceRoots,
+      onRequestPlanApproval: async (plan: Plan) => {
+        this._setStatus('PROCESSING', 'Engineering plan ready — awaiting user approval');
+        this.postMessageToWebview({
+          type: 'agent.plan_requested',
+          payload: {
+            taskId: this._activeTaskId || 'current',
+            planId: plan.id,
+            goal: plan.goal,
+            steps: plan.steps.map((s) => ({
+              id: s.id,
+              description: s.description,
+              files: s.files,
+            })),
+            risks: plan.risks,
+            verification: plan.verification,
+          },
+        });
+
+        return new Promise<boolean>((resolve) => {
+          this._pendingPlanApprovals.set(plan.id, resolve);
+        });
+      },
+      onRequestEditApproval: async (editSet: EditSet) => {
+        this._setStatus('PROCESSING', `Change set ready (${editSet.files.length} files) — awaiting user review`);
+        this.postMessageToWebview({
+          type: 'agent.editset_requested',
+          payload: {
+            taskId: this._activeTaskId || 'current',
+            editSetId: editSet.id,
+            files: editSet.files.map((f) => ({
+              relativePath: f.relativePath,
+              shadowUri: f.shadowUri,
+              isNew: f.isNewFile,
+            })),
+          },
+        });
+
+        return new Promise<boolean>((resolve) => {
+          this._pendingEditSetApprovals.set(editSet.id, resolve);
+        });
+      },
+      onRequestScopeApproval: async (unplannedFiles: string[]) => {
+        this.postMessageToWebview({
+          type: 'agent.scope_change_requested',
+          payload: {
+            taskId: this._activeTaskId || 'current',
+            unplannedFiles,
+            reason: `Proposed changes affect files not included in the approved engineering plan.`,
+          },
+        });
+
+        return new Promise<boolean>((resolve) => {
+          this._pendingScopeApprovals.set(this._activeTaskId || 'current', resolve);
+        });
+      },
+      onActivity: (activity: string) => {
+        this._setStatus('PROCESSING', activity);
+        this.postMessageToWebview({
+          type: 'agent.activity',
+          payload: { message: activity },
+        });
+      },
+    });
   }
 
   public get currentStatus(): UiAgentStatus {
@@ -223,6 +319,86 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
       case 'agent.review_diff': {
         const { filePath } = message.payload;
         await this.openDiffPreview(filePath);
+        break;
+      }
+
+      case 'agent.plan_approve': {
+        const { planId } = message.payload;
+        const resolver = this._pendingPlanApprovals.get(planId);
+        if (resolver) {
+          resolver(true);
+          this._pendingPlanApprovals.delete(planId);
+        }
+        this._eventBus.emit('plan.approved', {
+          taskId: this._activeTaskId || 'current',
+          planId,
+          timestamp: Date.now(),
+        });
+        break;
+      }
+
+      case 'agent.plan_reject': {
+        const { planId, reason } = message.payload;
+        const resolver = this._pendingPlanApprovals.get(planId);
+        if (resolver) {
+          resolver(false);
+          this._pendingPlanApprovals.delete(planId);
+        }
+        this._eventBus.emit('plan.rejected', {
+          taskId: this._activeTaskId || 'current',
+          planId,
+          reason,
+          timestamp: Date.now(),
+        });
+        break;
+      }
+
+      case 'agent.editset_approve': {
+        const { editSetId } = message.payload;
+        const resolver = this._pendingEditSetApprovals.get(editSetId);
+        if (resolver) {
+          resolver(true);
+          this._pendingEditSetApprovals.delete(editSetId);
+        }
+        this._eventBus.emit('editset.approved', {
+          editSetId,
+          timestamp: Date.now(),
+        });
+        break;
+      }
+
+      case 'agent.editset_reject': {
+        const { editSetId, reason } = message.payload;
+        const resolver = this._pendingEditSetApprovals.get(editSetId);
+        if (resolver) {
+          resolver(false);
+          this._pendingEditSetApprovals.delete(editSetId);
+        }
+        this._eventBus.emit('editset.rejected', {
+          editSetId,
+          reason,
+          timestamp: Date.now(),
+        });
+        break;
+      }
+
+      case 'agent.scope_approve': {
+        const taskId = message.payload?.taskId || this._activeTaskId || 'current';
+        const resolver = this._pendingScopeApprovals.get(taskId);
+        if (resolver) {
+          resolver(true);
+          this._pendingScopeApprovals.delete(taskId);
+        }
+        break;
+      }
+
+      case 'agent.scope_reject': {
+        const taskId = message.payload?.taskId || this._activeTaskId || 'current';
+        const resolver = this._pendingScopeApprovals.get(taskId);
+        if (resolver) {
+          resolver(false);
+          this._pendingScopeApprovals.delete(taskId);
+        }
         break;
       }
 

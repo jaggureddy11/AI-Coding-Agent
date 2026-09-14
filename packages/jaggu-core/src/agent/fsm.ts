@@ -18,12 +18,15 @@ export class AgentStateMachine {
 
   // Explicit allowed state transitions
   private static readonly ALLOWED_TRANSITIONS: Record<AgentState, ReadonlySet<AgentState>> = {
-    [AgentState.IDLE]: new Set([AgentState.THINKING, AgentState.CANCELLED]),
-    [AgentState.THINKING]: new Set([AgentState.PLANNING, AgentState.COMPLETED, AgentState.FAILED, AgentState.CANCELLED]),
-    [AgentState.PLANNING]: new Set([AgentState.WAITING_FOR_APPROVAL, AgentState.EXECUTING, AgentState.FAILED, AgentState.CANCELLED]),
-    [AgentState.WAITING_FOR_APPROVAL]: new Set([AgentState.EXECUTING, AgentState.PLANNING, AgentState.FAILED, AgentState.CANCELLED]),
-    [AgentState.EXECUTING]: new Set([AgentState.VERIFYING, AgentState.WAITING_FOR_APPROVAL, AgentState.COMPLETED, AgentState.FAILED, AgentState.CANCELLED]),
-    [AgentState.VERIFYING]: new Set([AgentState.COMPLETED, AgentState.EXECUTING, AgentState.FAILED, AgentState.CANCELLED]),
+    [AgentState.IDLE]: new Set([AgentState.UNDERSTANDING, AgentState.CANCELLED]),
+    [AgentState.UNDERSTANDING]: new Set([AgentState.PLANNING, AgentState.COMPLETED, AgentState.FAILED, AgentState.CANCELLED]),
+    [AgentState.PLANNING]: new Set([AgentState.PLAN_REVIEW, AgentState.EDIT_REVIEW, AgentState.EXECUTING, AgentState.FAILED, AgentState.CANCELLED]),
+    [AgentState.PLAN_REVIEW]: new Set([AgentState.EXECUTING, AgentState.PLANNING, AgentState.FAILED, AgentState.CANCELLED]),
+    [AgentState.EXECUTING]: new Set([AgentState.EDIT_REVIEW, AgentState.VERIFYING, AgentState.COMPLETED, AgentState.FAILED, AgentState.CANCELLED]),
+    [AgentState.EDIT_REVIEW]: new Set([AgentState.APPLYING, AgentState.EXECUTING, AgentState.FAILED, AgentState.CANCELLED]),
+    [AgentState.APPLYING]: new Set([AgentState.VERIFYING, AgentState.EXECUTING, AgentState.COMPLETED, AgentState.FAILED, AgentState.CANCELLED]),
+    [AgentState.VERIFYING]: new Set([AgentState.COMPLETED, AgentState.DIAGNOSING, AgentState.EXECUTING, AgentState.FAILED, AgentState.CANCELLED]),
+    [AgentState.DIAGNOSING]: new Set([AgentState.EXECUTING, AgentState.PLANNING, AgentState.FAILED, AgentState.CANCELLED]),
     [AgentState.COMPLETED]: new Set([AgentState.IDLE]),
     [AgentState.FAILED]: new Set([AgentState.IDLE]),
     [AgentState.CANCELLED]: new Set([AgentState.IDLE]),
@@ -62,7 +65,10 @@ export class AgentStateMachine {
       }
     }
 
-    if (this.currentState === AgentState.VERIFYING && nextState === AgentState.EXECUTING) {
+    if (
+      (this.currentState === AgentState.VERIFYING || this.currentState === AgentState.DIAGNOSING) &&
+      nextState === AgentState.EXECUTING
+    ) {
       this.repairAttempts++;
       if (this.repairAttempts > this.limits.maxRepairAttempts) {
         this.transitionTo(AgentState.FAILED, `Exceeded maximum test-repair attempts (${this.limits.maxRepairAttempts})`);

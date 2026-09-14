@@ -16,6 +16,7 @@ export interface MockTurn {
     arguments: Record<string, unknown>;
   };
   text?: string;
+  textResponse?: string;
   simulateError?: ModelErrorCode;
 }
 
@@ -101,8 +102,9 @@ export class MockModelProvider implements IModelProvider {
         yield { type: 'tool_call_complete', id: turn.toolCall.id, name: turn.toolCall.name, arguments: turn.toolCall.arguments };
         return;
       }
-      if (turn?.text) {
-        yield { type: 'token', text: turn.text };
+      const turnText = turn?.text ?? turn?.textResponse;
+      if (turnText !== undefined) {
+        yield { type: 'token', text: turnText };
         yield { type: 'usage', promptTokens: 10, completionTokens: 10 };
         return;
       }

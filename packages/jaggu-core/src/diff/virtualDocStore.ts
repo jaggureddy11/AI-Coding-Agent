@@ -1,5 +1,7 @@
 import { VirtualDocument, IVirtualDocStore } from '../types/diff.js';
 
+export type { IVirtualDocStore };
+
 export class InMemoryVirtualDocStore implements IVirtualDocStore {
   private readonly docs = new Map<string, VirtualDocument>();
 

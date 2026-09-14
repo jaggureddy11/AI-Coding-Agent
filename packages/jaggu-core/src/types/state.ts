@@ -1,27 +1,37 @@
 export enum AgentState {
   IDLE = 'IDLE',
-  THINKING = 'THINKING',
+  UNDERSTANDING = 'UNDERSTANDING',
   PLANNING = 'PLANNING',
-  WAITING_FOR_APPROVAL = 'WAITING_FOR_APPROVAL',
+  PLAN_REVIEW = 'PLAN_REVIEW',
   EXECUTING = 'EXECUTING',
+  EDIT_REVIEW = 'EDIT_REVIEW',
+  APPLYING = 'APPLYING',
   VERIFYING = 'VERIFYING',
+  DIAGNOSING = 'DIAGNOSING',
   COMPLETED = 'COMPLETED',
   FAILED = 'FAILED',
   CANCELLED = 'CANCELLED',
+  // Backward-compatibility aliases
+  THINKING = 'UNDERSTANDING',
+  WAITING_FOR_APPROVAL = 'EDIT_REVIEW',
 }
 
-export type UiAgentStatus = 'IDLE' | 'PROCESSING' | 'SUCCESS' | 'ERROR' | 'CANCELLED';
+export type UiAgentStatus = 'IDLE' | 'PROCESSING' | 'AWAITING_APPROVAL' | 'SUCCESS' | 'ERROR' | 'CANCELLED';
 
 export function agentStateToUiStatus(state: AgentState): UiAgentStatus {
   switch (state) {
     case AgentState.IDLE:
       return 'IDLE';
-    case AgentState.THINKING:
+    case AgentState.UNDERSTANDING:
     case AgentState.PLANNING:
-    case AgentState.WAITING_FOR_APPROVAL:
     case AgentState.EXECUTING:
+    case AgentState.APPLYING:
     case AgentState.VERIFYING:
+    case AgentState.DIAGNOSING:
       return 'PROCESSING';
+    case AgentState.PLAN_REVIEW:
+    case AgentState.EDIT_REVIEW:
+      return 'AWAITING_APPROVAL';
     case AgentState.COMPLETED:
       return 'SUCCESS';
     case AgentState.FAILED:
@@ -34,8 +44,10 @@ export function agentStateToUiStatus(state: AgentState): UiAgentStatus {
 export interface LoopGuardLimits {
   /** Maximum number of tool iterations per single user prompt */
   maxIterations: number;
-  /** Maximum self-healing repair attempts for the same failing test */
+  /** Maximum self-healing repair attempts for failing tests */
   maxRepairAttempts: number;
+  /** Maximum plan revision attempts */
+  maxPlanAttempts: number;
   /** Maximum consecutive identical tool calls */
   maxRepeatedToolCalls: number;
   /** Absolute task timeout in seconds */
@@ -45,6 +57,7 @@ export interface LoopGuardLimits {
 export const DEFAULT_LOOP_LIMITS: LoopGuardLimits = {
   maxIterations: 20,
   maxRepairAttempts: 3,
+  maxPlanAttempts: 2,
   maxRepeatedToolCalls: 2,
   taskTimeoutSeconds: 300,
 };

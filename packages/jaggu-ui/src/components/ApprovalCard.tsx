@@ -1,9 +1,16 @@
 import React from 'react';
 
+export interface ApprovalFileItem {
+  relativePath: string;
+  shadowUri?: string;
+  isNew?: boolean;
+}
+
 export interface ApprovalCardProps {
   proposalId: string;
-  filePath: string;
-  diffSummary: string;
+  filePath?: string;
+  files?: ApprovalFileItem[];
+  diffSummary?: string;
   onReviewDiff: (filePath: string) => void;
   onApprove: (proposalId: string) => void;
   onReject: (proposalId: string) => void;
@@ -13,12 +20,16 @@ export interface ApprovalCardProps {
 export const ApprovalCard: React.FC<ApprovalCardProps> = ({
   proposalId,
   filePath,
+  files,
   diffSummary,
   onReviewDiff,
   onApprove,
   onReject,
   status = 'pending',
 }) => {
+  const fileList = files && files.length > 0 ? files : filePath ? [{ relativePath: filePath }] : [];
+  const primaryPath = filePath || (fileList[0]?.relativePath ?? '');
+
   return (
     <div
       data-testid="approval-card"
@@ -40,7 +51,9 @@ export const ApprovalCard: React.FC<ApprovalCardProps> = ({
             color: 'var(--vscode-foreground, #ffffff)',
           }}
         >
-          Proposed Workspace Edit
+          {fileList.length > 1
+            ? `JAGGU Proposes Changes to ${fileList.length} Files`
+            : 'Proposed Workspace Edit'}
         </span>
         {status === 'approved' && (
           <span
@@ -74,48 +87,88 @@ export const ApprovalCard: React.FC<ApprovalCardProps> = ({
         )}
       </div>
 
-      <div
-        style={{
-          fontFamily: 'var(--vscode-editor-font-family, monospace)',
-          fontSize: '12px',
-          padding: '6px 8px',
-          backgroundColor: 'var(--vscode-editor-background, #1e1e1e)',
-          borderRadius: '4px',
-          border: '1px solid var(--vscode-widget-border, #333333)',
-          marginBottom: '8px',
-          wordBreak: 'break-all',
-        }}
-      >
-        📄 {filePath}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '10px' }}>
+        {fileList.map((item) => (
+          <div
+            key={item.relativePath}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '5px 8px',
+              backgroundColor: 'var(--vscode-editor-background, #1e1e1e)',
+              borderRadius: '4px',
+              border: '1px solid var(--vscode-widget-border, #333333)',
+              fontSize: '12px',
+              fontFamily: 'var(--vscode-editor-font-family, monospace)',
+            }}
+          >
+            <span style={{ wordBreak: 'break-all', display: 'flex', alignItems: 'center', gap: '5px' }}>
+              📄 {item.relativePath}
+              {item.isNew && (
+                <span
+                  style={{
+                    fontSize: '10px',
+                    color: 'var(--vscode-charts-green, #89d185)',
+                    border: '1px solid rgba(137, 209, 133, 0.3)',
+                    padding: '0 4px',
+                    borderRadius: '3px',
+                  }}
+                >
+                  NEW
+                </span>
+              )}
+            </span>
+            <button
+              type="button"
+              onClick={() => onReviewDiff(item.relativePath)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--vscode-textLink-foreground, #3794ff)',
+                cursor: 'pointer',
+                fontSize: '11px',
+                padding: '2px 6px',
+                textDecoration: 'underline',
+              }}
+            >
+              Review Diff
+            </button>
+          </div>
+        ))}
       </div>
 
-      <div
-        style={{
-          fontSize: '11px',
-          color: 'var(--vscode-descriptionForeground, #888888)',
-          marginBottom: '10px',
-        }}
-      >
-        {diffSummary}
-      </div>
+      {diffSummary && (
+        <div
+          style={{
+            fontSize: '11px',
+            color: 'var(--vscode-descriptionForeground, #888888)',
+            marginBottom: '10px',
+          }}
+        >
+          {diffSummary}
+        </div>
+      )}
 
       {status === 'pending' ? (
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          <button
-            type="button"
-            onClick={() => onReviewDiff(filePath)}
-            style={{
-              background: 'transparent',
-              border: '1px solid var(--vscode-button-border, #007acc)',
-              color: 'var(--vscode-textLink-foreground, #3794ff)',
-              padding: '4px 10px',
-              borderRadius: '3px',
-              fontSize: '11px',
-              cursor: 'pointer',
-            }}
-          >
-            🔍 Review Changes
-          </button>
+          {primaryPath && (
+            <button
+              type="button"
+              onClick={() => onReviewDiff(primaryPath)}
+              style={{
+                background: 'transparent',
+                border: '1px solid var(--vscode-button-border, #007acc)',
+                color: 'var(--vscode-textLink-foreground, #3794ff)',
+                padding: '4px 10px',
+                borderRadius: '3px',
+                fontSize: '11px',
+                cursor: 'pointer',
+              }}
+            >
+              🔍 Review Changes
+            </button>
+          )}
           <div style={{ marginLeft: 'auto', display: 'flex', gap: '6px' }}>
             <button
               type="button"
@@ -131,7 +184,7 @@ export const ApprovalCard: React.FC<ApprovalCardProps> = ({
                 cursor: 'pointer',
               }}
             >
-              Approve
+              Approve Changes
             </button>
             <button
               type="button"
@@ -152,21 +205,23 @@ export const ApprovalCard: React.FC<ApprovalCardProps> = ({
         </div>
       ) : (
         <div style={{ display: 'flex' }}>
-          <button
-            type="button"
-            onClick={() => onReviewDiff(filePath)}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--vscode-textLink-foreground, #3794ff)',
-              padding: 0,
-              fontSize: '11px',
-              cursor: 'pointer',
-              textDecoration: 'underline',
-            }}
-          >
-            View Diff
-          </button>
+          {primaryPath && (
+            <button
+              type="button"
+              onClick={() => onReviewDiff(primaryPath)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--vscode-textLink-foreground, #3794ff)',
+                padding: 0,
+                fontSize: '11px',
+                cursor: 'pointer',
+                textDecoration: 'underline',
+              }}
+            >
+              View Diff
+            </button>
+          )}
         </div>
       )}
     </div>

@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import type { UiAgentStatus, ContextSnippetSummary } from '@jaggu/core';
 import { StatusPill } from './components/StatusPill.js';
 import { ContextPill } from './components/ContextPill.js';
-import { ApprovalCard } from './components/ApprovalCard.js';
+import { ApprovalCard, ApprovalFileItem } from './components/ApprovalCard.js';
+import { PlanCard, PlanStepItem } from './components/PlanCard.js';
 import {
   VsCodeApi,
   ChatMessage,
@@ -18,9 +19,25 @@ export interface AppProps {
 
 export interface ProposalItem {
   proposalId: string;
-  filePath: string;
-  diffSummary: string;
+  filePath?: string;
+  files?: ApprovalFileItem[];
+  diffSummary?: string;
   status: 'pending' | 'approved' | 'rejected';
+}
+
+export interface ActivePlanState {
+  taskId: string;
+  planId: string;
+  goal: string;
+  steps: PlanStepItem[];
+  risks: string[];
+  verification: string[];
+}
+
+export interface ScopeChangeState {
+  taskId: string;
+  unplannedFiles: string[];
+  reason: string;
 }
 
 export const App: React.FC<AppProps> = ({
@@ -32,6 +49,8 @@ export const App: React.FC<AppProps> = ({
   const [statusDetail, setStatusDetail] = useState<string | undefined>();
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [proposals, setProposals] = useState<ProposalItem[]>([]);
+  const [activePlan, setActivePlan] = useState<ActivePlanState | null>(null);
+  const [scopeChange, setScopeChange] = useState<ScopeChangeState | null>(null);
   const [input, setInput] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [activeConfig, setActiveConfig] = useState<{ provider: string; model: string }>({
@@ -147,6 +166,37 @@ export const App: React.FC<AppProps> = ({
           });
           break;
         }
+        case 'agent.plan_requested': {
+          const { taskId, planId, goal, steps, risks, verification } = msg.payload;
+          setActivePlan({ taskId, planId, goal, steps, risks, verification });
+          setStatus('PLAN_REVIEW' as any);
+          setStatusDetail('Engineering plan generated — review required');
+          break;
+        }
+        case 'agent.editset_requested': {
+          const { editSetId, files } = msg.payload;
+          setProposals((prev) => {
+            const filtered = prev.filter((p) => p.proposalId !== editSetId);
+            return [
+              ...filtered,
+              {
+                proposalId: editSetId,
+                files,
+                diffSummary: `Multi-file change set proposing ${files.length} file updates`,
+                status: 'pending',
+              },
+            ];
+          });
+          setStatus('EDIT_REVIEW' as any);
+          setStatusDetail(`Change set ready: ${files.length} files awaiting review`);
+          break;
+        }
+        case 'agent.scope_change_requested': {
+          const { taskId, unplannedFiles, reason } = msg.payload;
+          setScopeChange({ taskId, unplannedFiles, reason });
+          setStatusDetail(`Scope change requested: ${unplannedFiles.length} unplanned files`);
+          break;
+        }
         case 'agent.activity':
           setStatusDetail(msg.payload.message);
           break;
@@ -230,13 +280,52 @@ export const App: React.FC<AppProps> = ({
     });
   };
 
+  const handleApprovePlan = (planId: string) => {
+    setActivePlan(null);
+    vscode?.postMessage({
+      type: 'agent.plan_approve',
+      payload: { planId },
+    });
+  };
+
+  const handleRejectPlan = (planId: string) => {
+    setActivePlan(null);
+    vscode?.postMessage({
+      type: 'agent.plan_reject',
+      payload: { planId },
+    });
+  };
+
+  const handleApproveScope = () => {
+    const taskId = scopeChange?.taskId;
+    setScopeChange(null);
+    vscode?.postMessage({
+      type: 'agent.scope_approve',
+      payload: { taskId },
+    });
+  };
+
+  const handleRejectScope = () => {
+    const taskId = scopeChange?.taskId;
+    setScopeChange(null);
+    vscode?.postMessage({
+      type: 'agent.scope_reject',
+      payload: { taskId },
+    });
+  };
+
   const handleApproveProposal = (proposalId: string) => {
     setProposals((prev) =>
       prev.map((p) => (p.proposalId === proposalId ? { ...p, status: 'approved' } : p))
     );
+    // Support both single proposalId and multi-file editSetId
     vscode?.postMessage({
       type: 'agent.approve',
       payload: { proposalId },
+    });
+    vscode?.postMessage({
+      type: 'agent.editset_approve',
+      payload: { editSetId: proposalId },
     });
   };
 
@@ -247,6 +336,10 @@ export const App: React.FC<AppProps> = ({
     vscode?.postMessage({
       type: 'agent.reject',
       payload: { proposalId },
+    });
+    vscode?.postMessage({
+      type: 'agent.editset_reject',
+      payload: { editSetId: proposalId },
     });
   };
 
@@ -458,6 +551,98 @@ export const App: React.FC<AppProps> = ({
           ))
         )}
 
+        {/* Active Plan requiring user review */}
+        {activePlan && (
+          <div data-testid="plan-container">
+            <PlanCard
+              planId={activePlan.planId}
+              goal={activePlan.goal}
+              steps={activePlan.steps}
+              risks={activePlan.risks}
+              verification={activePlan.verification}
+              onApprove={handleApprovePlan}
+              onReject={handleRejectPlan}
+            />
+          </div>
+        )}
+
+        {/* Scope change notification requiring user review */}
+        {scopeChange && (
+          <div
+            data-testid="scope-change-banner"
+            style={{
+              padding: '10px 14px',
+              borderRadius: '6px',
+              fontSize: '12px',
+              backgroundColor: 'var(--vscode-editorWarning-background, #332b00)',
+              border: '1px solid var(--vscode-editorWarning-foreground, #cca700)',
+              color: 'var(--vscode-foreground, #ffffff)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}>
+              <span>⚠️</span>
+              <span>Scope Change Requested</span>
+            </div>
+            <div style={{ fontSize: '11px', color: 'var(--vscode-descriptionForeground, #cccccc)' }}>
+              {scopeChange.reason}
+            </div>
+            <div style={{ fontSize: '11px' }}>
+              <strong>Unplanned files:</strong>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
+                {scopeChange.unplannedFiles.map((f) => (
+                  <span
+                    key={f}
+                    style={{
+                      fontFamily: 'monospace',
+                      padding: '2px 5px',
+                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                      borderRadius: '3px',
+                    }}
+                  >
+                    {f}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+              <button
+                type="button"
+                onClick={handleApproveScope}
+                style={{
+                  padding: '4px 10px',
+                  backgroundColor: 'var(--vscode-button-background, #0e639c)',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '3px',
+                  cursor: 'pointer',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                }}
+              >
+                Approve Scope
+              </button>
+              <button
+                type="button"
+                onClick={handleRejectScope}
+                style={{
+                  padding: '4px 10px',
+                  backgroundColor: 'var(--vscode-button-secondaryBackground, #3a3d41)',
+                  color: '#cccccc',
+                  border: 'none',
+                  borderRadius: '3px',
+                  cursor: 'pointer',
+                  fontSize: '11px',
+                }}
+              >
+                Reject Scope
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Pending / recent proposed edits requiring user review */}
         {proposals.length > 0 && (
           <div
@@ -474,6 +659,7 @@ export const App: React.FC<AppProps> = ({
                 key={prop.proposalId}
                 proposalId={prop.proposalId}
                 filePath={prop.filePath}
+                files={prop.files}
                 diffSummary={prop.diffSummary}
                 status={prop.status}
                 onReviewDiff={handleReviewDiff}

@@ -31,5 +31,12 @@ export * from './context/engine.js';
 // Tool Execution, File Editing & Workspace Mutation (M4)
 export * from './tools/index.js';
 
-
-
+// Agent Planning, Multi-File Changes & Verification (M5)
+export * from './types/plan.js';
+export * from './planning/planValidator.js';
+export * from './planning/planner.js';
+export * from './types/editSet.js';
+export * from './diff/editSetManager.js';
+export * from './types/verification.js';
+export * from './verification/verificationEngine.js';
+export * from './agent/agentOrchestrator.js';
