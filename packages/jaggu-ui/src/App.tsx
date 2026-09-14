@@ -24,6 +24,10 @@ export const App: React.FC<AppProps> = ({
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [input, setInput] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [activeConfig, setActiveConfig] = useState<{ provider: string; model: string }>({
+    provider: 'mock',
+    model: 'mock-fast',
+  });
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
@@ -53,7 +57,56 @@ export const App: React.FC<AppProps> = ({
           }
           break;
         case 'agent.message':
-          setMessages((prev) => [...prev, msg.payload]);
+          setMessages((prev) => {
+            // Avoid duplicate message if streamed
+            if (prev.some((m) => m.id === msg.payload.id)) {
+              return prev;
+            }
+            return [...prev, msg.payload];
+          });
+          break;
+        case 'token.delta': {
+          const { messageId, text } = msg.payload;
+          setMessages((prev) => {
+            const index = prev.findIndex((m) => m.id === messageId);
+            if (index >= 0) {
+              const updated = [...prev];
+              const existing = updated[index];
+              if (existing) {
+                updated[index] = { ...existing, text: existing.text + text };
+              }
+              return updated;
+            } else {
+              return [
+                ...prev,
+                { id: messageId, role: 'assistant', text, timestamp: Date.now() },
+              ];
+            }
+          });
+          break;
+        }
+        case 'token.complete': {
+          const { messageId, fullText } = msg.payload;
+          setMessages((prev) => {
+            const index = prev.findIndex((m) => m.id === messageId);
+            if (index >= 0) {
+              const updated = [...prev];
+              const existing = updated[index];
+              if (existing) {
+                updated[index] = { ...existing, text: fullText };
+              }
+              return updated;
+            } else {
+              return [
+                ...prev,
+                { id: messageId, role: 'assistant', text: fullText, timestamp: Date.now() },
+              ];
+            }
+          });
+          break;
+        }
+        case 'agent.config':
+          setActiveConfig(msg.payload);
           break;
         case 'agent.error':
           setErrorMessage(msg.payload.message);
@@ -177,6 +230,19 @@ export const App: React.FC<AppProps> = ({
             }}
           >
             Agent
+          </span>
+          <span
+            data-testid="provider-badge"
+            style={{
+              fontSize: '10px',
+              padding: '1px 5px',
+              borderRadius: '3px',
+              backgroundColor: 'var(--vscode-badge-background, rgba(255, 255, 255, 0.08))',
+              color: 'var(--vscode-badge-foreground, #858585)',
+              textTransform: 'uppercase',
+            }}
+          >
+            {activeConfig.provider}
           </span>
         </div>
 

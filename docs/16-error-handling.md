@@ -31,16 +31,19 @@ A key differentiator of an autonomous engineering agent is its ability to withst
 
 | Error Type | Severity | Category | Root Cause | Automated Recovery Strategy |
 |---|---|---|---|---|
-| `MODEL_TIMEOUT` | Medium | Recoverable | LLM provider took >30s without emitting tokens. | Abort HTTP stream; retry with backoff; offer provider failover if repeated. |
-| `MODEL_RATE_LIMIT` (429) | Medium | Recoverable | Provider TPM/RPM ceiling hit. | Exponential backoff with jitter (1s, 2s, 4s, 8s, up to 30s). |
+| `AUTH_FAILURE` (401/403) | High | Fatal (Non-retry) | Invalid or missing API credentials in SecretStorage. | Fail-fast immediately; prompt user to configure API key via `JAGGU: Set API Key`. |
+| `RATE_LIMIT` (429) | Medium | Recoverable | Provider TPM/RPM ceiling hit. | Exponential backoff with jitter (1s, 2s, 4s, 8s, up to 30s max 3 attempts). |
+| `TIMEOUT` (408) | Medium | Recoverable | LLM provider took >30s without emitting tokens. | Abort HTTP stream; retry with backoff; offer provider failover if repeated. |
+| `NETWORK_ERROR` | High | Recoverable | Socket drop, DNS resolution failure, local Ollama daemon down. | Classify specific socket issue; retry with backoff; warn if local daemon unreachable. |
+| `CONTEXT_OVERFLOW` | High | Fatal/Prune | Prompt length exceeded model context window. | Context Engine aggressively prunes Tier 7/8 items and summarizes older conversation turns. |
+| `MALFORMED_RESPONSE` | High | Fatal (Non-retry) | Unexpected payload schema from provider endpoint. | Fail-fast; log sanitized diagnostic structure; do not waste token retries. |
+| `CANCELLED` | Info | Clean Abort | User clicked cancel or pressed Escape. | Terminate native fetch socket immediately; emit `model.cancelled`; reset to `IDLE`. |
 | `MALFORMED_TOOL_CALL` | Low | Recoverable | Model emitted invalid JSON or missing arguments. | Feed Zod validation error back to the model in the next turn as a tool error message. |
 | `INVALID_FILE_PATH` | Low | Recoverable | Model hallucinated non-existent path. | Return `{ error: "File not found: X. Did you mean Y?" }` via fuzzy filename search. |
 | `FILE_CONFLICT` | Medium | Recoverable | Developer manually edited a file while agent had uncommitted diffs. | Recompute Myers diff against fresh disk buffer; prompt developer if merge conflict. |
 | `COMMAND_FAILURE` (Exit != 0) | Medium | Recoverable | Build or script exited with non-zero code. | Capture stdout/stderr; pass output to `DIAGNOSE` state; formulate fix. |
 | `TEST_FAILURE` | Medium | Recoverable | Unit/integration test assertion failed. | Extract stack trace & line numbers; patch implementation file; re-run tests (max 3 loops). |
 | `PERMISSION_DENIED` | High | Recoverable | Developer rejected an action in modal. | Return `{ error: "User denied permission" }`; model reformulates alternative non-destructive plan. |
-| `CONTEXT_OVERFLOW` | High | Recoverable | Prompt length exceeded model window. | Context Engine aggressively drops Tier 7/8 items and summarizes older conversation turns. |
-| `NETWORK_FAILURE` | High | Fatal/Retry | Loss of internet connection. | Retry 3 times; if network is down, pause agent and notify developer to check connectivity. |
 | `AGENT_LOOP_EXHAUSTED` | High | Fatal | Max 20 iterations or 3 repeated test failures reached. | Pause state machine; preserve staged diffs; present full diagnostic summary to user. |
 | `CORRUPTED_DISK_BUFFER` | Critical| Fatal | Operating system I/O error or permission failure. | Abort task immediately; revert to Git checkpoint snapshot; warn developer. |
 

@@ -23,28 +23,30 @@ Messages between the React Webview and VS Code Extension Host are strongly typed
 
 ```typescript
 export type WebviewToExtensionMessage =
-  | { type: 'SUBMIT_PROMPT'; payload: { prompt: string; attachedFiles?: string[] } }
+  | { type: 'user.submit'; payload: { id: string; text: string; timestamp: number } }
+  | { type: 'agent.cancel'; payload?: { taskId?: string } }
+  | { type: 'ui.ready'; payload?: { timestamp: number } }
+  | { type: 'ui.clear'; payload?: Record<string, never> }
+  // Extended types for future plan approvals
+  | { type: 'SUBMIT_PROMPT'; payload: { prompt: string } }
   | { type: 'CANCEL_ACTIVE_TASK'; payload: { taskId: string } }
   | { type: 'APPROVE_PLAN'; payload: { planId: string } }
-  | { type: 'MODIFY_PLAN'; payload: { planId: string; modifiedSteps: string[] } }
-  | { type: 'ACCEPT_DIFF_HUNK'; payload: { filePath: string; hunkId: string } }
-  | { type: 'REJECT_DIFF_HUNK'; payload: { filePath: string; hunkId: string } }
-  | { type: 'ACCEPT_ALL_DIFFS'; payload: { taskId: string } }
-  | { type: 'REJECT_ALL_DIFFS'; payload: { taskId: string } }
-  | { type: 'RESOLVE_APPROVAL'; payload: { approvalId: string; decision: 'APPROVED' | 'REJECTED' } }
-  | { type: 'UPDATE_SETTINGS'; payload: Partial<UserSettings> }
-  | { type: 'CLEAR_SESSION'; payload: {} };
+  | { type: 'RESOLVE_APPROVAL'; payload: { approvalId: string; decision: 'APPROVED' | 'REJECTED' } };
 
 export type ExtensionToWebviewMessage =
+  | { type: 'agent.status'; payload: { state: UiAgentStatus; detail?: string } }
+  | { type: 'agent.message'; payload: ChatMessage }
+  | { type: 'agent.error'; payload: { code?: string; message: string } }
+  | { type: 'agent.config'; payload: { provider: string; model: string } }
+  | { type: 'token.delta'; payload: { text: string; messageId: string } }
+  | { type: 'token.complete'; payload: { messageId: string; fullText: string; tokensUsed?: number } }
   | { type: 'AGENT_STATE_CHANGED'; payload: { state: AgentState; detail?: string } }
   | { type: 'TOKEN_STREAM_CHUNK'; payload: { text: string } }
   | { type: 'PLAN_GENERATED'; payload: Plan }
   | { type: 'PLAN_STEP_UPDATED'; payload: { stepIndex: number; status: PlanStep['status'] } }
-  | { type: 'DIFF_STAGED'; payload: { fileChanges: FileChange[] } }
-  | { type: 'TERMINAL_OUTPUT_CHUNK'; payload: { commandId: string; line: string } }
   | { type: 'APPROVAL_REQUESTED'; payload: ApprovalRequest }
-  | { type: 'TASK_COMPLETED'; payload: { summary: string; executionTimeMs: number; tokensUsed: number } }
-  | { type: 'TASK_ERROR'; payload: { error: string; recoverable: boolean } };
+  | { type: 'TASK_COMPLETED'; payload: { summary: string } }
+  | { type: 'TASK_ERROR'; payload: { error: string } };
 ```
 
 ---

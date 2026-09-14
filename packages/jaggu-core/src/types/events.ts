@@ -84,6 +84,55 @@ export interface JagguEvents {
     reason: string;
     timestamp: number;
   };
+
+  // Model Gateway Lifecycle Events
+  'model.requested': {
+    taskId: string;
+    provider: string;
+    model: string;
+    messageCount: number;
+    timestamp: number;
+  };
+  'model.stream_started': {
+    taskId: string;
+    provider: string;
+    model: string;
+    timestamp: number;
+  };
+  'model.text_delta': {
+    taskId: string;
+    text: string;
+    timestamp: number;
+  };
+  'model.tool_call_delta': {
+    taskId: string;
+    toolCallId: string;
+    argumentsDelta: string;
+    timestamp: number;
+  };
+  'model.completed': {
+    taskId: string;
+    provider: string;
+    model: string;
+    durationMs: number;
+    promptTokens: number;
+    completionTokens: number;
+    timestamp: number;
+  };
+  'model.cancelled': {
+    taskId: string;
+    provider: string;
+    model: string;
+    timestamp: number;
+  };
+  'model.error': {
+    taskId: string;
+    provider: string;
+    model: string;
+    error: string;
+    code: string;
+    timestamp: number;
+  };
 }
 
 export type EventKey = keyof JagguEvents;

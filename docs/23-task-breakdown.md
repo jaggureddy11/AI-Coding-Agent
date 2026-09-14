@@ -24,36 +24,36 @@ Every task defined below is **atomic, independently implementable, and independe
 - **Tests**: Unit test event subscription, dispatch, and unsubscription.
 - **Acceptance Criteria**: 100% test pass on event bus dispatch.
 
-### TASK-003: Model Gateway Interface & Types
-- **Objective**: Define polymorphic `IModelProvider`, chunk stream types, and token counter interfaces.
+### TASK-003: Model Gateway Interface & Types *(COMPLETED - M2)*
+- **Objective**: Define polymorphic `IModelProvider`, chunk stream types, capability interfaces, and error hierarchies.
 - **Prerequisites**: TASK-001.
-- **Files**: `packages/jaggu-models/src/types.ts`, `packages/jaggu-models/src/gateway.ts`.
-- **Implementation**: Define `streamChat`, `ModelMessage`, `ModelToolDefinition`, and `ModelStreamChunk`.
-- **Tests**: Typecheck interface assignments for mock implementations.
+- **Files**: `packages/jaggu-core/src/types/models.ts`, `packages/jaggu-core/src/models/gateway.ts`.
+- **Implementation**: Defined `streamChat`, `ModelMessage`, `ModelToolDefinition`, `ModelCapabilities`, `ModelStreamChunk`, and `ModelError`.
+- **Tests**: Comprehensive unit tests validating capabilities and interface contracts.
 - **Acceptance Criteria**: Clean TypeScript compilation with strict types.
 
-### TASK-004: Anthropic Claude Provider Implementation
-- **Objective**: Build production Anthropic provider supporting Claude 3.5/3.7 Sonnet with streaming and prompt caching.
+### TASK-004: Anthropic Claude Provider Implementation *(COMPLETED - M2)*
+- **Objective**: Build production Anthropic provider supporting Claude 3.5 Sonnet, Claude 3.5 Haiku, and Claude 3 Opus with streaming.
 - **Prerequisites**: TASK-003.
-- **Files**: `packages/jaggu-models/src/providers/anthropic.ts`.
-- **Implementation**: Implement SSE stream parser, `tool_use` chunk accumulator, and `cache_control` headers.
-- **Tests**: Mock server replay test streaming text and tool calls.
-- **Acceptance Criteria**: Emits `token` and `tool_call_complete` chunks matching schema.
+- **Files**: `packages/jaggu-core/src/models/anthropic.ts`.
+- **Implementation**: Implemented native `fetch` SSE stream parser (`message_start`, `content_block_delta`, `message_delta`), system prompt extraction, and usage accounting.
+- **Tests**: Mock server replay test streaming text deltas and error handling.
+- **Acceptance Criteria**: Emits `token` and `usage` chunks matching schema.
 
-### TASK-005: OpenAI & Gemini Provider Implementations
-- **Objective**: Build OpenAI (GPT-4o) and Gemini (2.0 Flash) provider adapters.
+### TASK-005: OpenAI & Gemini Provider Implementations *(COMPLETED - M2)*
+- **Objective**: Build OpenAI (GPT-4o, o1, o3-mini) and Gemini (2.0 Flash, 1.5 Pro) provider adapters.
 - **Prerequisites**: TASK-003.
-- **Files**: `packages/jaggu-models/src/providers/openai.ts`, `packages/jaggu-models/src/providers/gemini.ts`.
-- **Implementation**: Wire OpenAI SDK / fetch streaming; map Gemini response format to standard chunks.
-- **Tests**: Unit tests with recorded stream payloads.
+- **Files**: `packages/jaggu-core/src/models/openai.ts`, `packages/jaggu-core/src/models/gemini.ts`.
+- **Implementation**: Native fetch with SSE parsing, parallel tool-call aggregation, and token usage accounting.
+- **Tests**: Unit tests with recorded and simulated stream payloads.
 - **Acceptance Criteria**: Both providers stream chunks into common `ModelStreamChunk` format.
 
-### TASK-006: Local Ollama Provider Implementation
+### TASK-006: Local Ollama Provider Implementation *(COMPLETED - M2)*
 - **Objective**: Build privacy-first offline provider connecting to local Ollama daemon.
 - **Prerequisites**: TASK-003.
-- **Files**: `packages/jaggu-models/src/providers/ollama.ts`.
-- **Implementation**: Stream from `http://localhost:11434/api/chat` with tool-call parsing.
-- **Tests**: Unit test with simulated Ollama JSON streaming output.
+- **Files**: `packages/jaggu-core/src/models/ollama.ts`.
+- **Implementation**: Stream from `http://localhost:11434/api/chat` with NDJSON parsing and fail-fast network classification.
+- **Tests**: Unit test with simulated Ollama NDJSON streaming output and local connection failure classification.
 - **Acceptance Criteria**: Works with zero external internet connectivity.
 
 ### TASK-007: Ripgrep Search Service

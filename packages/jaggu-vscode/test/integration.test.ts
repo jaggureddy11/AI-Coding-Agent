@@ -31,9 +31,10 @@ describe('Webview ↔ Extension Host RPC Integration Flow', () => {
     };
     provider.handleIncomingMessage(readyMsg);
 
-    expect(receivedInWebview.length).toBe(1);
-    expect(receivedInWebview[0].type).toBe('agent.status');
-    expect((receivedInWebview[0] as any).payload.state).toBe('IDLE');
+    expect(receivedInWebview.length).toBe(2);
+    expect(receivedInWebview[0].type).toBe('agent.config');
+    expect(receivedInWebview[1].type).toBe('agent.status');
+    expect((receivedInWebview[1] as any).payload.state).toBe('IDLE');
 
     // 2. Webview user submits prompt
     const submitMsg: WebviewToExtensionMessage = {
@@ -44,22 +45,22 @@ describe('Webview ↔ Extension Host RPC Integration Flow', () => {
         timestamp: Date.now(),
       },
     };
-    provider.handleIncomingMessage(submitMsg);
+    const submitPromise = provider.handleIncomingMessage(submitMsg);
 
     // Should immediately transition to PROCESSING
-    expect(receivedInWebview.length).toBe(2);
-    expect(receivedInWebview[1].type).toBe('agent.status');
-    expect((receivedInWebview[1] as any).payload.state).toBe('PROCESSING');
     expect(provider.currentStatus).toBe('PROCESSING');
 
-    // 3. Advance timer for mock agent response (400ms)
-    await vi.advanceTimersByTimeAsync(450);
+    // 3. Advance timer for mock streaming tokens (mock tokens delayed by 10ms each)
+    await vi.advanceTimersByTimeAsync(300);
+    await submitPromise;
 
-    // Should receive assistant message and SUCCESS status
-    const messageMsg = receivedInWebview.find((m) => m.type === 'agent.message');
-    expect(messageMsg).toBeDefined();
-    expect((messageMsg as any).payload.role).toBe('assistant');
-    expect((messageMsg as any).payload.text).toContain('I received your request: "Explain this project"');
+    // Should receive token.delta messages and token.complete
+    const deltas = receivedInWebview.filter((m) => m.type === 'token.delta');
+    expect(deltas.length).toBeGreaterThan(0);
+
+    const completeMsg = receivedInWebview.find((m) => m.type === 'token.complete');
+    expect(completeMsg).toBeDefined();
+    expect((completeMsg as any).payload.fullText).toContain('Explain this project');
 
     const successStatusMsg = receivedInWebview.find(
       (m) => m.type === 'agent.status' && (m as any).payload.state === 'SUCCESS',
@@ -87,18 +88,19 @@ describe('Webview ↔ Extension Host RPC Integration Flow', () => {
     };
 
     // 1. Submit prompt
-    provider.handleIncomingMessage({
+    const submitPromise = provider.handleIncomingMessage({
       type: 'user.submit',
       payload: { id: 'task_to_cancel', text: 'Build a complex feature', timestamp: Date.now() },
     });
     expect(provider.currentStatus).toBe('PROCESSING');
 
-    // 2. User cancels midway (before 400ms response)
-    await vi.advanceTimersByTimeAsync(100);
+    // 2. User cancels midway
+    await vi.advanceTimersByTimeAsync(30);
     provider.handleIncomingMessage({
       type: 'agent.cancel',
       payload: {},
     });
+    await submitPromise;
 
     expect(provider.currentStatus).toBe('CANCELLED');
 

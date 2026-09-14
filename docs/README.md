@@ -97,3 +97,4 @@ Welcome to the comprehensive product, architecture, security, and engineering do
 ### 10 Milestone Implementation Records
 - [Milestone M0: Repository Architecture & Package Scaffolding](file:///Users/apple/Desktop/PROJECTS/Coding%20Agent/docs/implementation/M0-scaffolding.md)
 - [Milestone M1: Basic JAGGU Extension Shell & Webview UI](file:///Users/apple/Desktop/PROJECTS/Coding%20Agent/docs/implementation/M1-extension-shell.md)
+- [Milestone M2: JAGGU Multi-Provider Model Gateway](file:///Users/apple/Desktop/PROJECTS/Coding%20Agent/docs/implementation/M2-model-gateway.md)

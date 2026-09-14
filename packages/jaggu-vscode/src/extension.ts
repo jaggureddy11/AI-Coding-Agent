@@ -1,16 +1,21 @@
 import * as vscode from 'vscode';
-import { EventBus, InMemoryVirtualDocStore, UiAgentStatus } from '@jaggu/core';
+import { EventBus, InMemoryVirtualDocStore, UiAgentStatus, ModelGateway } from '@jaggu/core';
 import { JagguSidebarProvider } from './sidebarProvider.js';
 import { JagguShadowDocProvider } from './virtualDocProvider.js';
+import { CredentialManager } from './credentials.js';
 
 export function activate(context: vscode.ExtensionContext): {
   eventBus: EventBus;
   docStore: InMemoryVirtualDocStore;
   sidebarProvider: JagguSidebarProvider;
   statusBarItem: vscode.StatusBarItem;
+  credentialManager: CredentialManager;
+  modelGateway: ModelGateway;
 } {
   const eventBus = new EventBus();
   const docStore = new InMemoryVirtualDocStore();
+  const credentialManager = new CredentialManager(context.secrets);
+  const modelGateway = new ModelGateway();
 
   // 1. Register Virtual Document Content Provider for native diff previews
   const virtualDocProvider = new JagguShadowDocProvider(docStore);
@@ -22,7 +27,12 @@ export function activate(context: vscode.ExtensionContext): {
   );
 
   // 2. Register Webview Sidebar View Provider
-  const sidebarProvider = new JagguSidebarProvider(context.extensionUri, eventBus);
+  const sidebarProvider = new JagguSidebarProvider(
+    context.extensionUri,
+    eventBus,
+    modelGateway,
+    credentialManager,
+  );
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(
       JagguSidebarProvider.VIEW_ID,
@@ -30,7 +40,7 @@ export function activate(context: vscode.ExtensionContext): {
     ),
   );
 
-  // 3. Register Core Commands
+  // 3. Register Core & Model Commands
   context.subscriptions.push(
     vscode.commands.registerCommand('jaggu.openChat', () => {
       vscode.commands.executeCommand('jaggu.sidebarView.focus');
@@ -53,6 +63,69 @@ export function activate(context: vscode.ExtensionContext): {
       });
       sidebarProvider.handleIncomingMessage({ type: 'agent.cancel', payload: {} });
       vscode.window.showInformationMessage('JAGGU: Task cancelled.');
+    }),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('jaggu.setApiKey', async () => {
+      const provider = await vscode.window.showQuickPick(
+        ['openai', 'anthropic', 'gemini'],
+        { placeHolder: 'Select model provider to configure API Key' },
+      );
+      if (!provider) return;
+
+      const apiKey = await vscode.window.showInputBox({
+        prompt: `Enter API Key for ${provider.toUpperCase()} (leave empty to remove)`,
+        password: true,
+        ignoreFocusOut: true,
+      });
+
+      if (apiKey !== undefined) {
+        await credentialManager.setApiKey(provider, apiKey);
+        vscode.window.showInformationMessage(`JAGGU: API Key for [${provider}] updated in SecretStorage.`);
+      }
+    }),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('jaggu.selectProvider', async () => {
+      const providers = modelGateway.listProviders().map((p) => ({
+        label: p.name,
+        description: `ID: ${p.id}`,
+        id: p.id,
+      }));
+
+      const selected = await vscode.window.showQuickPick(providers, {
+        placeHolder: 'Select active model provider for JAGGU',
+      });
+
+      if (selected) {
+        const config = vscode.workspace.getConfiguration('jaggu');
+        await config.update('provider', selected.id, vscode.ConfigurationTarget.Global);
+        vscode.window.showInformationMessage(`JAGGU: Active provider set to ${selected.label}.`);
+      }
+    }),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('jaggu.selectModel', async () => {
+      const providerId = credentialManager.getActiveProvider();
+      const provider = modelGateway.getProvider(providerId);
+      const models = provider.supportedModels.map((m) => ({
+        label: m.displayName,
+        description: m.id,
+        id: m.id,
+      }));
+
+      const selected = await vscode.window.showQuickPick(models, {
+        placeHolder: `Select model for provider [${provider.name}]`,
+      });
+
+      if (selected) {
+        const config = vscode.workspace.getConfiguration('jaggu');
+        await config.update('model', selected.id, vscode.ConfigurationTarget.Global);
+        vscode.window.showInformationMessage(`JAGGU: Model set to ${selected.label}.`);
+      }
     }),
   );
 
@@ -95,7 +168,7 @@ export function activate(context: vscode.ExtensionContext): {
     updateStatusBar(e.state);
   });
 
-  return { eventBus, docStore, sidebarProvider, statusBarItem };
+  return { eventBus, docStore, sidebarProvider, statusBarItem, credentialManager, modelGateway };
 }
 
 export function deactivate(): void {

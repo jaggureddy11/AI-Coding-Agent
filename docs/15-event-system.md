@@ -128,6 +128,71 @@ export interface JagguEvents {
     reason: string;
     timestamp: number;
   };
+
+  // Model Gateway Lifecycle Events (M2)
+  'model.requested': {
+    taskId: string;
+    provider: string;
+    model: string;
+    messageCount: number;
+    timestamp: number;
+  };
+
+  'model.stream_started': {
+    taskId: string;
+    provider: string;
+    model: string;
+    timeToFirstTokenMs: number;
+    timestamp: number;
+  };
+
+  'model.text_delta': {
+    taskId: string;
+    provider: string;
+    model: string;
+    deltaLength: number;
+    timestamp: number;
+  };
+
+  'model.tool_call_delta': {
+    taskId: string;
+    provider: string;
+    model: string;
+    toolCallId: string;
+    name?: string;
+    argumentsDelta: string;
+    timestamp: number;
+  };
+
+  'model.completed': {
+    taskId: string;
+    provider: string;
+    model: string;
+    promptTokens: number;
+    completionTokens: number;
+    durationMs: number;
+    costEstimateUsd?: number;
+    timestamp: number;
+  };
+
+  'model.cancelled': {
+    taskId: string;
+    provider: string;
+    model: string;
+    durationMs: number;
+    timestamp: number;
+  };
+
+  'model.error': {
+    taskId: string;
+    provider: string;
+    model: string;
+    code: string;
+    message: string;
+    httpStatus?: number;
+    retryable: boolean;
+    timestamp: number;
+  };
 }
 ```
 

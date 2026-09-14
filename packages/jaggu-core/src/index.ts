@@ -4,8 +4,17 @@ export * from './types/events.js';
 export * from './events/eventBus.js';
 export * from './agent/fsm.js';
 
-// Subsystem Contracts
+// Subsystem Contracts & Models
 export * from './types/models.js';
+export * from './models/transport.js';
+export * from './models/openai.js';
+export * from './models/anthropic.js';
+export * from './models/gemini.js';
+export * from './models/ollama.js';
+export * from './models/mock.js';
+export * from './models/gateway.js';
+
+// Tools, Context, Task, Diff
 export * from './types/tools.js';
 export * from './types/context.js';
 export * from './types/task.js';

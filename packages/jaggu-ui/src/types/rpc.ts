@@ -22,6 +22,9 @@ export type ExtensionToWebviewMessage =
   | { type: 'agent.status'; payload: { state: UiAgentStatus; detail?: string } }
   | { type: 'agent.message'; payload: ChatMessage }
   | { type: 'agent.error'; payload: { code?: string; message: string } }
+  | { type: 'agent.config'; payload: { provider: string; model: string } }
+  | { type: 'token.delta'; payload: { text: string; messageId: string } }
+  | { type: 'token.complete'; payload: { messageId: string; fullText: string; tokensUsed?: number } }
   | { type: 'AGENT_STATE_CHANGED'; payload: { state: AgentState; detail?: string } }
   | { type: 'TOKEN_STREAM_CHUNK'; payload: { text: string } }
   | { type: 'PLAN_GENERATED'; payload: Plan }
@@ -97,6 +100,9 @@ export function isValidExtensionMessage(msg: unknown): msg is ExtensionToWebview
     'agent.status',
     'agent.message',
     'agent.error',
+    'agent.config',
+    'token.delta',
+    'token.complete',
     'AGENT_STATE_CHANGED',
     'TOKEN_STREAM_CHUNK',
     'PLAN_GENERATED',

@@ -29,9 +29,14 @@ export interface AuditLogEntry {
     toolArgumentsSanitized?: Record<string, unknown>;
     executionDurationMs?: number;
     exitCode?: number;
+    provider?: string;
     model?: string;
+    timeToFirstTokenMs?: number;
+    durationMs?: number;
     promptTokens?: number;
     completionTokens?: number;
+    retryCount?: number;
+    cancelled?: boolean;
     costUsd?: number;
     errorType?: string;
     errorMessageSanitized?: string;

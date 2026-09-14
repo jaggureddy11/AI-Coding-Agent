@@ -25,14 +25,13 @@ JAGGU is implemented in 17 rigorous, sequentially verifiable milestones (M0–M1
 - **Acceptance Criteria**: Full Webview ↔ Extension Host communication verified; status transitions and cancellation functional.
 - **Record**: See [`docs/implementation/M1-extension-shell.md`](file:///Users/apple/Desktop/PROJECTS/Coding%20Agent/docs/implementation/M1-extension-shell.md).
 
-### M2: Multi-Provider Model Gateway
-- **Goal**: Implement `IModelProvider` abstraction supporting Anthropic, OpenAI, Gemini, and Ollama.
-- **Affected Packages**: `packages/jaggu-models`.
-- **Steps**: Implement SSE streaming parsers, tool-call chunk assemblers, and secret token manager.
-- **Tests**: Mock stream tests verify token chunking and exponential backoff retry.
-- **Acceptance Criteria**: Unit tests pass against recorded HTTP responses for all 4 providers.
-- **Dependencies**: M0.
-- **Rollback**: Drop provider adapters.
+### M2: Multi-Provider Model Gateway *(COMPLETED - Sep 14, 2026)*
+- **Goal**: Implement `IModelProvider` abstraction and `ModelGateway` supporting OpenAI, Anthropic, Gemini, Ollama, and Mock.
+- **Affected Packages**: `packages/jaggu-core`, `packages/jaggu-vscode`, `packages/jaggu-ui`.
+- **Implementation Details**: Implemented native `fetch` transport with SSE/NDJSON streaming, jittered exponential backoff retry for 429/5xx, fail-fast for 401/403 credentials, first-class `AbortController` cancellation, `CredentialManager` backed by VS Code `SecretStorage` (`context.secrets`), real-time token streaming (`token.delta`, `token.complete`), and provider configuration switching (`jaggu.setApiKey`, `jaggu.selectProvider`, `jaggu.selectModel`).
+- **Tests**: 7 test suites passed, 41/41 unit & integration tests passing (`npm test`).
+- **Acceptance Criteria**: Normalized stream parsing, tool calling abstraction, capability querying, hardware cancellation, and zero-leak credential storage verified.
+- **Record**: See [`docs/implementation/M2-model-gateway.md`](file:///Users/apple/Desktop/PROJECTS/Coding%20Agent/docs/implementation/M2-model-gateway.md).
 
 ### M3: Streaming AI Chat Experience
 - **Goal**: Connect Webview UI to Model Gateway via Webview RPC for interactive conversation.
