@@ -6,7 +6,7 @@ Deterministic evaluation and benchmarking suite for measuring the capability, re
 
 `@jaggu/eval` runs a standardized battery of realistic software engineering tasks across sandboxed fixture repositories. It directly exercises JAGGU's orchestration, planning, multi-file editing, diagnostics, self-healing repair, and Git safety invariants without requiring external network connectivity, API keys, or live language servers.
 
-## Benchmark Archetypes (8 Tasks)
+## Benchmark Archetypes (12 Tasks)
 
 1. **TASK-01 (FEATURE)**: Authentication Rate Limiting (`fixture-01-rate-limiter`)
 2. **TASK-02 (DEBUG)**: JWT Expiration Clock Skew (`fixture-02-jwt-clockskew`)
@@ -16,6 +16,10 @@ Deterministic evaluation and benchmarking suite for measuring the capability, re
 6. **TASK-06 (GIT_SAFETY)**: Dirty Working Tree Preservation (`fixture-06-dirty-worktree`)
 7. **TASK-07 (PARTIAL_APPROVAL)**: Selective Migration (`fixture-07-partial-approval`)
 8. **TASK-08 (EXPLAIN)**: Cross-Module Architecture Trace (`fixture-08-architecture-trace`)
+9. **TASK-09 (ASYNC_RACE)**: Worker Pool Race Condition (`fixture-09-async-race`)
+10. **TASK-10 (SECURITY)**: Path Traversal Vulnerability Patch (`fixture-10-path-security`)
+11. **TASK-11 (INTEGRATION)**: Correlation ID Propagation (`fixture-11-correlation-id`)
+12. **TASK-12 (PERFORMANCE)**: LRU Cache Eviction (`fixture-12-cache-eviction`)
 
 ## Running the Benchmark
 

@@ -164,7 +164,7 @@ export function activate(context: vscode.ExtensionContext): {
   context.subscriptions.push(
     vscode.commands.registerCommand('jaggu.setApiKey', async () => {
       const provider = await vscode.window.showQuickPick(
-        ['openai', 'anthropic', 'gemini'],
+        ['openai', 'anthropic', 'gemini', 'huggingface'],
         { placeHolder: 'Select model provider to configure API Key' },
       );
       if (!provider) return;

@@ -1,14 +1,23 @@
 import * as childProcess from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs';
-import { rgPath } from '@vscode/ripgrep';
 import { SearchMatch, SearchQueryOptions } from './types.js';
+
+let defaultRgPath = '';
+try {
+  const rgModule = typeof require !== 'undefined' ? require('@vscode/ripgrep') : null;
+  if (rgModule?.rgPath) {
+    defaultRgPath = rgModule.rgPath;
+  }
+} catch {
+  defaultRgPath = '';
+}
 
 export class RipgrepSearchService {
   private readonly _rgPath: string;
 
   constructor(customRgPath?: string) {
-    this._rgPath = customRgPath || rgPath;
+    this._rgPath = customRgPath || defaultRgPath;
   }
 
   public async searchText(

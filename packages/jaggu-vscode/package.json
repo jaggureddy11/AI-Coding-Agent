@@ -1,19 +1,37 @@
 {
   "name": "jaggu-vscode",
-  "displayName": "JAGGU",
-  "description": "JAGGU — Autonomous AI Coding Agent for VS Code",
+  "displayName": "JAGGU — Autonomous AI Coding Agent",
+  "description": "Developer-controlled autonomous AI coding agent for VS Code. Understands repositories, formulates plans, executes verified multi-file edits, and self-heals errors.",
   "version": "0.1.0",
   "publisher": "jaggu",
   "engines": {
     "vscode": "^1.90.0"
+  },
+  "license": "MIT",
+  "icon": "media/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jaggureddy11/AI-Coding-Agent"
+  },
+  "homepage": "https://github.com/jaggureddy11/AI-Coding-Agent#readme",
+  "bugs": {
+    "url": "https://github.com/jaggureddy11/AI-Coding-Agent/issues"
   },
   "categories": [
     "AI",
     "Programming Languages",
     "Machine Learning"
   ],
+  "keywords": [
+    "ai",
+    "coding-agent",
+    "autonomous-agent",
+    "developer-tools",
+    "llm",
+    "ollama",
+    "copilot"
+  ],
   "main": "./dist/extension.js",
-  "type": "module",
   "activationEvents": [
     "onStartupFinished"
   ],
@@ -51,6 +69,26 @@
         "command": "jaggu.cancelSession",
         "title": "JAGGU: Cancel Active Task",
         "category": "JAGGU"
+      },
+      {
+        "command": "jaggu.setApiKey",
+        "title": "JAGGU: Manage API Keys (SecretStorage)",
+        "category": "JAGGU"
+      },
+      {
+        "command": "jaggu.selectProvider",
+        "title": "JAGGU: Select Model Provider",
+        "category": "JAGGU"
+      },
+      {
+        "command": "jaggu.selectModel",
+        "title": "JAGGU: Select Active Model",
+        "category": "JAGGU"
+      },
+      {
+        "command": "jaggu.reviewDiff",
+        "title": "JAGGU: Review Proposed Diff",
+        "category": "JAGGU"
       }
     ],
     "configuration": {
@@ -59,7 +97,7 @@
         "jaggu.provider": {
           "type": "string",
           "default": "mock",
-          "description": "Active AI provider for JAGGU ('mock', 'ollama', 'openai-compatible', 'openai', 'anthropic', 'gemini')"
+          "description": "Active AI provider for JAGGU ('mock', 'ollama', 'openai-compatible', 'openai', 'anthropic', 'gemini', 'huggingface')"
         },
         "jaggu.model": {
           "type": "string",
@@ -90,7 +128,8 @@
     }
   },
   "scripts": {
-    "build": "tsc -b",
+    "bundle": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --platform=node --external:vscode --format=cjs --sourcemap --banner:js=\"const import_meta_url = require('url').pathToFileURL(__filename).href;\" --define:import.meta.url=import_meta_url",
+    "build": "tsc -b && npm run bundle",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
@@ -99,6 +138,7 @@
     "@jaggu/ui": "*"
   },
   "devDependencies": {
-    "@types/vscode": "^1.90.0"
+    "@types/vscode": "^1.90.0",
+    "esbuild": "^0.21.5"
   }
 }

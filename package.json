@@ -8,6 +8,8 @@
   ],
   "scripts": {
     "build": "npm run build --workspaces",
+    "build:extension": "npm run build --workspace=jaggu-vscode",
+    "package:extension": "npm run build && cd packages/jaggu-vscode && npx @vscode/vsce package --no-dependencies --no-git-tag-version",
     "typecheck": "npm run typecheck --workspaces",
     "lint": "eslint packages/*/src/**/*.{ts,tsx}",
     "test": "vitest run",
