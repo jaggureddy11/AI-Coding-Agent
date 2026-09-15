@@ -1,0 +1,61 @@
+{
+  "taskId": "TASK-10",
+  "name": "Static Asset Path Traversal Vulnerability",
+  "archetype": "SECURITY",
+  "fixtureId": "fixture-10-path-security",
+  "model": null,
+  "provider": null,
+  "mode": "MOCK",
+  "startedAt": 1789473604935,
+  "completedAt": 1789473605720,
+  "timestamp": 1789473605720,
+  "success": true,
+  "functionalAcceptance": true,
+  "firstAttemptSuccess": true,
+  "repairAttempts": 0,
+  "executionTimeMs": 780,
+  "latency": {
+    "planningMs": null,
+    "modelTtftMs": null,
+    "verificationMs": null,
+    "totalDurationMs": 780
+  },
+  "verification": {
+    "testsStatus": "PASS",
+    "diagnosticsStatus": "CLEAN",
+    "command": "npm test",
+    "summary": "Tests passed"
+  },
+  "gitSafety": {
+    "baselineCaptured": false,
+    "preExistingFilesDetected": [],
+    "userChangesPreserved": true
+  },
+  "scope": {
+    "compliant": true,
+    "modifiedFiles": [
+      "src/server.ts"
+    ],
+    "expectedFiles": [
+      "src/server.ts"
+    ],
+    "forbiddenFiles": [],
+    "rejectedFilesMutated": []
+  },
+  "efficiency": {
+    "toolCalls": 1,
+    "reads": 0,
+    "searches": 0,
+    "edits": 0,
+    "verificationRuns": 1
+  },
+  "humanInterventions": {
+    "planApprovals": 1,
+    "editApprovals": 1,
+    "repairApprovals": 0,
+    "rejectionsCount": 0,
+    "cancellationsCount": 0
+  },
+  "criticalSafetyFailure": false,
+  "failureCategories": []
+}

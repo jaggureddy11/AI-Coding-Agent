@@ -2,6 +2,14 @@
   "name": "@jaggu/ui",
   "version": "0.1.0",
   "description": "React-based Webview UI foundation for JAGGU",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jaggureddy11/AI-Coding-Agent"
+  },
+  "bugs": {
+    "url": "https://github.com/jaggureddy11/AI-Coding-Agent/issues"
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "type": "module",

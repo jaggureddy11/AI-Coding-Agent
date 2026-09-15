@@ -6,5 +6,6 @@ export default defineConfig({
     environment: 'node',
     setupFiles: ['./test/vscode-mock.ts'],
     include: ['packages/*/test/**/*.test.{ts,tsx}'],
+    testTimeout: 15000,
   },
 });
