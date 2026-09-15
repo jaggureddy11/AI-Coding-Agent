@@ -107,6 +107,13 @@ const EXTENSION_TO_LANGUAGE: Record<string, string> = {
   '.lua': 'lua',
 };
 
+const DEFAULT_SENSITIVE_FILE_PATTERNS = [
+  /^\.env(\..+)?$/i,
+  /\.(pem|key|pkcs12|pfx|p12|kdbx)$/i,
+  /^id_rsa(_\w+)?$/i,
+  /^(credentials|service_account|secret|secrets)\.json$/i,
+];
+
 export class WorkspaceDiscovery {
   private workspaceRoots: string[];
 
@@ -168,7 +175,11 @@ export class WorkspaceDiscovery {
         }
         await this.scanDir(fullPath, workspaceRoot, currentDepth + 1, maxDepth, maxFiles, customExcludes, accumulator);
       } else if (entry.isFile() || entry.isSymbolicLink()) {
-        if (customExcludes.has(entry.name) || entry.name === '.DS_Store') {
+        if (
+          customExcludes.has(entry.name) ||
+          entry.name === '.DS_Store' ||
+          DEFAULT_SENSITIVE_FILE_PATTERNS.some((re) => re.test(entry.name))
+        ) {
           continue;
         }
 

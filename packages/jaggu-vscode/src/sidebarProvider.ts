@@ -62,6 +62,8 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
   private readonly _pendingPlanApprovals = new Map<string, (approved: boolean) => void>();
   private readonly _pendingEditSetApprovals = new Map<string, (decision: boolean | EditApprovalDecision) => void>();
   private readonly _pendingScopeApprovals = new Map<string, (approved: boolean) => void>();
+  private _lastHealthCheckTime = 0;
+  private static readonly HEALTH_CHECK_TTL_MS = 20000; // 20s cache to avoid excessive probing
 
   private readonly _onDidChangeStatus = new vscode.EventEmitter<{
     state: UiAgentStatus;
@@ -257,8 +259,15 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
 
   /**
    * Probes health of local runtimes and credential status for registered models.
+   * Uses cached results if called within HEALTH_CHECK_TTL_MS unless forced.
    */
-  public async checkRuntimesHealth(): Promise<void> {
+  public async checkRuntimesHealth(force = false): Promise<void> {
+    const now = Date.now();
+    if (!force && now - this._lastHealthCheckTime < JagguSidebarProvider.HEALTH_CHECK_TTL_MS) {
+      return;
+    }
+    this._lastHealthCheckTime = now;
+
     const registry = this._modelGateway.getModelRegistry();
     const ollamaProvider = this._modelGateway.getProvider('ollama');
     const openaiCompatProvider = this._modelGateway.getProvider('openai-compatible');
@@ -430,7 +439,7 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
       }
 
       case 'models.refresh_health': {
-        await this.checkRuntimesHealth();
+        await this.checkRuntimesHealth(true);
         break;
       }
 
