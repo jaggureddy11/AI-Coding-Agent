@@ -420,7 +420,7 @@ export const App: React.FC<AppProps> = ({
           minHeight: '42px',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           {/* Coding Glasses Icon */}
           <div
             style={{
@@ -472,15 +472,6 @@ export const App: React.FC<AppProps> = ({
           >
             {activeConfig.provider}
           </span>
-
-          {availableModels.length > 0 && (
-            <ModelSelector
-              models={availableModels}
-              activeModelId={activeModelId}
-              onSelectModel={handleModelSelect}
-              onRefreshHealth={handleRefreshHealth}
-            />
-          )}
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -959,8 +950,8 @@ export const App: React.FC<AppProps> = ({
             />
 
             {/* Inner Controls Bar */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '2px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: 'var(--vscode-descriptionForeground, #858585)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '4px', gap: '8px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', flexWrap: 'wrap' }}>
                 <span
                   style={{
                     padding: '2px 6px',
@@ -973,9 +964,14 @@ export const App: React.FC<AppProps> = ({
                 >
                   @workspace
                 </span>
-                <span>
-                  Status: <span style={{ fontWeight: 500, color: 'var(--vscode-foreground, #cccccc)' }}>● {status === 'IDLE' ? 'Ready' : status}</span>
-                </span>
+                {availableModels.length > 0 && (
+                  <ModelSelector
+                    models={availableModels}
+                    activeModelId={activeModelId}
+                    onSelectModel={handleModelSelect}
+                    onRefreshHealth={handleRefreshHealth}
+                  />
+                )}
               </div>
 
               <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>

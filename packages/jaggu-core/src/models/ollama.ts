@@ -210,10 +210,10 @@ export class OllamaProvider implements IModelProvider {
         const models = Array.isArray(data.models) ? data.models.map((m) => m.name) : [];
         return { reachable: true, models };
       }
-      return { reachable: false, error: `HTTP ${response.status} ${response.statusText}` };
+      return { reachable: false, models: [], error: `HTTP ${response.status} ${response.statusText}` };
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      return { reachable: false, error: msg };
+      return { reachable: false, models: [], error: msg };
     }
   }
 
