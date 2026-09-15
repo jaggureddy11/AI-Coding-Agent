@@ -114,6 +114,31 @@
         "category": "JAGGU"
       },
       {
+        "command": "jaggu.checkProviderStatus",
+        "title": "JAGGU: Check Provider Status",
+        "category": "JAGGU"
+      },
+      {
+        "command": "jaggu.approvePlan",
+        "title": "JAGGU: Approve Plan",
+        "category": "JAGGU"
+      },
+      {
+        "command": "jaggu.rejectPlan",
+        "title": "JAGGU: Reject Plan",
+        "category": "JAGGU"
+      },
+      {
+        "command": "jaggu.approveEditSet",
+        "title": "JAGGU: Approve Changes",
+        "category": "JAGGU"
+      },
+      {
+        "command": "jaggu.rejectEditSet",
+        "title": "JAGGU: Reject Changes",
+        "category": "JAGGU"
+      },
+      {
         "command": "jaggu.selectProvider",
         "title": "JAGGU: Select Model Provider",
         "icon": "$(server)",
@@ -133,6 +158,11 @@
     "configuration": {
       "title": "JAGGU",
       "properties": {
+        "jaggu.autoRouting": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically select the best eligible free/open model for each task"
+        },
         "jaggu.modelMode": {
           "type": "string",
           "enum": ["auto", "free-and-local", "local-only", "manual"],
@@ -149,10 +179,20 @@
           "default": false,
           "description": "Allow automatic fallback to configured paid models (OpenAI, Anthropic, Gemini) if all free/local models are unavailable. (Default: false)"
         },
+        "jaggu.preferLocalModels": {
+          "type": "boolean",
+          "default": false,
+          "description": "Prefer local Ollama or OpenAI-compatible models over cloud models when available"
+        },
         "jaggu.localOnly": {
           "type": "boolean",
           "default": false,
           "description": "Strictly restrict JAGGU to offline local runtimes (Ollama / local servers). Never contact cloud providers."
+        },
+        "jaggu.showModelStatus": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show model selection badge and availability status in the sidebar"
         },
         "jaggu.provider": {
           "type": "string",

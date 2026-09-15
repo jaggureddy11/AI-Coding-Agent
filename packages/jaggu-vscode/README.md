@@ -137,25 +137,35 @@ Access all JAGGU capabilities directly via the Command Palette (`Cmd+Shift+P` / 
 | `JAGGU: Open Chat` | `jaggu.openChat` | Focuses and opens the JAGGU sidebar view |
 | `JAGGU: Start New Session` | `jaggu.startSession` | Resets conversation state and initializes a clean task session |
 | `JAGGU: Cancel Active Task` | `jaggu.cancelSession` | Instantly aborts in-flight generation, streaming, or test execution |
+| `JAGGU: Set Hugging Face Token` | `jaggu.setHuggingFaceToken` | Stores your free Hugging Face token in SecretStorage |
+| `JAGGU: Remove Hugging Face Token` | `jaggu.removeHuggingFaceToken` | Clears Hugging Face token from SecretStorage |
+| `JAGGU: Test Hugging Face Connection` | `jaggu.testHuggingFaceConnection` | Tests live connectivity to Hugging Face inference router |
+| `JAGGU: Check Provider Status` | `jaggu.checkProviderStatus` | Verifies runtime health of local and cloud providers |
 | `JAGGU: Manage API Keys (SecretStorage)` | `jaggu.setApiKey` | Securely stores API keys in OS Keychain / Credential Manager |
-| `JAGGU: Select Model Provider` | `jaggu.selectProvider` | Quickly switches active AI provider (Ollama, Anthropic, OpenAI, etc.) |
+| `JAGGU: Select Model Provider` | `jaggu.selectProvider` | Quickly switches active AI provider (Hugging Face, Ollama, Anthropic, etc.) |
 | `JAGGU: Select Active Model` | `jaggu.selectModel` | Selects specific model tag or enters custom model string |
+| `JAGGU: Approve Plan` | `jaggu.approvePlan` | Approves staged milestone engineering plan |
+| `JAGGU: Reject Plan` | `jaggu.rejectPlan` | Rejects proposed plan and allows prompt refinement |
+| `JAGGU: Approve Changes` | `jaggu.approveEditSet` | Atomically applies reviewed change set to workspace |
+| `JAGGU: Reject Changes` | `jaggu.rejectEditSet` | Rejects change set with zero disk mutations |
+| `JAGGU: Review Proposed Diff` | `jaggu.reviewDiff` | Opens native VS Code side-by-side diff review |
 
 ---
 
 ## 🤖 Supported Models & Providers
 
-JAGGU connects directly to AI providers with **zero intermediate proxy servers**:
+JAGGU connects directly to AI providers with **zero intermediate proxy servers** and **Free-First Auto Routing**:
 
-| Provider | Provider ID | Highlighted Models | Privacy / Connection |
+| Provider | Access Tier | Highlighted Models | Privacy / Connection |
 | :--- | :--- | :--- | :--- |
-| **Local Ollama** | `ollama` | `qwen2.5-coder:7b`, `deepseek-r1:14b`, `llama3.3:8b` | **100% Offline / Air-Gapped** |
-| **OpenAI-Compatible** | `openai-compatible` | Any self-hosted model (vLLM, LM Studio, LocalAI) | Local / Private Network |
-| **Anthropic** | `anthropic` | `claude-3-7-sonnet-latest`, `claude-3-5-sonnet-latest` | Direct Client-to-API TLS |
-| **OpenAI** | `openai` | `gpt-4o`, `gpt-4o-mini`, `o1`, `o3-mini` | Direct Client-to-API TLS |
-| **Google Gemini** | `gemini` | `gemini-2.0-flash`, `gemini-2.0-pro-exp`, `gemini-1.5-pro` | Direct Client-to-API TLS |
-| **Hugging Face** | `huggingface` | `Qwen/Qwen2.5-Coder-32B-Instruct`, `meta-llama/Llama-3.3-70B` | Direct Client-to-API TLS |
-| **Mock Engine** | `mock` | `mock-fast`, `mock-accurate` | In-memory simulated for testing |
+| **Auto (Default)** | **Free / Local First** | Dynamic best model (`Qwen3-Coder-30B`, `qwen2.5-coder:7b`) | Automated Zero-Cost Priority |
+| **Hugging Face** | **Free Cloud** | `Qwen/Qwen3-Coder-30B-A3B-Instruct`, `meta-llama/Llama-3.1-8B` | Direct Client-to-API TLS |
+| **Local Ollama** | **100% Local / Free** | `qwen2.5-coder:7b`, `deepseek-r1:8b`, `llama3.3:70b` | **100% Offline / Air-Gapped** |
+| **OpenAI-Compatible** | **Local Server** | Any self-hosted model (vLLM, LM Studio, LocalAI) | Local / Private Network |
+| **Anthropic** | **Paid (Opt-in)** | `claude-3-7-sonnet-latest`, `claude-3-5-sonnet-latest` | Direct Client-to-API TLS |
+| **OpenAI** | **Paid (Opt-in)** | `gpt-4o`, `gpt-4o-mini`, `o1`, `o3-mini` | Direct Client-to-API TLS |
+| **Google Gemini** | **Paid (Opt-in)** | `gemini-2.0-flash`, `gemini-1.5-pro` | Direct Client-to-API TLS |
+| **Mock Engine** | **Deterministic** | `mock-fast`, `mock-reasoning` | In-memory simulated for testing |
 
 ---
 

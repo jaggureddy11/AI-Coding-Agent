@@ -259,6 +259,14 @@ export function activate(context: vscode.ExtensionContext): {
   );
 
   context.subscriptions.push(
+    vscode.commands.registerCommand('jaggu.checkProviderStatus', async () => {
+      await sidebarProvider.checkRuntimesHealth();
+      const status = sidebarProvider.currentStatus;
+      vscode.window.showInformationMessage(`JAGGU: Runtime health check completed. Current state: [${status}]`);
+    }),
+  );
+
+  context.subscriptions.push(
     vscode.commands.registerCommand('jaggu.selectProvider', async () => {
       const providers = modelGateway.listProviders().map((p) => ({
         label: p.name,
