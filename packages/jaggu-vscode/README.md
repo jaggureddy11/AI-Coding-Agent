@@ -1,29 +1,36 @@
-# JAGGU ⚡
+# JAGGU
 
 <p align="center">
   <img src="media/icon.png" alt="JAGGU Logo" width="128" style="border-radius: 24px;" />
 </p>
 
+<h2 align="center">Developer-Controlled AI Coding Agent for VS Code</h2>
+
 <p align="center">
-  <strong>The Developer-Controlled Autonomous AI Coding Agent for VS Code</strong><br>
   <em>Plan precisely. Stage safely. Verify with tests. Never surrender control.</em>
 </p>
 
 <p align="center">
-  <a href="https://code.visualstudio.com/"><img src="https://img.shields.io/badge/VS_Code-%5E1.90.0-007ACC?style=for-the-badge&logo=visualstudiocode&logoColor=white" alt="VS Code"></a>
-  <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.7_Strict-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript"></a>
-  <a href="https://github.com/jaggureddy11/AI-Coding-Agent"><img src="https://img.shields.io/badge/Tests-31_Suites_Passing-brightgreen?style=for-the-badge" alt="Tests"></a>
-  <a href="#-security--privacy-first"><img src="https://img.shields.io/badge/Privacy-Zero_Exfiltration-orange?style=for-the-badge" alt="Privacy"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge" alt="License"></a>
+  <code>TypeScript</code> &nbsp;|&nbsp;
+  <code>React</code> &nbsp;|&nbsp;
+  <code>VS Code API</code> &nbsp;|&nbsp;
+  <code>Hugging Face</code> &nbsp;|&nbsp;
+  <code>Ollama</code>
 </p>
 
 <p align="center">
-  <a href="#-overview">Overview</a> •
-  <a href="#-key-features">Key Features</a> •
-  <a href="#-using-jaggu">Usage</a> •
-  <a href="#-vs-code-commands">Commands</a> •
-  <a href="#-supported-models--providers">Models</a> •
-  <a href="#-security--privacy-first">Security</a>
+  <a href="#-architecture-diagram"><img src="https://img.shields.io/badge/🏛️_Architecture-Diagram-4B0082?style=for-the-badge" alt="Architecture Diagram"></a>
+  <a href="#-install-extension"><img src="https://img.shields.io/badge/⚡_Install-Extension-007ACC?style=for-the-badge&logo=visualstudiocode&logoColor=white" alt="Install Extension"></a>
+  <a href="#-using-jaggu"><img src="https://img.shields.io/badge/🎮_Using-JAGGU-8A2BE2?style=for-the-badge" alt="Using JAGGU"></a>
+  <a href="#-supported-models--providers"><img src="https://img.shields.io/badge/🤖_Models-Supported-28A745?style=for-the-badge" alt="Models"></a>
+</p>
+
+<p align="center">
+  <a href="https://code.visualstudio.com/"><img src="https://img.shields.io/badge/VS_Code-%5E1.90.0-007ACC?style=flat-square&logo=visualstudiocode&logoColor=white" alt="VS Code"></a>
+  <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.7_Strict-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript"></a>
+  <a href="https://github.com/jaggureddy11/AI-Coding-Agent"><img src="https://img.shields.io/badge/Tests-31_Suites_Passing-brightgreen?style=flat-square" alt="Tests"></a>
+  <a href="#-security--privacy-first"><img src="https://img.shields.io/badge/Privacy-Zero_Exfiltration-orange?style=flat-square" alt="Privacy"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue?style=flat-square" alt="License"></a>
 </p>
 
 ---
@@ -37,6 +44,60 @@ Most AI coding assistants either output code snippets to a chat window for you t
 Built directly on the VS Code extension runtime, JAGGU indexes your codebase with Ripgrep, synthesizes structured multi-phase execution plans, stages surgical diffs in an **in-memory shadow buffer**, runs your project's test suites to verify its solutions, and autonomously repairs compiler or test errors before presenting the finished work for your final approval.
 
 > **Zero Middleman Proxy** • **100% Direct TLS Connections** • **Air-Gapped Local Model Support**
+
+---
+
+## 🏛️ Architecture Diagram
+
+JAGGU uses a decoupled, event-driven multi-layer architecture:
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                           Visual Studio Code                            │
+│     (Sidebar Webview React 18 • Native Diff Editor • Status Bar)        │
+└────────────────────────────────────┬────────────────────────────────────┘
+                                     │ Extension Host Typed IPC
+┌────────────────────────────────────▼────────────────────────────────────┐
+│                          JAGGU Extension Host                           │
+│       (SidebarProvider • SecretStorage • VirtualDocProvider)            │
+└────────────────────────────────────┬────────────────────────────────────┘
+                                     │
+┌────────────────────────────────────▼────────────────────────────────────┐
+│                            Agent Orchestrator                           │
+│        (Deterministic 7-State Finite State Machine / Safety Model)      │
+├────────────────────────────────────┬────────────────────────────────────┤
+│           Context Engine           │        Verification Engine         │
+│   (Ripgrep Index + AST RepoMap)    │   (Test Runners + LSP Diagnostics) │
+├────────────────────────────────────┴────────────────────────────────────┤
+│                              Tool Executor                              │
+│       (ReadFile • ProposeEdit • ApplyEdit • ExecuteTerminal • Git)      │
+└────────────────────────────────────┬────────────────────────────────────┘
+                                     │ Direct TLS / Local IPC
+┌────────────────────────────────────▼────────────────────────────────────┐
+│                        Polymorphic Model Gateway                        │
+│   ┌─────────────────────┬──────────────────────┬────────────────────┐   │
+│   │    Cloud Models     │  Air-Gapped Ollama   │ OpenAI-Compatible  │   │
+│   │ (Claude/GPT/Gemini) │  (Qwen/DeepSeek-R1)  │ (vLLM / LM Studio) │   │
+│   └─────────────────────┴──────────────────────┴────────────────────┘   │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## ⚡ Install Extension
+
+### Quick Install via VS Code Terminal
+Run the following command in your terminal to install the packaged extension directly into your local VS Code instance:
+
+```bash
+code --install-extension jaggu-vscode-0.1.0.vsix
+```
+
+### Install via VS Code UI
+1. Open VS Code.
+2. Open the Command Palette (`Cmd+Shift+P` on macOS / `Ctrl+Shift+P` on Windows/Linux).
+3. Type **`Extensions: Install from VSIX...`** and press Enter.
+4. Select `jaggu-vscode-0.1.0.vsix`.
 
 ---
 
