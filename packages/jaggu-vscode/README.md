@@ -1,187 +1,113 @@
-# JAGGU — Autonomous AI Coding Agent for VS Code
+# JAGGU ⚡
 
 <p align="center">
-  <img src="media/icon.png" alt="JAGGU Logo" width="96" height="96" />
+  <img src="media/icon.png" alt="JAGGU Logo" width="128" style="border-radius: 24px;" />
 </p>
 
 <p align="center">
-  <strong>A developer-controlled autonomous AI coding agent built on the Visual Studio Code foundation.</strong><br>
-  <em>Act, Do Not Merely Chat.</em>
+  <strong>The Developer-Controlled Autonomous AI Coding Agent for VS Code</strong><br>
+  <em>Plan precisely. Stage safely. Verify with tests. Never surrender control.</em>
+</p>
+
+<p align="center">
+  <a href="https://code.visualstudio.com/"><img src="https://img.shields.io/badge/VS_Code-%5E1.90.0-007ACC?style=for-the-badge&logo=visualstudiocode&logoColor=white" alt="VS Code"></a>
+  <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.7_Strict-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript"></a>
+  <a href="https://github.com/jaggureddy11/AI-Coding-Agent"><img src="https://img.shields.io/badge/Tests-31_Suites_Passing-brightgreen?style=for-the-badge" alt="Tests"></a>
+  <a href="#-security--privacy-first"><img src="https://img.shields.io/badge/Privacy-Zero_Exfiltration-orange?style=for-the-badge" alt="Privacy"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge" alt="License"></a>
+</p>
+
+<p align="center">
+  <a href="#-overview">Overview</a> •
+  <a href="#-key-features">Key Features</a> •
+  <a href="#-using-jaggu">Usage</a> •
+  <a href="#-vs-code-commands">Commands</a> •
+  <a href="#-supported-models--providers">Models</a> •
+  <a href="#-security--privacy-first">Security</a>
 </p>
 
 ---
 
-## Overview
+## ⚡ Overview
 
-**JAGGU** is an autonomous software engineering partner for VS Code that enables developers to delegate multi-file coding, debugging, refactoring, and test repair tasks without relinquishing architectural oversight or code control.
+Most AI coding assistants either output code snippets to a chat window for you to manually copy-paste, or silently modify your workspace files with opaque, unpredictable changes.
 
-Unlike conversational chatbots that output snippets for manual copying, or opaque tools that silently overwrite workspace files, JAGGU operates within an observable, deterministic **7-state Finite State Machine (FSM)**. It analyzes your repository, constructs a structured plan, requests your approval, stages surgical multi-file diffs in an in-memory shadow buffer, executes test suites to verify its work, and self-heals compiler or test errors before completion.
+**JAGGU delivers true autonomous engineering without sacrificing developer control.**
 
----
+Built directly on the VS Code extension runtime, JAGGU indexes your codebase with Ripgrep, synthesizes structured multi-phase execution plans, stages surgical diffs in an **in-memory shadow buffer**, runs your project's test suites to verify its solutions, and autonomously repairs compiler or test errors before presenting the finished work for your final approval.
 
-## Key Features
-
-- 🔍 **Repository-Aware Context**: Automatic workspace discovery, import dependency tracing, and high-speed Ripgrep symbol indexing.
-- 📋 **Structured Planning**: Generates phased, milestone-based plans presented as interactive **PlanCards** for your explicit consensus.
-- 🛡️ **Approval-Gated Multi-File Editing**: Changes are staged in an in-memory `VirtualDocStore` shadow buffer. Files can be inspected, approved individually, or selectively rejected.
-- ⚡ **Native VS Code Diff Review**: Inspect proposed modifications side-by-side using VS Code's native diff viewer before disk commits.
-- 🔄 **Deterministic Test Verification**: Automatically executes workspace test runners (Vitest, Jest, PyTest, Go test, Cargo) and parses exit codes and stack traces.
-- 🩺 **Language Service Diagnostics**: Collects real-time compiler and linter diagnostics directly from the VS Code Language Server Protocol (LSP).
-- 🩹 **Autonomous Self-Healing Loop**: Diagnoses compilation and test failures, synthesizes surgical fixes, and verifies repairs (strictly bounded to a 3-retry budget).
-- 🔒 **Git Working Tree Safety**: Creates non-destructive safety checkpoints to preserve unstaged developer modifications. Never performs autonomous git pushes.
-- ⏹️ **Instant Cancellation**: Abort active tasks or in-flight model streams at any second with a single click or `Escape`.
-- 🌐 **Provider Independence**: Seamlessly switch between Anthropic Claude, OpenAI GPT-4o, Google Gemini, Hugging Face, and 100% offline local inference via Ollama or OpenAI-compatible servers.
+> **Zero Middleman Proxy** • **100% Direct TLS Connections** • **Air-Gapped Local Model Support**
 
 ---
 
-## Architecture
+## ✨ Key Features
 
-JAGGU uses a clean, decoupled multi-layer architecture:
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                      Visual Studio Code                     │
-│    (Sidebar Webview • Native Diff View • Status Bar)       │
-└──────────────────────────────┬──────────────────────────────┘
-                               │ Extension Host IPC (Typed RPC)
-┌──────────────────────────────▼──────────────────────────────┐
-│                    JAGGU Extension Host                     │
-│   (SidebarProvider • SecretStorage • VirtualDocProvider)    │
-└──────────────────────────────┬──────────────────────────────┘
-                               │
-┌──────────────────────────────▼──────────────────────────────┐
-│                      Agent Orchestrator                      │
-│            (Deterministic 7-State State Machine)            │
-├──────────────────────────────┬──────────────────────────────┤
-│       Context Engine         │      Verification Engine     │
-│   (Ripgrep + RepoMap)        │   (Test Runners + LSP Diag)  │
-├──────────────────────────────┴──────────────────────────────┤
-│                        Tool Executor                        │
-│   (ReadFile • ProposeEdit • ApplyEdit • RunTests • Git)     │
-└──────────────────────────────┬──────────────────────────────┘
-                               │ Direct TLS / Local IPC
-┌──────────────────────────────▼──────────────────────────────┐
-│                    Polymorphic Model Gateway                │
-│    ┌───────────────┬───────────────┬───────────────────┐    │
-│    │ Cloud Models  │ Local Ollama  │ OpenAI-Compatible │    │
-│    │ (Claude/GPT/  │ (Qwen/        │ (vLLM / LM Studio/│    │
-│    │  Gemini/HF)   │  DeepSeek-R1) │  LocalAI)         │    │
-│    └───────────────┴───────────────┴───────────────────┘    │
-└─────────────────────────────────────────────────────────────┘
-```
+| Capability | What It Does | Why It Matters |
+| :--- | :--- | :--- |
+| 🛡️ **Controlled Autonomy** | Deterministic 7-state Finite State Machine (`IDLE` ➔ `PLANNING` ➔ `APPROVAL` ➔ `EXECUTING` ➔ `VERIFYING` ➔ `SELF-HEAL` ➔ `COMPLETE`) | No runaway loops or silent background file corruption. Every transition is transparent and observable. |
+| 📋 **Interactive PlanCards** | Generates structured, milestone-based execution plans | Review and approve the agent's strategy before a single line of code is staged. |
+| 🪟 **Shadow Buffer Diffs** | Edits staged in an in-memory `VirtualDocStore` | Zero direct file overwrites. Inspect changes side-by-side using VS Code's native diff editor. |
+| 📁 **Selective File Approval** | Granular per-file Accept / Reject gates | Approve only the files you want, reject unwanted changes, or iterate on the diff before committing. |
+| 🔄 **Automated Test Verification** | Auto-detects & runs test runners (Jest, Vitest, PyTest, Go, Cargo) | The agent never marks a task finished without empirical test proof. |
+| 🩹 **Self-Healing Loop** | Catches exit codes, stderr & LSP compiler diagnostics | Automatically attempts up to 3 targeted repairs if tests fail or syntax errors arise. |
+| 🔒 **Git Safety Checkpoints** | Non-destructive working tree safety stashes | Protects unstaged work and provides instant rollback points. Never pushes to remote. |
+| 🌐 **Provider Agnostic & Local AI** | Native support for Claude 3.5/3.7, GPT-4o, Gemini 2.0, Hugging Face, Ollama, & vLLM | Complete independence from vendor lock-in. Run 100% offline and air-gapped with zero telemetry. |
 
 ---
 
-## Installation
+## 🎮 Using JAGGU
 
-### From VS Code Marketplace (When Published)
-1. Open VS Code and navigate to Extensions (`Cmd+Shift+X` / `Ctrl+Shift+X`).
-2. Search for `JAGGU`.
-3. Click **Install**.
-
-### Installing from a VSIX Package (Development / Offline)
-1. Download or build `jaggu-vscode-0.1.0.vsix`.
-2. In VS Code, open the Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`).
-3. Run **Extensions: Install from VSIX...** and select the `.vsix` file.
-4. Alternatively, install from terminal:
-   ```bash
-   code --install-extension jaggu-vscode-0.1.0.vsix
-   ```
+1. **Open the Sidebar**: Click the **JAGGU coding glasses icon** in the Activity Bar (or run `JAGGU: Open Chat`).
+2. **Configure Your Provider**:
+   - **Local AI (Ollama)**: Ensure Ollama is running (`ollama serve`). Select `ollama` as your provider and type your model (e.g. `qwen2.5-coder:7b`). No API key needed!
+   - **Cloud Models**: Run `JAGGU: Manage API Keys (SecretStorage)` from the Command Palette, pick your provider, and paste your API key.
+3. **Submit a Task**: Type your request (e.g. *"Fix the clock skew error in the JWT auth middleware and add regression tests"*).
+4. **Approve the Plan**: Review the milestone PlanCard and click **Approve**.
+5. **Inspect Diffs & Review**: Check the staged changes in VS Code's side-by-side diff viewer and accept or reject files individually.
 
 ---
 
-## Model Configuration & Credentials
+## ⌨️ VS Code Commands
 
-JAGGU provides true provider agnosticism. Configure your active provider in **Settings** (`Cmd+,` > search `JAGGU`):
+Access all JAGGU capabilities directly via the Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`):
 
-### Supported Providers
-- **Local Ollama** (`ollama`): Air-gapped, zero-cost inference. Requires a running Ollama daemon (`ollama serve`). Recommended models: `qwen2.5-coder:7b`, `deepseek-r1:14b`, `llama3.3:8b`.
-- **OpenAI-Compatible** (`openai-compatible`): Point to local or private enterprise vLLM, LM Studio, or LocalAI endpoints.
-- **Anthropic** (`anthropic`): Claude 3.7 Sonnet, Claude 3.5 Sonnet, Claude 3.5 Haiku.
-- **OpenAI** (`openai`): GPT-4o, GPT-4o-mini, o1, o3-mini.
-- **Google Gemini** (`gemini`): Gemini 2.0 Flash, Gemini 2.0 Pro, Gemini 1.5 Pro.
-- **Hugging Face** (`huggingface`): Llama 3.3 70B, Qwen 2.5 Coder 32B via HF Router.
-- **Mock** (`mock`): Deterministic in-memory simulated responses for instant testing and evaluation.
-
-### Managing API Keys
-API keys are never stored in settings or files. They are managed through VS Code's native `SecretStorage` API (OS Keychain / Credential Manager):
-1. Open Command Palette (`Cmd+Shift+P`).
-2. Run **`JAGGU: Manage API Keys (SecretStorage)`**.
-3. Select your provider (`OpenAI`, `Anthropic`, `Gemini`, or `Hugging Face`) and input your key.
+| Command | Identifier | Action |
+| :--- | :--- | :--- |
+| `JAGGU: Open Chat` | `jaggu.openChat` | Focuses and opens the JAGGU sidebar view |
+| `JAGGU: Start New Session` | `jaggu.startSession` | Resets conversation state and initializes a clean task session |
+| `JAGGU: Cancel Active Task` | `jaggu.cancelSession` | Instantly aborts in-flight generation, streaming, or test execution |
+| `JAGGU: Manage API Keys (SecretStorage)` | `jaggu.setApiKey` | Securely stores API keys in OS Keychain / Credential Manager |
+| `JAGGU: Select Model Provider` | `jaggu.selectProvider` | Quickly switches active AI provider (Ollama, Anthropic, OpenAI, etc.) |
+| `JAGGU: Select Active Model` | `jaggu.selectModel` | Selects specific model tag or enters custom model string |
 
 ---
 
-## Security & Sandboxing
+## 🤖 Supported Models & Providers
 
-- 🔐 **Zero Credential Exposure**: API tokens are never written to disk, sent to Webviews, or printed in logs. The built-in `SecretSanitizer` automatically scrubs tokens from debug channels.
-- 🛡️ **Content Security Policy (CSP)**: The Webview enforces strict nonce-based CSP (`default-src 'none'; script-src 'nonce-...';`) preventing unauthorized script execution.
-- 📂 **Workspace Containment**: File reading, search, and editing tools strictly validate paths against the active workspace root to prevent directory traversal (`/../`).
-- ✍️ **Zero Silent Writes**: Diffs are staged in an in-memory shadow buffer. File mutation occurs only upon explicit developer approval.
-- 🛑 **Untrusted Model Output**: Model responses are treated as untrusted proposals subject to JSON schema validation and compiler diagnostic checks.
+JAGGU connects directly to AI providers with **zero intermediate proxy servers**:
 
----
-
-## Privacy Notice
-
-- **No Proprietary Relay**: JAGGU establishes direct TLS connections from your machine to your chosen AI provider. There are no intermediate telemetry proxy servers.
-- **Local AI Privacy**: When using the `ollama` or `openai-compatible` providers, 100% of code tokens remain on your local machine.
-- **Cloud Providers**: When using cloud providers, only the relevant prompt tokens (task intent, retrieved code context, and active file diffs) are transmitted to the respective API provider in accordance with their terms of service.
-- **Telemetry**: JAGGU does not implement independent usage telemetry.
+| Provider | Provider ID | Highlighted Models | Privacy / Connection |
+| :--- | :--- | :--- | :--- |
+| **Local Ollama** | `ollama` | `qwen2.5-coder:7b`, `deepseek-r1:14b`, `llama3.3:8b` | **100% Offline / Air-Gapped** |
+| **OpenAI-Compatible** | `openai-compatible` | Any self-hosted model (vLLM, LM Studio, LocalAI) | Local / Private Network |
+| **Anthropic** | `anthropic` | `claude-3-7-sonnet-latest`, `claude-3-5-sonnet-latest` | Direct Client-to-API TLS |
+| **OpenAI** | `openai` | `gpt-4o`, `gpt-4o-mini`, `o1`, `o3-mini` | Direct Client-to-API TLS |
+| **Google Gemini** | `gemini` | `gemini-2.0-flash`, `gemini-2.0-pro-exp`, `gemini-1.5-pro` | Direct Client-to-API TLS |
+| **Hugging Face** | `huggingface` | `Qwen/Qwen2.5-Coder-32B-Instruct`, `meta-llama/Llama-3.3-70B` | Direct Client-to-API TLS |
+| **Mock Engine** | `mock` | `mock-fast`, `mock-accurate` | In-memory simulated for testing |
 
 ---
 
-## Scientific Evaluation Suite
+## 🛡️ Security & Privacy First
 
-JAGGU includes a standardized evaluation harness ([`@jaggu/eval`](https://github.com/jaggureddy11/AI-Coding-Agent/tree/main/packages/jaggu-eval)) with **12 realistic multi-file engineering benchmark tasks** across 8 archetypes:
-1. `FEATURE`: Token bucket rate limiting with sliding window (`fixture-01-rate-limiter`)
-2. `DEBUG`: JWT expiration clock skew tolerance (`fixture-02-jwt-clockskew`)
-3. `REFACTOR`: Decoupling repository interfaces (`fixture-03-repo-decoupling`)
-4. `TESTGEN`: Boundary test suite generation (`fixture-04-boundary-validation`)
-5. `CODE_INTEL`: Type error diagnosis and repair (`fixture-05-type-error-recovery`)
-6. `GIT_SAFETY`: Preserving unstaged working tree changes (`fixture-06-dirty-worktree`)
-7. `PARTIAL_APPROVAL`: Selective file approval and rejection (`fixture-07-partial-approval`)
-8. `EXPLAIN`: Cross-module architecture tracing (`fixture-08-architecture-trace`)
-9. `ASYNC_RACE`: Worker pool concurrency race condition repair (`fixture-09-async-race`)
-10. `SECURITY`: Directory traversal vulnerability remediation (`fixture-10-path-security`)
-11. `INTEGRATION`: Correlation ID tracing across microservices (`fixture-11-correlation-id`)
-12. `PERFORMANCE`: LRU cache eviction under load (`fixture-12-cache-eviction`)
+- 🔐 **OS-Level Secret Storage**: API keys are saved exclusively into VS Code's `SecretStorage` API (backed by macOS Keychain, Windows Credential Manager, or Linux Secret Service). Never saved to plain text or settings files.
+- 🧹 **Secret Sanitizer**: Built-in regex sanitization strips API keys, tokens, and sensitive headers from debug logs and error messages.
+- 🛡️ **Zero Telemetry Exfiltration**: Code, prompts, and tokens are never sent to third-party analytics or intermediary relays.
+- 🛑 **Shadow Staging Protection**: The agent cannot execute destructive writes directly to your disk; all diffs reside in memory until explicitly accepted.
+- 🔒 **Workspace Confinement**: Path resolution strictly prevents directory traversal (`/../`) attacks beyond the active project folder.
 
 ---
 
-## Known Limitations
+## 📄 License
 
-- **File-Level Approval**: The current release supports full file-level approval and selective rejection. Individual hunk-level staging within a single file will arrive in v0.2.0.
-- **Local Model Hardware**: Running local models (e.g. `qwen2.5-coder:7b`) via Ollama requires appropriate CPU/GPU RAM (minimum 8GB system RAM; 16GB+ recommended).
-- **Network Requirements**: Cloud providers (Claude, GPT, Gemini, Hugging Face) require outbound Internet access.
-- **Model Non-Determinism**: AI outputs depend on the underlying model's reasoning capabilities; code modifications should always be reviewed before committing.
-
----
-
-## Contributing & Development
-
-```bash
-# Clone repository
-git clone https://github.com/jaggureddy11/AI-Coding-Agent.git
-cd AI-Coding-Agent
-
-# Install monorepo dependencies
-npm install
-
-# Build all packages
-npm run build
-
-# Run automated test suites (189+ tests)
-npm test
-
-# Typecheck and lint
-npm run typecheck
-npm run lint
-```
-
-Press **`F5`** in VS Code to launch the Extension Development Host.
-
----
-
-## License
-
-This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details. Built upon the Visual Studio Code extension architecture.
+This extension is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details. Built upon the Visual Studio Code extension architecture.

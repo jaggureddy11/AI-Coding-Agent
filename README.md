@@ -243,6 +243,7 @@ npm run package:extension
 
 Deep-dive architectural documentation is available in the [`docs/`](docs/) directory:
 
+- [Documentation Master Index](docs/INDEX.md)
 - [System Architecture](docs/06-system-architecture.md)
 - [Agent State Machine Specification](docs/07-agent-architecture.md)
 - [Context Retrieval Engine](docs/10-context-engine.md)
