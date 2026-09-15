@@ -28,7 +28,7 @@
 <p align="center">
   <a href="https://code.visualstudio.com/"><img src="https://img.shields.io/badge/VS_Code-%5E1.90.0-007ACC?style=flat-square&logo=visualstudiocode&logoColor=white" alt="VS Code"></a>
   <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.7_Strict-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript"></a>
-  <a href="#-development--testing"><img src="https://img.shields.io/badge/Tests-31_Suites_Passing-brightgreen?style=flat-square" alt="Tests"></a>
+  <a href="#-development--testing"><img src="https://img.shields.io/badge/Tests-32_Suites_Passing-brightgreen?style=flat-square" alt="Tests"></a>
   <a href="#-security--privacy-first"><img src="https://img.shields.io/badge/Privacy-Zero_Exfiltration-orange?style=flat-square" alt="Privacy"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue?style=flat-square" alt="License"></a>
 </p>
@@ -135,7 +135,7 @@ The production-ready, standalone VSIX package is generated at:
 | Attribute | Details |
 | :--- | :--- |
 | **Artifact Path** | [`packages/jaggu-vscode/jaggu-vscode-0.1.0.vsix`](packages/jaggu-vscode/jaggu-vscode-0.1.0.vsix) |
-| **Package Size** | ~508 KB (Self-contained, zero external runtime dependencies) |
+| **Package Size** | ~520 KB (Self-contained, zero external runtime dependencies) |
 | **Included Files** | 12 files (Bundled CJS extension, minified Webview IIFE, icons, manifest, license) |
 | **Target VS Code** | `^1.90.0` or higher |
 
@@ -277,7 +277,7 @@ npm run typecheck
 # Run linter across all workspaces
 npm run lint
 
-# Run all 31 unit & integration test suites
+# Run all 32 unit & integration test suites
 npm test
 
 # Package standalone .vsix extension
@@ -288,13 +288,18 @@ npm run package:extension
 
 ## 📚 Documentation
 
-Deep-dive architectural documentation is available in the [`docs/`](docs/) directory:
+Deep-dive architectural, security, and operational documentation is available in the [`docs/`](docs/) directory:
 
-- [Documentation Master Index](docs/INDEX.md)
+- [Trust & Security Architecture](docs/TRUST_AND_SECURITY.md)
+- [Threat Model](docs/THREAT_MODEL.md)
+- [Production Security Report](docs/PRODUCTION_SECURITY_REPORT.md)
+- [Production Readiness Report](docs/PRODUCTION_READINESS_REPORT.md)
+- [Production Runbook](docs/PRODUCTION_RUNBOOK.md)
+- [Incident Response Plan](docs/INCIDENT_RESPONSE.md)
+- [Security Policy](SECURITY.md)
 - [System Architecture](docs/06-system-architecture.md)
 - [Agent State Machine Specification](docs/07-agent-architecture.md)
 - [Context Retrieval Engine](docs/10-context-engine.md)
-- [Security & Permission Architecture](docs/09-security-and-permissions.md)
 - [Marketplace Release Checklist](docs/MARKETPLACE_RELEASE_CHECKLIST.md)
 - [Architecture Decision Records (ADRs)](docs/adr/)
 

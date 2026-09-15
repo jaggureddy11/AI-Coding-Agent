@@ -30,6 +30,7 @@ import {
   EditSet,
   EditApprovalDecision,
   TaskCheckpointManager,
+  sanitizeSecretStrings,
 } from '@jaggu/core';
 import {
   isValidWebviewMessage,
@@ -990,7 +991,7 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
         type: 'agent.error',
         payload: {
           code: error instanceof ModelError ? error.code : 'MODEL_ERROR',
-          message: errMsg,
+          message: sanitizeSecretStrings(errMsg),
         },
       });
       this._setStatus('ERROR', 'Error occurred');

@@ -20,7 +20,7 @@ export function resolveAndValidateWorkspacePath(
   untrustedPath: string,
   workspaceRoots: string[],
 ): string {
-  if (!untrustedPath || typeof untrustedPath !== 'string') {
+  if (!untrustedPath || typeof untrustedPath !== 'string' || untrustedPath.trim().length === 0) {
     throw new WorkspaceSecurityError('Empty or invalid path provided', 'INVALID_PATH', untrustedPath);
   }
 
@@ -117,4 +117,18 @@ export function resolveAndValidateWorkspacePath(
     'PATH_TRAVERSAL_DETECTED',
     untrustedPath,
   );
+}
+
+/**
+ * Redacts known secret patterns (Bearer tokens, OpenAI keys, HuggingFace tokens, Gemini keys)
+ * from arbitrary error messages or log output.
+ */
+export function sanitizeSecretStrings(input: string): string {
+  if (!input || typeof input !== 'string') return '';
+  return input
+    .replace(/(Bearer\s+)[A-Za-z0-9_\-\.]{8,}/gi, '$1[REDACTED]')
+    .replace(/(sk-[A-Za-z0-9_\-]{8,})/gi, '[REDACTED_API_KEY]')
+    .replace(/(hf_[A-Za-z0-9_\-]{8,})/gi, '[REDACTED_HF_TOKEN]')
+    .replace(/(AIza[0-9A-Za-z-_]{35})/g, '[REDACTED_GEMINI_KEY]')
+    .replace(/(key=[A-Za-z0-9_\-]{8,})/gi, 'key=[REDACTED]');
 }

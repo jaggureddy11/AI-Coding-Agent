@@ -20,6 +20,21 @@ const STOP_WORDS = new Set([
   'this', 'that', 'implemented', 'explain', 'show', 'tell', 'me', 'please', 'find',
 ]);
 
+/**
+ * Identifies sensitive credential or secret files that should not be automatically
+ * injected into context packages unless explicitly targeted by the developer.
+ */
+export function isSensitiveFilePath(relativePath: string): boolean {
+  const normalized = relativePath.replace(/\\/g, '/').toLowerCase();
+  const base = path.basename(normalized);
+  if (base === '.env' || base.startsWith('.env.') || base.endsWith('.env')) return true;
+  if (base.endsWith('.pem') || base.endsWith('.key') || base.endsWith('.pfx') || base.endsWith('.pkcs12')) return true;
+  if (base === 'id_rsa' || base === 'id_ed25519' || base === 'id_ecdsa' || base === 'id_dsa') return true;
+  if (base === 'credentials.json' || base === 'service-account.json') return true;
+  if (normalized.includes('.git/config') || normalized.includes('.git/credentials')) return true;
+  return false;
+}
+
 export class ContextEngine {
   private readonly _repoMap: RepositoryMap;
   private readonly _ripgrep: RipgrepSearchService;
@@ -150,6 +165,9 @@ export class ContextEngine {
         if (kw.length < 3) continue;
         const matched = this._repoMap.findFilesByName(kw);
         for (const file of matched.slice(0, 3)) {
+          if (isSensitiveFilePath(file.relativePath) && !prompt.toLowerCase().includes(path.basename(file.relativePath).toLowerCase())) {
+            continue; // Shield sensitive credential files from automatic context inclusion
+          }
           if (!candidates.some((c) => c.relativeFilePath === file.relativePath)) {
             const isSource = file.classification === 'source';
             const score = isSource ? 0.90 : 0.80;
@@ -180,6 +198,9 @@ export class ContextEngine {
         );
 
         for (const match of matches) {
+          if (isSensitiveFilePath(match.relativeFilePath) && !prompt.toLowerCase().includes(path.basename(match.relativeFilePath).toLowerCase())) {
+            continue; // Shield sensitive credential files from automatic context inclusion
+          }
           if (candidates.some((c) => c.relativeFilePath === match.relativeFilePath)) {
             continue;
           }
