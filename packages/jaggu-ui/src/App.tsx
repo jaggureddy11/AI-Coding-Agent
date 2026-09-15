@@ -388,58 +388,79 @@ export const App: React.FC<AppProps> = ({
         flexDirection: 'column',
         height: '100vh',
         boxSizing: 'border-box',
-        backgroundColor: 'var(--vscode-sideBar-background, #252526)',
+        backgroundColor: 'var(--vscode-sideBar-background, #18181b)',
         color: 'var(--vscode-sideBar-foreground, var(--vscode-foreground, #cccccc))',
-        fontFamily: 'var(--vscode-font-family, -apple-system, BlinkMacSystemFont, sans-serif)',
+        fontFamily: 'var(--vscode-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif)',
         fontSize: 'var(--vscode-font-size, 13px)',
         overflow: 'hidden',
       }}
     >
-      {/* 1. Header with branding & status */}
+      {/* 1. Header with branding, model selector & status */}
       <div
         style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          padding: '10px 14px',
+          padding: '8px 12px',
           borderBottom: '1px solid var(--vscode-sideBarSectionHeader-border, rgba(255, 255, 255, 0.08))',
-          backgroundColor: 'var(--vscode-sideBarSectionHeader-background, transparent)',
+          backgroundColor: 'var(--vscode-sideBarSectionHeader-background, rgba(0, 0, 0, 0.15))',
+          backdropFilter: 'blur(8px)',
+          minHeight: '42px',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          {/* Coding Glasses Icon */}
+          <div
+            style={{
+              width: '24px',
+              height: '24px',
+              borderRadius: '6px',
+              backgroundColor: 'rgba(255, 255, 255, 0.08)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--vscode-foreground, #ffffff)',
+            }}
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="6" width="8.5" height="9.5" rx="3" />
+              <rect x="13.5" y="6" width="8.5" height="9.5" rx="3" />
+              <path d="M10.5 9.5a2 2 0 0 1 3 0" />
+              <path d="M2 9.5H1" />
+              <path d="M23 9.5h-1" />
+              <path d="M7.5 9L5.5 10.75L7.5 12.5" />
+              <path d="M16.5 9L18.5 10.75L16.5 12.5" />
+            </svg>
+          </div>
+
           <span
             style={{
               fontWeight: 700,
               fontSize: '13px',
-              letterSpacing: '0.08em',
+              letterSpacing: '0.04em',
               color: 'var(--vscode-foreground, #ffffff)',
             }}
           >
             JAGGU
           </span>
-          <span
-            style={{
-              fontSize: '10px',
-              opacity: 0.6,
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-            }}
-          >
-            Agent
-          </span>
+
           <span
             data-testid="provider-badge"
             style={{
-              fontSize: '10px',
-              padding: '1px 5px',
-              borderRadius: '3px',
-              backgroundColor: 'var(--vscode-badge-background, rgba(255, 255, 255, 0.08))',
-              color: 'var(--vscode-badge-foreground, #858585)',
+              fontSize: '9px',
+              padding: '2px 5px',
+              borderRadius: '4px',
+              backgroundColor: 'rgba(59, 130, 246, 0.15)',
+              color: '#60a5fa',
+              fontWeight: 600,
               textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+              border: '1px solid rgba(59, 130, 246, 0.25)',
             }}
           >
             {activeConfig.provider}
           </span>
+
           {availableModels.length > 0 && (
             <ModelSelector
               models={availableModels}
@@ -456,24 +477,29 @@ export const App: React.FC<AppProps> = ({
             <button
               data-testid="clear-btn"
               onClick={handleClear}
-              title="Clear conversation"
+              title="Clear conversation and start fresh task"
               style={{
-                background: 'transparent',
-                border: 'none',
+                background: 'rgba(255, 255, 255, 0.06)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
                 color: 'var(--vscode-descriptionForeground, #858585)',
                 cursor: 'pointer',
                 fontSize: '11px',
-                padding: '2px 6px',
-                borderRadius: '3px',
+                padding: '3px 8px',
+                borderRadius: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                fontWeight: 500,
               }}
             >
-              Clear
+              <span>+</span>
+              <span>Clear</span>
             </button>
           )}
         </div>
       </div>
 
-      {/* 2. Conversation area */}
+      {/* 2. Conversation Area */}
       <div
         data-testid="conversation-area"
         style={{
@@ -482,7 +508,7 @@ export const App: React.FC<AppProps> = ({
           padding: '14px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '12px',
+          gap: '14px',
         }}
       >
         {messages.length === 0 ? (
@@ -491,45 +517,89 @@ export const App: React.FC<AppProps> = ({
             style={{
               margin: 'auto 0',
               textAlign: 'center',
-              padding: '20px 10px',
+              padding: '24px 12px',
               color: 'var(--vscode-descriptionForeground, #858585)',
             }}
           >
+            {/* Glowing Hero Icon */}
+            <div
+              style={{
+                width: '64px',
+                height: '64px',
+                borderRadius: '16px',
+                background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(16, 185, 129, 0.15))',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 16px',
+                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.35)',
+                color: '#ffffff',
+              }}
+            >
+              <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="6" width="8.5" height="9.5" rx="3" />
+                <rect x="13.5" y="6" width="8.5" height="9.5" rx="3" />
+                <path d="M10.5 9.5a2 2 0 0 1 3 0" />
+                <path d="M2 9.5H1" />
+                <path d="M23 9.5h-1" />
+                <path d="M7.5 9L5.5 10.75L7.5 12.5" />
+                <path d="M16.5 9L18.5 10.75L16.5 12.5" />
+              </svg>
+            </div>
+
             <div
               style={{
                 fontSize: '16px',
                 fontWeight: 600,
-                color: 'var(--vscode-foreground, #cccccc)',
+                color: 'var(--vscode-foreground, #ffffff)',
                 marginBottom: '8px',
+                letterSpacing: '-0.01em',
               }}
             >
               What would you like me to build?
             </div>
-            <p style={{ fontSize: '12px', lineHeight: 1.5, margin: '0 auto 16px', maxWidth: '240px' }}>
-              Assign tasks, ask architectural questions, or plan code modifications.
+            <p style={{ fontSize: '12px', lineHeight: 1.5, margin: '0 auto 20px', maxWidth: '280px', opacity: 0.8 }}>
+              Assign tasks, ask architectural questions, or plan verified multi-file code modifications.
             </p>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxWidth: '260px', margin: '0 auto' }}>
+            {/* Quick Prompt Cards */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxWidth: '300px', margin: '0 auto' }}>
               {[
-                'Explain this project',
-                'Plan a new feature',
-                'Inspect repository architecture',
-              ].map((promptText) => (
+                { title: 'Explain this project', desc: 'Overview of modules & architecture' },
+                { title: 'Plan a new feature', desc: 'Formulate a step-by-step engineering plan' },
+                { title: 'Inspect repository architecture', desc: 'Analyze dependencies and symbols' },
+              ].map((item) => (
                 <button
-                  key={promptText}
-                  onClick={() => setInput(promptText)}
+                  key={item.title}
+                  onClick={() => setInput(item.title)}
                   style={{
-                    padding: '6px 10px',
+                    padding: '8px 12px',
                     textAlign: 'left',
-                    fontSize: '11px',
-                    backgroundColor: 'var(--vscode-input-background, rgba(255, 255, 255, 0.04))',
-                    color: 'var(--vscode-foreground, #cccccc)',
-                    border: '1px solid var(--vscode-input-border, rgba(255, 255, 255, 0.1))',
-                    borderRadius: '4px',
+                    fontSize: '12px',
+                    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                    color: 'var(--vscode-foreground, #e4e4e7)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    borderRadius: '8px',
                     cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    transition: 'all 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
+                    e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.04)';
+                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
                   }}
                 >
-                  ⚡ {promptText}
+                  <span style={{ fontSize: '14px', color: '#60a5fa' }}>⚡</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <span style={{ fontWeight: 500 }}>{item.title}</span>
+                  </div>
                 </button>
               ))}
             </div>
@@ -543,47 +613,68 @@ export const App: React.FC<AppProps> = ({
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                width: '100%',
               }}
             >
               <div
                 style={{
                   fontSize: '10px',
                   color: 'var(--vscode-descriptionForeground, #858585)',
-                  marginBottom: '3px',
+                  marginBottom: '4px',
                   paddingLeft: msg.role === 'user' ? 0 : '4px',
                   paddingRight: msg.role === 'user' ? '4px' : 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
                 }}
               >
-                {msg.role === 'user' ? 'You' : 'JAGGU'} •{' '}
-                {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                {msg.role === 'user' ? (
+                  <>
+                    <span>You</span>
+                    <span>•</span>
+                    <span>{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                  </>
+                ) : (
+                  <>
+                    <span style={{ color: '#60a5fa', fontWeight: 600 }}>JAGGU</span>
+                    <span>•</span>
+                    <span>{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                  </>
+                )}
               </div>
               <div
                 style={{
-                  maxWidth: '90%',
-                  padding: '8px 12px',
-                  borderRadius: '6px',
+                  maxWidth: '92%',
+                  padding: '10px 14px',
+                  borderRadius: msg.role === 'user' ? '12px 12px 3px 12px' : '12px 12px 12px 3px',
                   fontSize: '12px',
-                  lineHeight: 1.45,
+                  lineHeight: 1.55,
                   whiteSpace: 'pre-wrap',
                   wordBreak: 'break-word',
                   backgroundColor:
                     msg.role === 'user'
-                      ? 'var(--vscode-button-background, #0e639c)'
-                      : 'var(--vscode-editor-inactiveSelectionBackground, rgba(255, 255, 255, 0.06))',
+                      ? 'var(--vscode-button-background, #0078d4)'
+                      : 'rgba(255, 255, 255, 0.05)',
                   color:
                     msg.role === 'user'
                       ? 'var(--vscode-button-foreground, #ffffff)'
-                      : 'var(--vscode-foreground, #cccccc)',
+                      : 'var(--vscode-foreground, #e4e4e7)',
                   border:
                     msg.role === 'user'
                       ? 'none'
-                      : '1px solid var(--vscode-widget-border, rgba(255, 255, 255, 0.08))',
+                      : '1px solid rgba(255, 255, 255, 0.08)',
+                  boxShadow:
+                    msg.role === 'user'
+                      ? '0 2px 8px rgba(0, 120, 212, 0.3)'
+                      : '0 2px 8px rgba(0, 0, 0, 0.15)',
                 }}
               >
                 {msg.text}
               </div>
               {msg.role === 'assistant' && msg.provenance && msg.provenance.length > 0 && (
-                <ContextPill provenance={msg.provenance} />
+                <div style={{ marginTop: '4px', paddingLeft: '2px' }}>
+                  <ContextPill provenance={msg.provenance} />
+                </div>
               )}
             </div>
           ))
@@ -609,22 +700,22 @@ export const App: React.FC<AppProps> = ({
           <div
             data-testid="scope-change-banner"
             style={{
-              padding: '10px 14px',
-              borderRadius: '6px',
+              padding: '12px 14px',
+              borderRadius: '8px',
               fontSize: '12px',
-              backgroundColor: 'var(--vscode-editorWarning-background, #332b00)',
-              border: '1px solid var(--vscode-editorWarning-foreground, #cca700)',
+              backgroundColor: 'rgba(204, 167, 0, 0.12)',
+              border: '1px solid rgba(204, 167, 0, 0.4)',
               color: 'var(--vscode-foreground, #ffffff)',
               display: 'flex',
               flexDirection: 'column',
               gap: '8px',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, color: '#facc15' }}>
               <span>⚠️</span>
               <span>Scope Change Requested</span>
             </div>
-            <div style={{ fontSize: '11px', color: 'var(--vscode-descriptionForeground, #cccccc)' }}>
+            <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.8)' }}>
               {scopeChange.reason}
             </div>
             <div style={{ fontSize: '11px' }}>
@@ -635,9 +726,9 @@ export const App: React.FC<AppProps> = ({
                     key={f}
                     style={{
                       fontFamily: 'monospace',
-                      padding: '2px 5px',
+                      padding: '2px 6px',
                       backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                      borderRadius: '3px',
+                      borderRadius: '4px',
                     }}
                   >
                     {f}
@@ -645,16 +736,16 @@ export const App: React.FC<AppProps> = ({
                 ))}
               </div>
             </div>
-            <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+            <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
               <button
                 type="button"
                 onClick={handleApproveScope}
                 style={{
-                  padding: '4px 10px',
-                  backgroundColor: 'var(--vscode-button-background, #0e639c)',
+                  padding: '5px 12px',
+                  backgroundColor: 'var(--vscode-button-background, #0078d4)',
                   color: '#ffffff',
                   border: 'none',
-                  borderRadius: '3px',
+                  borderRadius: '4px',
                   cursor: 'pointer',
                   fontSize: '11px',
                   fontWeight: 600,
@@ -666,11 +757,11 @@ export const App: React.FC<AppProps> = ({
                 type="button"
                 onClick={handleRejectScope}
                 style={{
-                  padding: '4px 10px',
-                  backgroundColor: 'var(--vscode-button-secondaryBackground, #3a3d41)',
+                  padding: '5px 12px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.08)',
                   color: '#cccccc',
-                  border: 'none',
-                  borderRadius: '3px',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '4px',
                   cursor: 'pointer',
                   fontSize: '11px',
                 }}
@@ -688,8 +779,8 @@ export const App: React.FC<AppProps> = ({
             style={{
               display: 'flex',
               flexDirection: 'column',
-              gap: '8px',
-              margin: '4px 0',
+              gap: '10px',
+              margin: '6px 0',
             }}
           >
             {proposals.map((prop) => (
@@ -715,17 +806,18 @@ export const App: React.FC<AppProps> = ({
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
-              padding: '6px 10px',
-              borderRadius: '4px',
-              fontSize: '11px',
-              backgroundColor: 'rgba(0, 122, 204, 0.1)',
-              color: 'var(--vscode-progressBar-background, #007acc)',
-              border: '1px solid rgba(0, 122, 204, 0.2)',
+              gap: '10px',
+              padding: '10px 14px',
+              borderRadius: '8px',
+              fontSize: '12px',
+              backgroundColor: 'rgba(0, 120, 212, 0.12)',
+              color: '#60a5fa',
+              border: '1px solid rgba(0, 120, 212, 0.25)',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
             }}
           >
             <span style={{ display: 'inline-block', animation: 'spin 1s linear infinite' }}>⏳</span>
-            <span>{statusDetail || 'JAGGU is processing your request...'}</span>
+            <span style={{ fontWeight: 500 }}>{statusDetail || 'JAGGU is processing your request...'}</span>
           </div>
         )}
 
@@ -734,100 +826,141 @@ export const App: React.FC<AppProps> = ({
           <div
             data-testid="error-banner"
             style={{
-              padding: '8px 12px',
-              borderRadius: '4px',
-              fontSize: '11px',
-              backgroundColor: 'var(--vscode-inputValidation-errorBackground, #5a1d1d)',
-              border: '1px solid var(--vscode-inputValidation-errorBorder, #be1100)',
-              color: 'var(--vscode-errorForeground, #f48771)',
+              padding: '10px 14px',
+              borderRadius: '8px',
+              fontSize: '12px',
+              backgroundColor: 'rgba(239, 68, 68, 0.15)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              color: '#fca5a5',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
             }}
           >
-            ⚠️ {errorMessage}
+            <span>⚠️</span>
+            <span>{errorMessage}</span>
           </div>
         )}
 
         <div ref={messagesEndRef} />
       </div>
 
-      {/* 3. Input & control area */}
+      {/* 3. Floating Prompt Input Area (Antigravity & Claude Style) */}
       <div
         style={{
-          padding: '10px 14px 14px',
+          padding: '12px 14px 14px',
           borderTop: '1px solid var(--vscode-sideBarSectionHeader-border, rgba(255, 255, 255, 0.08))',
-          backgroundColor: 'var(--vscode-sideBar-background, #252526)',
+          backgroundColor: 'var(--vscode-sideBar-background, #18181b)',
         }}
       >
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <textarea
-            data-testid="prompt-input"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Type a task... (Enter to send, Shift+Enter for newline)"
-            rows={2}
-            disabled={status === 'PROCESSING'}
+        <form onSubmit={handleSubmit}>
+          <div
             style={{
-              width: '100%',
-              boxSizing: 'border-box',
-              padding: '8px 10px',
-              borderRadius: '4px',
-              border: '1px solid var(--vscode-input-border, rgba(255, 255, 255, 0.15))',
-              backgroundColor: 'var(--vscode-input-background, #3c3c3c)',
-              color: 'var(--vscode-input-foreground, #cccccc)',
-              fontSize: '12px',
-              fontFamily: 'inherit',
-              resize: 'none',
-              outline: 'none',
+              backgroundColor: 'var(--vscode-input-background, #222226)',
+              border: '1px solid var(--vscode-input-border, rgba(255, 255, 255, 0.12))',
+              borderRadius: '10px',
+              padding: '10px 12px 8px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px',
+              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)',
             }}
-          />
+          >
+            <textarea
+              data-testid="prompt-input"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Type a task... (Enter to send, Shift+Enter for newline)"
+              rows={2}
+              disabled={status === 'PROCESSING'}
+              style={{
+                width: '100%',
+                boxSizing: 'border-box',
+                border: 'none',
+                backgroundColor: 'transparent',
+                color: 'var(--vscode-input-foreground, #ffffff)',
+                fontSize: '12.5px',
+                fontFamily: 'inherit',
+                lineHeight: 1.5,
+                resize: 'none',
+                outline: 'none',
+              }}
+            />
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ fontSize: '11px', color: 'var(--vscode-descriptionForeground, #858585)' }}>
-              Status: <span style={{ fontWeight: 500, color: 'var(--vscode-foreground, #cccccc)' }}>● {status === 'IDLE' ? 'Ready' : status}</span>
-            </div>
-
-            <div style={{ display: 'flex', gap: '6px' }}>
-              {status === 'PROCESSING' ? (
-                <button
-                  data-testid="cancel-btn"
-                  type="button"
-                  onClick={handleCancel}
+            {/* Inner Controls Bar */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '2px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: 'var(--vscode-descriptionForeground, #858585)' }}>
+                <span
                   style={{
-                    padding: '5px 12px',
-                    backgroundColor: 'var(--vscode-button-secondaryBackground, #3a3d41)',
-                    color: 'var(--vscode-button-secondaryForeground, #ffffff)',
-                    border: 'none',
-                    borderRadius: '3px',
-                    fontSize: '11px',
-                    fontWeight: 500,
-                    cursor: 'pointer',
+                    padding: '2px 6px',
+                    borderRadius: '4px',
+                    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                    fontSize: '10px',
+                    fontFamily: 'monospace',
+                    color: '#93c5fd',
                   }}
                 >
-                  Cancel
-                </button>
-              ) : (
-                <button
-                  data-testid="submit-btn"
-                  type="submit"
-                  disabled={!input.trim()}
-                  style={{
-                    padding: '5px 14px',
-                    backgroundColor: input.trim()
-                      ? 'var(--vscode-button-background, #0e639c)'
-                      : 'var(--vscode-button-secondaryBackground, #3a3d41)',
-                    color: input.trim()
-                      ? 'var(--vscode-button-foreground, #ffffff)'
-                      : 'var(--vscode-disabledForeground, #858585)',
-                    border: 'none',
-                    borderRadius: '3px',
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    cursor: input.trim() ? 'pointer' : 'not-allowed',
-                  }}
-                >
-                  Send
-                </button>
-              )}
+                  @workspace
+                </span>
+                <span>
+                  Status: <span style={{ fontWeight: 500, color: 'var(--vscode-foreground, #cccccc)' }}>● {status === 'IDLE' ? 'Ready' : status}</span>
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                {status === 'PROCESSING' ? (
+                  <button
+                    data-testid="cancel-btn"
+                    type="button"
+                    onClick={handleCancel}
+                    style={{
+                      padding: '5px 12px',
+                      backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                      color: '#f87171',
+                      border: '1px solid rgba(239, 68, 68, 0.35)',
+                      borderRadius: '6px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                    }}
+                  >
+                    <span>■</span>
+                    <span>Cancel</span>
+                  </button>
+                ) : (
+                  <button
+                    data-testid="submit-btn"
+                    type="submit"
+                    disabled={!input.trim()}
+                    style={{
+                      padding: '5px 14px',
+                      backgroundColor: input.trim()
+                        ? 'var(--vscode-button-background, #0078d4)'
+                        : 'rgba(255, 255, 255, 0.08)',
+                      color: input.trim()
+                        ? 'var(--vscode-button-foreground, #ffffff)'
+                        : 'var(--vscode-disabledForeground, #71717a)',
+                      border: 'none',
+                      borderRadius: '6px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      cursor: input.trim() ? 'pointer' : 'not-allowed',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      transition: 'all 0.15s ease',
+                      boxShadow: input.trim() ? '0 2px 8px rgba(0, 120, 212, 0.35)' : 'none',
+                    }}
+                  >
+                    <span>Send</span>
+                    <span>↑</span>
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </form>

@@ -1,4 +1,4 @@
-/* JAGGU Webview Base Theme Styles */
+/* JAGGU Webview Base Theme Styles - Modern AI Coding Assistant Interface */
 html, body, #root {
   height: 100%;
   width: 100%;
@@ -12,8 +12,9 @@ body {
   font-family: var(--vscode-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif);
   font-size: var(--vscode-font-size, 13px);
   color: var(--vscode-sideBar-foreground, var(--vscode-foreground, #cccccc));
-  background-color: var(--vscode-sideBar-background, #252526);
+  background-color: var(--vscode-sideBar-background, #18181b);
   user-select: text;
+  -webkit-font-smoothing: antialiased;
 }
 
 * {
@@ -31,16 +32,36 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--vscode-scrollbarSlider-background, rgba(121, 121, 121, 0.4));
-  border-radius: 3px;
+  background: var(--vscode-scrollbarSlider-background, rgba(121, 121, 121, 0.3));
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--vscode-scrollbarSlider-hoverBackground, rgba(100, 100, 100, 0.7));
+  background: var(--vscode-scrollbarSlider-hoverBackground, rgba(100, 100, 100, 0.6));
 }
 
-::-webkit-scrollbar-thumb:active {
-  background: var(--vscode-scrollbarSlider-activeBackground, rgba(191, 191, 191, 0.4));
+/* Glassmorphism & Modern Card Shadows */
+.jaggu-card {
+  background: var(--vscode-editorWidget-background, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--vscode-widget-border, rgba(255, 255, 255, 0.08));
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.jaggu-card:hover {
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.jaggu-input-card {
+  background: var(--vscode-input-background, #222226);
+  border: 1px solid var(--vscode-input-border, rgba(255, 255, 255, 0.12));
+  border-radius: 10px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.jaggu-input-card:focus-within {
+  border-color: var(--vscode-focusBorder, #0078d4);
+  box-shadow: 0 0 0 1px var(--vscode-focusBorder, #0078d4), 0 4px 14px rgba(0, 120, 212, 0.15);
 }
 
 /* Animations */
@@ -51,7 +72,7 @@ body {
   }
   50% {
     opacity: 1;
-    transform: scale(1.1);
+    transform: scale(1.08);
   }
   100% {
     opacity: 0.4;
@@ -65,5 +86,14 @@ body {
   }
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(59, 130, 246, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.45);
   }
 }

@@ -67,6 +67,11 @@ export function activate(context: vscode.ExtensionContext): {
     vscode.window.registerWebviewViewProvider(
       JagguSidebarProvider.VIEW_ID,
       sidebarProvider,
+      {
+        webviewOptions: {
+          retainContextWhenHidden: true,
+        },
+      },
     ),
   );
 
@@ -143,9 +148,10 @@ export function activate(context: vscode.ExtensionContext): {
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('jaggu.startSession', () => {
-      vscode.commands.executeCommand('jaggu.sidebarView.focus');
-      vscode.window.showInformationMessage('JAGGU: Session ready.');
+    vscode.commands.registerCommand('jaggu.startSession', async () => {
+      await vscode.commands.executeCommand('jaggu.sidebarView.focus');
+      await sidebarProvider.handleIncomingMessage({ type: 'ui.clear', payload: {} });
+      vscode.window.showInformationMessage('JAGGU: Fresh session started.');
     }),
   );
 
