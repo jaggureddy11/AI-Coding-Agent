@@ -13,7 +13,7 @@ describe('HuggingFaceProvider Unit Tests', () => {
   it('should expose correct provider metadata and capabilities', () => {
     expect(provider.id).toBe('huggingface');
     expect(provider.name).toBe('Hugging Face Inference');
-    expect(provider.defaultModel).toBe('Qwen/Qwen2.5-Coder-32B-Instruct');
+    expect(provider.defaultModel).toBe('Qwen/Qwen3-Coder-30B-A3B-Instruct');
 
     const cap32B = provider.getCapabilities('Qwen/Qwen2.5-Coder-32B-Instruct');
     expect(cap32B.streaming).toBe(true);

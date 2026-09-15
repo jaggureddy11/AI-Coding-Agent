@@ -7,6 +7,8 @@ import {
   ModelGateway,
   ModelMessage,
   ModelError,
+  ModelRouter,
+  ModelRouteResult,
   ContextEngine,
   ContextPackage,
   ActiveEditorContext,
@@ -50,6 +52,7 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
   private _activeTaskId?: string;
   private _activeProviderId?: string;
   private _activeModelId?: string;
+  private readonly _modelRouter: ModelRouter;
   private readonly _docStore: InMemoryVirtualDocStore;
   private readonly _proposalRegistry = new Map<string, ProposedEditRecord>();
   private readonly _proposeEditTool: ProposeEditTool;
@@ -78,6 +81,15 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
     this._docStore = docStore || new InMemoryVirtualDocStore();
     this._proposeEditTool = new ProposeEditTool(this._docStore, this._eventBus, this._proposalRegistry);
     this._applyEditTool = new ApplyEditTool(this._docStore, this._proposalRegistry, this._eventBus);
+
+    this._modelRouter = new ModelRouter(
+      this._modelGateway.getModelRegistry(),
+      this._eventBus,
+      {
+        policy: 'free-first',
+        allowPaidFallbackInAuto: this._credentialManager?.getAllowPaidFallback() ?? false,
+      },
+    );
 
     this._toolExecutor = new ToolExecutor({ eventBus: this._eventBus });
     this._toolExecutor.registerTool(new ReadFileTool());
@@ -367,8 +379,8 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
 
     switch (message.type) {
       case 'ui.ready': {
-        const providerId = this._activeProviderId || this._credentialManager?.getActiveProvider() || 'mock';
-        const modelId = this._activeModelId || this._credentialManager?.getActiveModel() || 'mock-fast';
+        const providerId = this._activeProviderId || this._credentialManager?.getActiveProvider() || 'auto';
+        const modelId = this._activeModelId || this._credentialManager?.getActiveModel() || 'auto';
         const models = this._modelGateway.getModelRegistry().listModels();
         this.postMessageToWebview({
           type: 'agent.config',
@@ -376,7 +388,7 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
         });
         this.postMessageToWebview({
           type: 'agent.status',
-          payload: { state: this._currentStatus, detail: 'Ready' },
+          payload: { state: this._currentStatus, detail: 'Ready — Auto (Free / Local priority)' },
         });
         // Check health of local runtimes in background without blocking
         this.checkRuntimesHealth().catch(() => {});
@@ -385,20 +397,34 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
 
       case 'model.select': {
         const { modelId } = message.payload;
-        const descriptor = this._modelGateway.getModelRegistry().findModel(modelId);
-        if (descriptor) {
-          this._activeModelId = descriptor.id;
-          this._activeProviderId = descriptor.providerId;
-          await this._credentialManager?.setActiveModel(descriptor.id);
-          await this._credentialManager?.setActiveProvider(descriptor.providerId);
+        if (modelId === 'auto') {
+          this._activeModelId = 'auto';
+          this._activeProviderId = undefined;
+          await this._credentialManager?.setActiveModel('auto');
           this.postMessageToWebview({
             type: 'agent.config',
             payload: {
-              provider: descriptor.providerId,
-              model: descriptor.id,
+              provider: 'auto',
+              model: 'auto',
               models: this._modelGateway.getModelRegistry().listModels(),
             },
           });
+        } else {
+          const descriptor = this._modelGateway.getModelRegistry().findModel(modelId);
+          if (descriptor) {
+            this._activeModelId = descriptor.id;
+            this._activeProviderId = descriptor.providerId;
+            await this._credentialManager?.setActiveModel(descriptor.id);
+            await this._credentialManager?.setActiveProvider(descriptor.providerId);
+            this.postMessageToWebview({
+              type: 'agent.config',
+              payload: {
+                provider: descriptor.providerId,
+                model: descriptor.id,
+                models: this._modelGateway.getModelRegistry().listModels(),
+              },
+            });
+          }
         }
         break;
       }
@@ -666,27 +692,104 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
       });
     }
 
-    // 5. Resolve active provider and credentials
-    const providerId = this._activeProviderId || this._credentialManager?.getActiveProvider() || 'mock';
-    const model = this._activeModelId || this._credentialManager?.getActiveModel() || undefined;
-    let apiKey: string | undefined;
+    // 5. Resolve active model and provider through ModelRouter
+    const allowPaid = this._credentialManager?.getAllowPaidFallback() ?? false;
+    const localOnly = this._credentialManager?.getLocalOnly() ?? false;
+    const registeredProviders = this._modelGateway.listProviders().map((p) => p.id);
+    const configuredProviderIds = this._credentialManager
+      ? (await this._credentialManager.getConfiguredCloudProviders()).filter((p) => registeredProviders.includes(p))
+      : (registeredProviders.includes('mock') ? ['mock'] : registeredProviders);
 
-    try {
-      apiKey = await this._credentialManager?.getApiKey(providerId);
-    } catch {
-      // ignore
+    let routingPolicy: import('@jaggu/core').ModelRoutingPolicy = 'free-first';
+    if (localOnly) {
+      routingPolicy = 'local-only';
+    } else {
+      const mode = this._credentialManager?.getModelMode();
+      if (mode === 'free-and-local') {
+        routingPolicy = 'free-and-local-only';
+      } else if (mode === 'local-only') {
+        routingPolicy = 'local-only';
+      }
     }
 
-    if (!apiKey && providerId !== 'mock' && providerId !== 'ollama' && providerId !== 'openai-compatible') {
+    this._modelRouter.setPolicy(routingPolicy);
+    this._modelRouter.setAllowPaidFallback(allowPaid);
+    this._modelRouter.setConfiguredProviders(configuredProviderIds);
+
+    const explicitModel = this._activeModelId && this._activeModelId !== 'auto' ? this._activeModelId : undefined;
+
+    let routeResult: ModelRouteResult;
+    try {
+      routeResult = this._modelRouter.route(
+        {
+          prompt: text,
+          activeFile: activeEditorContext?.filePath,
+          selectedText: activeEditorContext?.selectedText,
+          diagnosticsCount: 0,
+        },
+        {
+          preferredModelId: explicitModel,
+          configuredProviderIds,
+        },
+      );
+    } catch (routeErr: unknown) {
+      const msg = routeErr instanceof Error ? routeErr.message : String(routeErr);
       this.postMessageToWebview({
         type: 'agent.error',
         payload: {
-          code: 'MISSING_API_KEY',
-          message: `API key for [${providerId}] is not configured. Use command "JAGGU: Set API Key" or switch to a local or "mock" model.`,
+          code: 'NO_MODEL_AVAILABLE',
+          message: msg,
         },
       });
-      this._setStatus('ERROR', 'API key missing');
+      this._setStatus('ERROR', 'No model available');
       return;
+    }
+
+    let providerId = routeResult.providerId;
+    let activeModel = routeResult.selectedModel.id;
+
+    this.postMessageToWebview({
+      type: 'model.routed',
+      payload: {
+        selectedModel: routeResult.selectedModel.displayName,
+        provider: providerId,
+        policy: routeResult.policy,
+        reason: routeResult.reason,
+        score: routeResult.score,
+      },
+    });
+
+    let apiKey = await this._credentialManager?.getApiKey(providerId);
+
+    if (!apiKey && providerId !== 'mock' && providerId !== 'ollama' && providerId !== 'openai-compatible') {
+      // If Hugging Face is selected without token, check if we can fallback to local ollama or mock
+      const fallback = this._modelRouter.routeFallback(routeResult, 'Missing authentication token');
+      if (fallback) {
+        routeResult = fallback;
+        providerId = fallback.providerId;
+        activeModel = fallback.selectedModel.id;
+        apiKey = await this._credentialManager?.getApiKey(providerId);
+        this.postMessageToWebview({
+          type: 'model.fallback',
+          payload: {
+            fromModel: routeResult.selectedModel.displayName,
+            toModel: fallback.selectedModel.displayName,
+            provider: providerId,
+            reason: 'Missing access token for cloud model; switched to local/fallback model.',
+            attempt: fallback.attempt,
+          },
+        });
+      } else {
+        this.postMessageToWebview({
+          type: 'agent.error',
+          payload: {
+            code: 'MISSING_API_KEY',
+            message: `Hugging Face / Provider token is required for [${providerId}]. Please set jaggu.apiKey.${providerId} in SecretStorage or connect local Ollama.`,
+          },
+        });
+        this._setStatus('ERROR', 'API key missing');
+        return;
+      }
     }
 
     const systemPromptParts = [
@@ -736,7 +839,6 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
         let currentToolCall: { id: string; name: string; arguments: Record<string, unknown> } | undefined;
         let turnTokens = '';
 
-        const activeModel = model || this._modelGateway.getProvider(providerId).defaultModel;
         const descriptor = this._modelGateway.getModelRegistry().findModel(activeModel);
         const supportsTools = descriptor ? descriptor.capabilities.toolCalling : true;
 
@@ -747,7 +849,9 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
             model: activeModel,
             apiKey,
             baseUrl:
-              providerId === 'ollama'
+              providerId === 'huggingface'
+                ? this._credentialManager?.getHuggingFaceBaseUrl()
+                : providerId === 'ollama'
                 ? this._credentialManager?.getOllamaBaseUrl()
                 : providerId === 'openai-compatible'
                 ? this._credentialManager?.getOpenAICompatibleBaseUrl()

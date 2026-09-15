@@ -28,9 +28,12 @@ describe('Extension Host Lifecycle and Registration', () => {
     expect(cmds['jaggu.openChat']).toBeDefined();
     expect(cmds['jaggu.startSession']).toBeDefined();
     expect(cmds['jaggu.cancelSession']).toBeDefined();
+    expect(cmds['jaggu.setHuggingFaceToken']).toBeDefined();
+    expect(cmds['jaggu.removeHuggingFaceToken']).toBeDefined();
+    expect(cmds['jaggu.testHuggingFaceConnection']).toBeDefined();
 
     // Verify subscriptions populated
-    expect(context.subscriptions.length).toBeGreaterThanOrEqual(7);
+    expect(context.subscriptions.length).toBeGreaterThanOrEqual(10);
 
     deactivate();
   });
@@ -54,7 +57,7 @@ describe('Extension Host Lifecycle and Registration', () => {
     expect(html).toContain('<div id="root"></div>');
   });
 
-  it('should manage status transitions and fire onDidChangeStatus', () => {
+  it('should manage status transitions and fire onDidChangeStatus', async () => {
     const eventBus = new EventBus();
     const extensionUri = { toString: () => 'file:///mock/ext', fsPath: '/mock/ext' } as any;
     const provider = new JagguSidebarProvider(extensionUri, eventBus);
@@ -71,12 +74,12 @@ describe('Extension Host Lifecycle and Registration', () => {
       return Promise.resolve(true);
     };
 
-    provider.handleIncomingMessage({ type: 'invalid.unknown' });
+    await provider.handleIncomingMessage({ type: 'invalid.unknown' });
     expect(sentMessage?.type).toBe('agent.error');
     expect(sentMessage?.payload?.code).toBe('INVALID_RPC_PAYLOAD');
 
     // Send ui.ready -> should send agent.status IDLE
-    provider.handleIncomingMessage({ type: 'ui.ready' });
+    await provider.handleIncomingMessage({ type: 'ui.ready' });
     expect(sentMessage?.type).toBe('agent.status');
     expect(sentMessage?.payload?.state).toBe('IDLE');
   });

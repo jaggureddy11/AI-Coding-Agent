@@ -43,7 +43,23 @@ Most AI coding assistants either output code snippets to a chat window for you t
 
 Built directly on the VS Code extension runtime, JAGGU indexes your codebase with Ripgrep, synthesizes structured multi-phase execution plans, stages surgical diffs in an **in-memory shadow buffer**, runs your project's test suites to verify its solutions, and autonomously repairs compiler or test errors before presenting the finished work for your final approval.
 
-> **Zero Middleman Proxy** • **100% Direct TLS Connections** • **Air-Gapped Local Model Support**
+> **Zero Middleman Proxy** • **Free-First Default** • **100% Direct TLS Connections** • **Air-Gapped Local Model Support**
+
+---
+
+## 🚀 Get Started
+
+1. **Install JAGGU** via `.vsix` or VS Code Marketplace.
+2. **Open JAGGU** from the VS Code sidebar activity bar.
+3. **Keep Model = Auto** (default free cloud & local prioritization).
+4. **Connect Hugging Face** if prompted with your free user access token.
+5. **Start coding** — prompt JAGGU with any bug fix, feature, refactor, or test request!
+
+### Deep-Dive Documentation
+- [Model Routing Architecture & Auto Mode](docs/MODEL_ROUTING.md)
+- [Hugging Face Free-First Provider](docs/HUGGINGFACE_PROVIDER.md)
+- [Offline Local Inference (Ollama & vLLM)](docs/OFFLINE_OLLAMA.md)
+- [Security, Credential Isolation & Sandboxing](docs/SECURITY.md)
 
 ---
 

@@ -133,6 +133,25 @@ export interface JagguEvents {
     code: string;
     timestamp: number;
   };
+  'model.routed': {
+    taskId: string;
+    selectedModel: string;
+    provider: string;
+    policy: string;
+    reason: string;
+    score: number;
+    fallbackAttempt: number;
+    timestamp: number;
+  };
+  'model.fallback': {
+    taskId: string;
+    fromModel: string;
+    toModel: string;
+    provider: string;
+    reason: string;
+    attempt: number;
+    timestamp: number;
+  };
 
   // Context Engine Lifecycle Events (M3)
   'context.search_started': {

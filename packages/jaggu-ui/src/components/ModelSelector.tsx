@@ -45,15 +45,43 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
   onSelectModel,
   onRefreshHealth,
 }) => {
+  const isAuto = activeModelId === 'auto' || !activeModelId;
   const activeModel = models.find((m) => m.id === activeModelId);
 
-  const localModels = models.filter((m) => m.runtimeType === 'local');
-  const cloudModels = models.filter((m) => m.runtimeType === 'cloud');
+  const freeModels = models.filter((m) => m.access === 'free' && m.id !== 'mock-fast' && m.id !== 'mock-reasoning');
+  const localModels = models.filter((m) => (m.access === 'local' || m.runtimeType === 'local') && m.id !== 'mock-fast' && m.id !== 'mock-reasoning');
+  const paidModels = models.filter((m) => m.access === 'paid' || (m.runtimeType === 'cloud' && m.access !== 'free'));
+  const mockModels = models.filter((m) => m.providerId === 'mock');
 
-  const healthColor = activeModel ? getHealthColor(activeModel.health) : '#858585';
-  const healthTitle = activeModel
-    ? `${getHealthLabel(activeModel.health)}${activeModel.healthDetail ? `: ${activeModel.healthDetail}` : ''}`
-    : 'Unknown model';
+  let healthColor = '#4caf50';
+  let healthTitle = 'Auto: JAGGU automatically selects the best free or local model';
+
+  if (!isAuto && activeModel) {
+    healthColor = getHealthColor(activeModel.health);
+    healthTitle = `${getHealthLabel(activeModel.health)}${activeModel.healthDetail ? `: ${activeModel.healthDetail}` : ''}`;
+  }
+
+  let badgeText = 'AUTO';
+  let badgeColor = 'var(--vscode-editorInfo-foreground, #75beff)';
+  let badgeBg = 'var(--vscode-badge-background, rgba(0, 122, 204, 0.2))';
+
+  if (!isAuto && activeModel) {
+    if (activeModel.access === 'free') {
+      badgeText = 'FREE';
+      badgeColor = '#4caf50';
+      badgeBg = 'rgba(76, 175, 80, 0.15)';
+    } else if (activeModel.access === 'local') {
+      badgeText = 'LOCAL';
+      badgeColor = '#75beff';
+      badgeBg = 'rgba(0, 122, 204, 0.2)';
+    } else if (activeModel.access === 'paid') {
+      badgeText = 'PAID';
+      badgeColor = '#ff9800';
+      badgeBg = 'rgba(255, 152, 0, 0.15)';
+    } else {
+      badgeText = activeModel.runtimeType.toUpperCase();
+    }
+  }
 
   return (
     <div
@@ -91,7 +119,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
         <select
           data-testid="model-selector"
           aria-label="Select AI Model"
-          value={activeModelId}
+          value={activeModelId || 'auto'}
           onChange={(e) => onSelectModel(e.target.value)}
           style={{
             background: 'transparent',
@@ -100,11 +128,25 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
             fontSize: '11px',
             outline: 'none',
             cursor: 'pointer',
-            maxWidth: '160px',
+            maxWidth: '180px',
           }}
         >
+          <optgroup label="AUTO (RECOMMENDED)">
+            <option value="auto">Auto (Best Available Free/Local)</option>
+          </optgroup>
+
+          {freeModels.length > 0 && (
+            <optgroup label="FREE / OPEN (HUGGING FACE)">
+              {freeModels.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.displayName}
+                </option>
+              ))}
+            </optgroup>
+          )}
+
           {localModels.length > 0 && (
-            <optgroup label="Local Models">
+            <optgroup label="LOCAL (OLLAMA / VLLM)">
               {localModels.map((m) => (
                 <option key={m.id} value={m.id}>
                   {`${m.displayName}${!m.capabilities.toolCalling ? ' [No Tools]' : ''}`}
@@ -113,9 +155,9 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
             </optgroup>
           )}
 
-          {cloudModels.length > 0 && (
-            <optgroup label="Cloud Models">
-              {cloudModels.map((m) => (
+          {paidModels.length > 0 && (
+            <optgroup label="CONFIGURED (OPTIONAL CLOUD)">
+              {paidModels.map((m) => (
                 <option key={m.id} value={m.id}>
                   {m.displayName}
                 </option>
@@ -123,33 +165,31 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
             </optgroup>
           )}
 
-          {localModels.length === 0 && cloudModels.length === 0 && (
-            <option value={activeModelId}>{activeModelId || 'Default Model'}</option>
+          {mockModels.length > 0 && (
+            <optgroup label="TESTING & OFFLINE">
+              {mockModels.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.displayName}
+                </option>
+              ))}
+            </optgroup>
           )}
         </select>
 
-        {activeModel && (
-          <span
-            data-testid="model-runtime-badge"
-            style={{
-              fontSize: '9px',
-              padding: '1px 4px',
-              borderRadius: '2px',
-              fontWeight: 600,
-              textTransform: 'uppercase',
-              backgroundColor:
-                activeModel.runtimeType === 'local'
-                  ? 'var(--vscode-badge-background, rgba(0, 122, 204, 0.2))'
-                  : 'var(--vscode-badge-background, rgba(255, 255, 255, 0.1))',
-              color:
-                activeModel.runtimeType === 'local'
-                  ? 'var(--vscode-editorInfo-foreground, #75beff)'
-                  : 'var(--vscode-badge-foreground, #cccccc)',
-            }}
-          >
-            {activeModel.runtimeType}
-          </span>
-        )}
+        <span
+          data-testid="model-runtime-badge"
+          style={{
+            fontSize: '9px',
+            padding: '1px 4px',
+            borderRadius: '2px',
+            fontWeight: 600,
+            textTransform: 'uppercase',
+            backgroundColor: badgeBg,
+            color: badgeColor,
+          }}
+        >
+          {badgeText}
+        </span>
       </div>
 
       {onRefreshHealth && (

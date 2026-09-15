@@ -99,6 +99,21 @@
         "category": "JAGGU"
       },
       {
+        "command": "jaggu.setHuggingFaceToken",
+        "title": "JAGGU: Set Hugging Face Token",
+        "category": "JAGGU"
+      },
+      {
+        "command": "jaggu.removeHuggingFaceToken",
+        "title": "JAGGU: Remove Hugging Face Token",
+        "category": "JAGGU"
+      },
+      {
+        "command": "jaggu.testHuggingFaceConnection",
+        "title": "JAGGU: Test Hugging Face Connection",
+        "category": "JAGGU"
+      },
+      {
         "command": "jaggu.selectProvider",
         "title": "JAGGU: Select Model Provider",
         "icon": "$(server)",
@@ -118,15 +133,41 @@
     "configuration": {
       "title": "JAGGU",
       "properties": {
+        "jaggu.modelMode": {
+          "type": "string",
+          "enum": ["auto", "free-and-local", "local-only", "manual"],
+          "default": "auto",
+          "description": "JAGGU Model Mode. 'auto' selects best free/open model (Qwen3-Coder) -> local Ollama -> fallback."
+        },
+        "jaggu.allowPaidFallbackInAuto": {
+          "type": "boolean",
+          "default": false,
+          "description": "Allow automatic fallback to configured paid models (OpenAI, Anthropic, Gemini) if all free/local models are unavailable. (Default: false)"
+        },
+        "jaggu.allowPaidFallback": {
+          "type": "boolean",
+          "default": false,
+          "description": "Allow automatic fallback to configured paid models (OpenAI, Anthropic, Gemini) if all free/local models are unavailable. (Default: false)"
+        },
+        "jaggu.localOnly": {
+          "type": "boolean",
+          "default": false,
+          "description": "Strictly restrict JAGGU to offline local runtimes (Ollama / local servers). Never contact cloud providers."
+        },
         "jaggu.provider": {
           "type": "string",
-          "default": "mock",
-          "description": "Active AI provider for JAGGU ('mock', 'ollama', 'openai-compatible', 'openai', 'anthropic', 'gemini', 'huggingface')"
+          "default": "auto",
+          "description": "Active AI provider for JAGGU ('auto', 'huggingface', 'ollama', 'openai-compatible', 'openai', 'anthropic', 'gemini', 'mock')"
         },
         "jaggu.model": {
           "type": "string",
-          "default": "mock-fast",
-          "description": "Active AI model ID"
+          "default": "auto",
+          "description": "Active AI model ID ('auto' for intelligent routing, or specific model identifier)"
+        },
+        "jaggu.huggingface.endpoint": {
+          "type": "string",
+          "default": "https://router.huggingface.co/v1",
+          "description": "Base URL for Hugging Face Inference Router"
         },
         "jaggu.ollama.endpoint": {
           "type": "string",
@@ -137,6 +178,26 @@
           "type": "string",
           "default": "http://localhost:1234/v1",
           "description": "Base URL for local or custom OpenAI-compatible server (vLLM, LM Studio, etc.)"
+        },
+        "jaggu.maxContextTokens": {
+          "type": "number",
+          "default": 0,
+          "description": "Maximum workspace context token budget (0 = automatic based on model limit)"
+        },
+        "jaggu.maxRepairAttempts": {
+          "type": "number",
+          "default": 3,
+          "description": "Maximum autonomous self-repair attempts if verification tests or compilation fails"
+        },
+        "jaggu.enableDiagnostics": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable language server diagnostics collection for self-healing verification"
+        },
+        "jaggu.enableVerification": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable automated test execution and verification after applying code changes"
         },
         "jaggu.model.contextLimit": {
           "type": "number",

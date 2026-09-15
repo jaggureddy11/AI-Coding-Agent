@@ -45,6 +45,8 @@ export type ExtensionToWebviewMessage =
   | { type: 'agent.error'; payload: { code?: string; message: string } }
   | { type: 'agent.config'; payload: { provider: string; model: string; models?: ModelDescriptor[] } }
   | { type: 'model.health_changed'; payload: { modelId: string; health: ModelHealthStatus; detail?: string } }
+  | { type: 'model.routed'; payload: { selectedModel: string; provider: string; policy: string; reason: string; score: number } }
+  | { type: 'model.fallback'; payload: { fromModel: string; toModel: string; provider: string; reason: string; attempt: number } }
   | { type: 'token.delta'; payload: { text: string; messageId: string } }
   | { type: 'token.complete'; payload: { messageId: string; fullText: string; tokensUsed?: number; provenance?: ContextSnippetSummary[] } }
   | { type: 'context.assembled'; payload: { taskId: string; filesCount: number; totalTokens: number; provenance: ContextSnippetSummary[] } }
@@ -166,6 +168,8 @@ export function isValidExtensionMessage(msg: unknown): msg is ExtensionToWebview
     'agent.error',
     'agent.config',
     'model.health_changed',
+    'model.routed',
+    'model.fallback',
     'token.delta',
     'token.complete',
     'context.assembled',

@@ -63,8 +63,8 @@ describe('JAGGU UI ModelSelector (M7-A)', () => {
       />,
     );
 
-    expect(html).toContain('optgroup label="Local Models"');
-    expect(html).toContain('optgroup label="Cloud Models"');
+    expect(html).toContain('optgroup label="LOCAL (OLLAMA / VLLM)"');
+    expect(html).toContain('optgroup label="CONFIGURED (OPTIONAL CLOUD)"');
     expect(html).toContain('Qwen 2.5 Coder 7B');
     expect(html).toContain('GPT-4o (Omni)');
     expect(html).toContain('data-testid="model-selector"');
@@ -92,7 +92,7 @@ describe('JAGGU UI ModelSelector (M7-A)', () => {
     );
 
     expect(html).toContain('data-testid="model-runtime-badge"');
-    expect(html).toContain('local');
+    expect(html.toLowerCase()).toContain('local');
   });
 
   it('should render cloud runtime badge when cloud model is active', () => {
@@ -105,7 +105,7 @@ describe('JAGGU UI ModelSelector (M7-A)', () => {
     );
 
     expect(html).toContain('data-testid="model-runtime-badge"');
-    expect(html).toContain('cloud');
+    expect(html.toLowerCase()).toContain('cloud');
   });
 
   it('should display health status indicator dot and tooltip', () => {

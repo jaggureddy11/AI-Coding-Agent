@@ -11,6 +11,19 @@ import { resilientFetch, parseSseStream } from './transport.js';
 
 export const HUGGINGFACE_SUPPORTED_MODELS: ModelMetadata[] = [
   {
+    id: 'Qwen/Qwen3-Coder-30B-A3B-Instruct',
+    displayName: 'Qwen 3 Coder 30B (Hugging Face Free)',
+    providerId: 'huggingface',
+    capabilities: {
+      streaming: true,
+      toolCalling: true,
+      vision: false,
+      structuredOutput: true,
+      maxContextTokens: 131072,
+      maxOutputTokens: 8192,
+    },
+  },
+  {
     id: 'Qwen/Qwen2.5-Coder-32B-Instruct',
     displayName: 'Qwen 2.5 Coder 32B (Hugging Face)',
     providerId: 'huggingface',
@@ -67,7 +80,7 @@ export const HUGGINGFACE_SUPPORTED_MODELS: ModelMetadata[] = [
 export class HuggingFaceProvider implements IModelProvider {
   public readonly id = 'huggingface';
   public readonly name = 'Hugging Face Inference';
-  public readonly defaultModel = 'Qwen/Qwen2.5-Coder-32B-Instruct';
+  public readonly defaultModel = 'Qwen/Qwen3-Coder-30B-A3B-Instruct';
   public readonly supportedModels = HUGGINGFACE_SUPPORTED_MODELS;
 
   public getCapabilities(model: string): ModelCapabilities {
@@ -80,7 +93,7 @@ export class HuggingFaceProvider implements IModelProvider {
       toolCalling: true,
       vision: false,
       structuredOutput: true,
-      maxContextTokens: 32768,
+      maxContextTokens: 131072,
       maxOutputTokens: 8192,
     };
   }
@@ -95,7 +108,7 @@ export class HuggingFaceProvider implements IModelProvider {
   ): AsyncIterable<ModelStreamChunk> {
     if (!options.apiKey || options.apiKey.trim().length === 0) {
       throw new ModelError(
-        'Hugging Face API token is required. Please set jaggu.apiKey.huggingface in SecretStorage.',
+        'Hugging Face access token is required for cloud inference. Please configure a free token in JAGGU Settings.',
         'AUTH_FAILURE',
         this.id,
         401,

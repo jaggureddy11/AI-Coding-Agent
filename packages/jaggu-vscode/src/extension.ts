@@ -189,6 +189,76 @@ export function activate(context: vscode.ExtensionContext): {
   );
 
   context.subscriptions.push(
+    vscode.commands.registerCommand('jaggu.setHuggingFaceToken', async () => {
+      const token = await vscode.window.showInputBox({
+        prompt: 'Enter your Hugging Face User Access Token (hf_...)',
+        placeHolder: 'hf_...',
+        password: true,
+        ignoreFocusOut: true,
+      });
+
+      if (token !== undefined) {
+        await credentialManager.setHuggingFaceToken(token);
+        if (token.trim()) {
+          vscode.window.showInformationMessage('JAGGU: Hugging Face token saved securely in SecretStorage.');
+        } else {
+          vscode.window.showInformationMessage('JAGGU: Hugging Face token removed.');
+        }
+      }
+    }),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('jaggu.removeHuggingFaceToken', async () => {
+      await credentialManager.removeHuggingFaceToken();
+      vscode.window.showInformationMessage('JAGGU: Hugging Face token removed from SecretStorage.');
+    }),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('jaggu.testHuggingFaceConnection', async () => {
+      const token = await credentialManager.getHuggingFaceToken();
+      if (!token) {
+        vscode.window.showWarningMessage('JAGGU: No Hugging Face token found. Run "JAGGU: Set Hugging Face Token" first.');
+        return;
+      }
+
+      await vscode.window.withProgress(
+        {
+          location: vscode.ProgressLocation.Notification,
+          title: 'JAGGU: Testing Hugging Face Connection...',
+          cancellable: false,
+        },
+        async () => {
+          try {
+            const hfProvider = modelGateway.getProvider('huggingface');
+            const stream = hfProvider.streamChat(
+              [{ role: 'user', content: 'Ping' }],
+              { apiKey: token, maxTokens: 4, model: 'Qwen/Qwen3-Coder-30B-A3B-Instruct' },
+            );
+            // Read at least 1 chunk to verify credentials and endpoint
+            for await (const _chunk of stream) {
+              break;
+            }
+            vscode.window.showInformationMessage('✓ Connected — Model available (Qwen 3 Coder 30B via Hugging Face)');
+          } catch (err: any) {
+            const code = err?.code || '';
+            if (code === 'AUTH_FAILURE') {
+              vscode.window.showErrorMessage('✗ Authentication failed — Invalid or expired Hugging Face token.');
+            } else if (code === 'RATE_LIMITED') {
+              vscode.window.showWarningMessage('✗ Rate limited — Hugging Face inference is temporarily busy.');
+            } else if (code === 'NETWORK_ERROR') {
+              vscode.window.showErrorMessage('✗ Network error — Unable to reach Hugging Face inference router.');
+            } else {
+              vscode.window.showErrorMessage(`✗ Hugging Face connection test failed: ${err?.message || String(err)}`);
+            }
+          }
+        },
+      );
+    }),
+  );
+
+  context.subscriptions.push(
     vscode.commands.registerCommand('jaggu.selectProvider', async () => {
       const providers = modelGateway.listProviders().map((p) => ({
         label: p.name,

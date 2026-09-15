@@ -61,7 +61,7 @@ export const App: React.FC<AppProps> = ({
     model: 'mock-fast',
   });
   const [availableModels, setAvailableModels] = useState<ModelDescriptor[]>([]);
-  const [activeModelId, setActiveModelId] = useState<string>('mock-fast');
+  const [activeModelId, setActiveModelId] = useState<string>('auto');
 
   const activeProvenanceRef = useRef<ContextSnippetSummary[] | undefined>();
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -103,6 +103,12 @@ export const App: React.FC<AppProps> = ({
         case 'context.assembled':
           activeProvenanceRef.current = msg.payload.provenance;
           setStatusDetail(`Grounded in ${msg.payload.filesCount} workspace files`);
+          break;
+        case 'model.routed':
+          setStatusDetail(`Auto selected: ${msg.payload.selectedModel} (${msg.payload.reason})`);
+          break;
+        case 'model.fallback':
+          setStatusDetail(`Fallback from ${msg.payload.fromModel} to ${msg.payload.toModel}: ${msg.payload.reason}`);
           break;
         case 'token.delta': {
           const { messageId, text } = msg.payload;
@@ -207,8 +213,8 @@ export const App: React.FC<AppProps> = ({
           break;
         case 'agent.config':
           setActiveConfig({ provider: msg.payload.provider, model: msg.payload.model });
-          if (msg.payload.model) {
-            setActiveModelId(msg.payload.model);
+          if (msg.payload.model && msg.payload.model !== 'auto') {
+            setActiveModelId((prev) => (prev === 'auto' ? 'auto' : msg.payload.model));
           }
           if (Array.isArray(msg.payload.models) && msg.payload.models.length > 0) {
             setAvailableModels(msg.payload.models);

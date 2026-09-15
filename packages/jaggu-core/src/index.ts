@@ -17,6 +17,7 @@ export * from './models/openaiCompatible.js';
 export * from './models/mock.js';
 export * from './models/registry.js';
 export * from './models/gateway.js';
+export * from './models/router.js';
 
 // Tools, Context, Task, Diff
 export * from './types/tools.js';

@@ -59,9 +59,74 @@ export class CredentialManager {
     return config.get<string>('openaiCompatible.endpoint', 'http://localhost:1234/v1');
   }
 
+  public getModelMode(): 'auto' | 'free-and-local' | 'local-only' | 'manual' {
+    const config = vscode.workspace.getConfiguration('jaggu');
+    return config.get<'auto' | 'free-and-local' | 'local-only' | 'manual'>('modelMode', 'auto');
+  }
+
+  public getAllowPaidFallback(): boolean {
+    const config = vscode.workspace.getConfiguration('jaggu');
+    return (
+      config.get<boolean>('allowPaidFallbackInAuto') ??
+      config.get<boolean>('allowPaidFallback', false)
+    );
+  }
+
+  public getLocalOnly(): boolean {
+    const config = vscode.workspace.getConfiguration('jaggu');
+    return config.get<boolean>('localOnly', false);
+  }
+
+  public getHuggingFaceBaseUrl(): string {
+    const config = vscode.workspace.getConfiguration('jaggu');
+    return config.get<string>('huggingface.endpoint', 'https://router.huggingface.co/v1');
+  }
+
+  public async getHuggingFaceToken(): Promise<string | undefined> {
+    return this.getApiKey('huggingface');
+  }
+
+  public async setHuggingFaceToken(token: string): Promise<void> {
+    return this.setApiKey('huggingface', token);
+  }
+
+  public async removeHuggingFaceToken(): Promise<void> {
+    return this.deleteApiKey('huggingface');
+  }
+
+  public async getConfiguredCloudProviders(): Promise<string[]> {
+    const providers = ['openai', 'anthropic', 'gemini', 'huggingface'];
+    const configured: string[] = ['mock', 'ollama', 'openai-compatible'];
+    for (const p of providers) {
+      const key = await this.getApiKey(p);
+      if (key && key.trim().length > 0) {
+        configured.push(p);
+      }
+    }
+    return configured;
+  }
+
   public getContextLimitOverride(): number {
     const config = vscode.workspace.getConfiguration('jaggu');
-    return config.get<number>('model.contextLimit', 0);
+    return (
+      config.get<number>('maxContextTokens') ||
+      config.get<number>('model.contextLimit', 0)
+    );
+  }
+
+  public getMaxRepairAttempts(): number {
+    const config = vscode.workspace.getConfiguration('jaggu');
+    return config.get<number>('maxRepairAttempts', 3);
+  }
+
+  public getEnableDiagnostics(): boolean {
+    const config = vscode.workspace.getConfiguration('jaggu');
+    return config.get<boolean>('enableDiagnostics', true);
+  }
+
+  public getEnableVerification(): boolean {
+    const config = vscode.workspace.getConfiguration('jaggu');
+    return config.get<boolean>('enableVerification', true);
   }
 
   public getTemperature(): number {
@@ -69,3 +134,4 @@ export class CredentialManager {
     return config.get<number>('temperature', 0.2);
   }
 }
+

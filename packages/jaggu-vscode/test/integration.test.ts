@@ -29,7 +29,7 @@ describe('Webview ↔ Extension Host RPC Integration Flow', () => {
       type: 'ui.ready',
       payload: { timestamp: Date.now() },
     };
-    provider.handleIncomingMessage(readyMsg);
+    await provider.handleIncomingMessage(readyMsg);
 
     expect(receivedInWebview.length).toBe(2);
     expect(receivedInWebview[0].type).toBe('agent.config');

@@ -177,7 +177,9 @@ export async function* parseSseStream(response: Response, abortSignal?: AbortSig
       yield buffer.trim().slice(5).trim();
     }
   } finally {
-    reader.releaseLock();
+    if (typeof reader.releaseLock === 'function') {
+      reader.releaseLock();
+    }
   }
 }
 
@@ -239,6 +241,8 @@ export async function* parseNdjsonStream<T = unknown>(response: Response, abortS
       }
     }
   } finally {
-    reader.releaseLock();
+    if (typeof reader.releaseLock === 'function') {
+      reader.releaseLock();
+    }
   }
 }
