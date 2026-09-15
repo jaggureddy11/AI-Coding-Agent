@@ -5,6 +5,8 @@ import { ContextPill } from './components/ContextPill.js';
 import { ApprovalCard, ApprovalFileItem } from './components/ApprovalCard.js';
 import { PlanCard, PlanStepItem } from './components/PlanCard.js';
 import { ModelSelector } from './components/ModelSelector.js';
+import { VoiceTypingButton } from './components/VoiceTypingButton.js';
+import { TrustBadgeBar } from './components/TrustBadgeBar.js';
 import {
   VsCodeApi,
   ChatMessage,
@@ -373,6 +375,16 @@ export const App: React.FC<AppProps> = ({
     });
   };
 
+  const handleVoiceTranscript = (text: string) => {
+    setInput((prev) => {
+      const trimmed = prev.trim();
+      if (!trimmed) {
+        return text;
+      }
+      return `${trimmed} ${text}`;
+    });
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -499,6 +511,9 @@ export const App: React.FC<AppProps> = ({
         </div>
       </div>
 
+      {/* Trust & Safe Execution Guarantee Bar */}
+      <TrustBadgeBar state={status} />
+
       {/* 2. Conversation Area */}
       <div
         data-testid="conversation-area"
@@ -553,28 +568,80 @@ export const App: React.FC<AppProps> = ({
                 fontSize: '16px',
                 fontWeight: 600,
                 color: 'var(--vscode-foreground, #ffffff)',
-                marginBottom: '8px',
+                marginBottom: '6px',
                 letterSpacing: '-0.01em',
               }}
             >
               What would you like me to build?
             </div>
-            <p style={{ fontSize: '12px', lineHeight: 1.5, margin: '0 auto 20px', maxWidth: '280px', opacity: 0.8 }}>
-              Assign tasks, ask architectural questions, or plan verified multi-file code modifications.
+            <p style={{ fontSize: '12px', lineHeight: 1.5, margin: '0 auto 16px', maxWidth: '300px', opacity: 0.85 }}>
+              Delegate multi-file implementations, refactoring, and test repairs without losing code control.
             </p>
 
+            {/* Core Trust Guarantees */}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'center',
+                flexWrap: 'wrap',
+                gap: '6px',
+                margin: '0 auto 18px',
+                maxWidth: '320px',
+              }}
+            >
+              <span
+                style={{
+                  fontSize: '10px',
+                  padding: '3px 7px',
+                  borderRadius: '12px',
+                  backgroundColor: 'rgba(52, 211, 153, 0.1)',
+                  color: '#34d399',
+                  border: '1px solid rgba(52, 211, 153, 0.25)',
+                  fontWeight: 500,
+                }}
+              >
+                ✓ Review-Gated
+              </span>
+              <span
+                style={{
+                  fontSize: '10px',
+                  padding: '3px 7px',
+                  borderRadius: '12px',
+                  backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                  color: '#60a5fa',
+                  border: '1px solid rgba(59, 130, 246, 0.25)',
+                  fontWeight: 500,
+                }}
+              >
+                ✓ Shadow Buffer
+              </span>
+              <span
+                style={{
+                  fontSize: '10px',
+                  padding: '3px 7px',
+                  borderRadius: '12px',
+                  backgroundColor: 'rgba(167, 139, 250, 0.1)',
+                  color: '#c084fc',
+                  border: '1px solid rgba(167, 139, 250, 0.25)',
+                  fontWeight: 500,
+                }}
+              >
+                ✓ Self-Healing Tests
+              </span>
+            </div>
+
             {/* Quick Prompt Cards */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxWidth: '300px', margin: '0 auto' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxWidth: '320px', margin: '0 auto' }}>
               {[
-                { title: 'Explain this project', desc: 'Overview of modules & architecture' },
-                { title: 'Plan a new feature', desc: 'Formulate a step-by-step engineering plan' },
-                { title: 'Inspect repository architecture', desc: 'Analyze dependencies and symbols' },
+                { title: 'Explain this project', desc: 'Index symbols & trace architecture' },
+                { title: 'Plan a new feature', desc: 'Formulate a verified multi-phase plan' },
+                { title: 'Diagnose compiler & test errors', desc: 'Collect LSP diagnostics and fix root cause' },
               ].map((item) => (
                 <button
                   key={item.title}
                   onClick={() => setInput(item.title)}
                   style={{
-                    padding: '8px 12px',
+                    padding: '9px 12px',
                     textAlign: 'left',
                     fontSize: '12px',
                     backgroundColor: 'rgba(255, 255, 255, 0.04)',
@@ -584,21 +651,24 @@ export const App: React.FC<AppProps> = ({
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '8px',
-                    transition: 'all 0.15s ease',
+                    gap: '10px',
+                    transition: 'all 0.18s ease',
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
-                    e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+                    e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.35)';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.04)';
                     e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                    e.currentTarget.style.transform = 'translateY(0)';
                   }}
                 >
                   <span style={{ fontSize: '14px', color: '#60a5fa' }}>⚡</span>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
                     <span style={{ fontWeight: 500 }}>{item.title}</span>
+                    <span style={{ fontSize: '10.5px', color: 'var(--vscode-descriptionForeground, #858585)' }}>{item.desc}</span>
                   </div>
                 </button>
               ))}
@@ -909,6 +979,10 @@ export const App: React.FC<AppProps> = ({
               </div>
 
               <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                <VoiceTypingButton
+                  onTranscript={handleVoiceTranscript}
+                  disabled={status === 'PROCESSING'}
+                />
                 {status === 'PROCESSING' ? (
                   <button
                     data-testid="cancel-btn"

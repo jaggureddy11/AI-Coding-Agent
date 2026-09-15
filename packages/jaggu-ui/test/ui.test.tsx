@@ -4,6 +4,8 @@ import { renderToString } from 'react-dom/server';
 import { App } from '../src/App.js';
 import { StatusPill } from '../src/components/StatusPill.js';
 import { PlanCard } from '../src/components/PlanCard.js';
+import { TrustBadgeBar } from '../src/components/TrustBadgeBar.js';
+import { VoiceTypingButton } from '../src/components/VoiceTypingButton.js';
 import { AgentState, Plan } from '@jaggu/core';
 import { ChatMessage } from '../src/types/rpc.js';
 
@@ -76,5 +78,26 @@ describe('JAGGU UI Webview Shell', () => {
     expect(html).toContain('Cancel');
     expect(html).toContain('JAGGU is processing your request...');
     expect(html).toContain('Processing');
+  });
+
+  it('should render TrustBadgeBar with security guarantee and active state', () => {
+    const html = renderToString(<TrustBadgeBar state="IDLE" />);
+    expect(html).toContain('TRUSTED CONTROL ACTIVE');
+    expect(html).toContain('Zero Silent Writes');
+    expect(html).toContain('IDLE');
+    expect(html).toContain('data-testid="trust-badge-bar"');
+  });
+
+  it('should render VoiceTypingButton with microphone icon and data-testid', () => {
+    const html = renderToString(<VoiceTypingButton onTranscript={() => {}} disabled={false} />);
+    expect(html).toContain('data-testid="voice-typing-btn"');
+    expect(html).toContain('Voice typing');
+  });
+
+  it('should render TrustBadgeBar and VoiceTypingButton within the main App shell', () => {
+    const html = renderToString(<App initialStatus="IDLE" />);
+    expect(html).toContain('data-testid="trust-badge-bar"');
+    expect(html).toContain('data-testid="voice-typing-btn"');
+    expect(html).toContain('Review-Gated');
   });
 });
