@@ -1,7 +1,7 @@
 # JAGGU
 
 <p align="center">
-  <img src="./packages/jaggu-vscode/media/icon.png" alt="JAGGU Logo" width="128" style="border-radius: 24px;" />
+  <img src="./media/logo.png" alt="JAGGU Logo" width="140" style="border-radius: 20px;" />
 </p>
 
 <h2 align="center">Developer-Controlled AI Coding Agent for VS Code</h2>
