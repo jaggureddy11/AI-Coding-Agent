@@ -13,9 +13,11 @@ build/
 .vscode/jaggu/
 .vscode-test/
 *.log
+.kilo/
 
 # OS files
 .DS_Store
+**/.DS_Store
 Thumbs.db
 
 # Evaluation raw outputs

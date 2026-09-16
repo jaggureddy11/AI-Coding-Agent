@@ -21,3 +21,7 @@ dist/credentials.js*
 dist/sidebarProvider.js*
 dist/virtualDocProvider.js*
 dist/diagnostics/**
+**/*.map
+media/preview.html
+.DS_Store
+**/.DS_Store
