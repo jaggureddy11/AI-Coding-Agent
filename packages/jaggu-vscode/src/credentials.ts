@@ -108,10 +108,7 @@ export class CredentialManager {
 
   public getContextLimitOverride(): number {
     const config = vscode.workspace.getConfiguration('jaggu');
-    return (
-      config.get<number>('maxContextTokens') ||
-      config.get<number>('model.contextLimit', 0)
-    );
+    return config.get<number>('maxContextTokens') || config.get<number>('model.contextLimit', 0);
   }
 
   public getMaxRepairAttempts(): number {
@@ -134,4 +131,3 @@ export class CredentialManager {
     return config.get<number>('temperature', 0.2);
   }
 }
-

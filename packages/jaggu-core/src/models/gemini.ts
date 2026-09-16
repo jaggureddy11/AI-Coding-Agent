@@ -63,7 +63,11 @@ export class GeminiProvider implements IModelProvider {
   ): AsyncIterable<ModelStreamChunk> {
     const apiKey = options.apiKey;
     if (!apiKey) {
-      throw new ModelError('Google Gemini API key is missing. Configure it in JAGGU settings.', 'AUTH_FAILURE', this.id);
+      throw new ModelError(
+        'Google Gemini API key is missing. Configure it in JAGGU settings.',
+        'AUTH_FAILURE',
+        this.id,
+      );
     }
 
     const model = options.model || this.defaultModel;
@@ -113,7 +117,10 @@ export class GeminiProvider implements IModelProvider {
         const chunk = JSON.parse(line) as {
           candidates?: Array<{
             content?: {
-              parts?: Array<{ text?: string; functionCall?: { name: string; args: Record<string, unknown> } }>;
+              parts?: Array<{
+                text?: string;
+                functionCall?: { name: string; args: Record<string, unknown> };
+              }>;
             };
           }>;
           usageMetadata?: {

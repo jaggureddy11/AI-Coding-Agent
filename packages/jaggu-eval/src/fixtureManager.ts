@@ -48,12 +48,23 @@ export class FixtureManager {
     if (options.requiresGit) {
       try {
         execFileSync('git', ['init'], { cwd: tempDir, stdio: 'ignore' });
-        execFileSync('git', ['config', 'user.name', 'Jaggu Evaluator'], { cwd: tempDir, stdio: 'ignore' });
-        execFileSync('git', ['config', 'user.email', 'eval@jaggu.local'], { cwd: tempDir, stdio: 'ignore' });
+        execFileSync('git', ['config', 'user.name', 'Jaggu Evaluator'], {
+          cwd: tempDir,
+          stdio: 'ignore',
+        });
+        execFileSync('git', ['config', 'user.email', 'eval@jaggu.local'], {
+          cwd: tempDir,
+          stdio: 'ignore',
+        });
         execFileSync('git', ['add', '.'], { cwd: tempDir, stdio: 'ignore' });
-        execFileSync('git', ['commit', '-m', 'Initial baseline commit'], { cwd: tempDir, stdio: 'ignore' });
+        execFileSync('git', ['commit', '-m', 'Initial baseline commit'], {
+          cwd: tempDir,
+          stdio: 'ignore',
+        });
       } catch (err) {
-        throw new Error(`Failed to initialize git repository in fixture sandbox: ${err instanceof Error ? err.message : String(err)}`);
+        throw new Error(
+          `Failed to initialize git repository in fixture sandbox: ${err instanceof Error ? err.message : String(err)}`,
+        );
       }
     }
 

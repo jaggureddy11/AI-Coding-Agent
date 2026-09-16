@@ -7,6 +7,10 @@ import { PlanCard, PlanStepItem } from './components/PlanCard.js';
 import { ModelSelector } from './components/ModelSelector.js';
 import { VoiceTypingButton } from './components/VoiceTypingButton.js';
 import { TrustBadgeBar } from './components/TrustBadgeBar.js';
+import { MarkdownMessage } from './components/MarkdownMessage.js';
+import { FileMentionDropdown } from './components/FileMentionDropdown.js';
+import { AttachedFilesBar } from './components/AttachedFilesBar.js';
+import { ExecutionDrawer, LogEntry } from './components/ExecutionDrawer.js';
 import {
   VsCodeApi,
   ChatMessage,
@@ -63,8 +67,33 @@ export const App: React.FC<AppProps> = ({
   const [availableModels, setAvailableModels] = useState<ModelDescriptor[]>([]);
   const [activeModelId, setActiveModelId] = useState<string>('auto');
 
+  // Track 3: Workspace files, @file mentions, drag-drop attachments, and terminal logs
+  const [workspaceFiles, setWorkspaceFiles] = useState<string[]>([
+    'packages/jaggu-core/src/agent/agentOrchestrator.ts',
+    'packages/jaggu-core/src/models/gateway.ts',
+    'packages/jaggu-server/src/index.ts',
+    'packages/jaggu-ui/src/App.tsx',
+    'packages/jaggu-vscode/src/extension.ts',
+    'README.md',
+    'package.json',
+  ]);
+  const [mentionQuery, setMentionQuery] = useState<string | null>(null);
+  const [mentionIndex, setMentionIndex] = useState(0);
+  const [attachedFiles, setAttachedFiles] = useState<string[]>([]);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [isTerminalOpen, setIsTerminalOpen] = useState(false);
+  const [terminalLogs, setTerminalLogs] = useState<LogEntry[]>([
+    {
+      id: 'init_ready',
+      type: 'info',
+      line: 'JAGGU Agent Shell initialized. Ready for execution.',
+      timestamp: Date.now(),
+    },
+  ]);
+
   const activeProvenanceRef = useRef<ContextSnippetSummary[] | undefined>();
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -73,6 +102,15 @@ export const App: React.FC<AppProps> = ({
   useEffect(() => {
     scrollToBottom();
   }, [messages, status]);
+
+  // Auto-resize prompt textarea dynamically as user types
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      const targetHeight = Math.min(Math.max(textareaRef.current.scrollHeight, 44), 160);
+      textareaRef.current.style.height = `${targetHeight}px`;
+    }
+  }, [input]);
 
   // Listen for messages from the extension host
   useEffect(() => {
@@ -108,7 +146,9 @@ export const App: React.FC<AppProps> = ({
           setStatusDetail(`Auto selected: ${msg.payload.selectedModel} (${msg.payload.reason})`);
           break;
         case 'model.fallback':
-          setStatusDetail(`Fallback from ${msg.payload.fromModel} to ${msg.payload.toModel}: ${msg.payload.reason}`);
+          setStatusDetail(
+            `Fallback from ${msg.payload.fromModel} to ${msg.payload.toModel}: ${msg.payload.reason}`,
+          );
           break;
         case 'token.delta': {
           const { messageId, text } = msg.payload;
@@ -170,10 +210,7 @@ export const App: React.FC<AppProps> = ({
           const { proposalId, filePath, diffSummary } = msg.payload;
           setProposals((prev) => {
             const filtered = prev.filter((p) => p.proposalId !== proposalId);
-            return [
-              ...filtered,
-              { proposalId, filePath, diffSummary, status: 'pending' },
-            ];
+            return [...filtered, { proposalId, filePath, diffSummary, status: 'pending' }];
           });
           break;
         }
@@ -227,23 +264,62 @@ export const App: React.FC<AppProps> = ({
           );
           break;
         }
+        case 'workspace.files': {
+          if (Array.isArray(msg.payload.files) && msg.payload.files.length > 0) {
+            setWorkspaceFiles(msg.payload.files);
+          }
+          break;
+        }
+        case 'terminal.log': {
+          setTerminalLogs((prev) => [
+            ...prev,
+            {
+              id: `log_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+              type: msg.payload.type,
+              line: msg.payload.line,
+              timestamp: msg.payload.timestamp,
+            },
+          ]);
+          break;
+        }
         case 'agent.error':
           setErrorMessage(msg.payload.message);
           setStatus('ERROR');
+          setTerminalLogs((prev) => [
+            ...prev,
+            {
+              id: `err_${Date.now()}`,
+              type: 'stderr',
+              line: msg.payload.message,
+              timestamp: Date.now(),
+            },
+          ]);
           break;
         case 'TASK_ERROR':
           setErrorMessage(msg.payload.error);
           setStatus('ERROR');
+          setTerminalLogs((prev) => [
+            ...prev,
+            {
+              id: `err_${Date.now()}`,
+              type: 'stderr',
+              line: msg.payload.error,
+              timestamp: Date.now(),
+            },
+          ]);
           break;
       }
     };
 
     window.addEventListener('message', handleMessage);
 
-    // Notify extension that webview is ready
+    // Notify extension that webview is ready & request workspace files
     vscode?.postMessage({
       type: 'ui.ready',
       payload: { timestamp: Date.now() },
+    });
+    vscode?.postMessage({
+      type: 'workspace.request_files',
     });
 
     return () => {
@@ -265,6 +341,94 @@ export const App: React.FC<AppProps> = ({
     });
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const val = e.target.value;
+    setInput(val);
+
+    // Detect @ mention pattern
+    const cursor = e.target.selectionStart ?? val.length;
+    const textBeforeCursor = val.slice(0, cursor);
+    const lastAtPos = textBeforeCursor.lastIndexOf('@');
+
+    if (lastAtPos !== -1) {
+      const query = textBeforeCursor.slice(lastAtPos + 1);
+      // Valid mention query has no whitespace between '@' and cursor
+      if (!/\s/.test(query)) {
+        setMentionQuery(query);
+        setMentionIndex(0);
+      } else {
+        setMentionQuery(null);
+      }
+    } else {
+      setMentionQuery(null);
+    }
+  };
+
+  const handleSelectMention = (file: string) => {
+    const cursor = textareaRef.current?.selectionStart ?? input.length;
+    const textBeforeCursor = input.slice(0, cursor);
+    const textAfterCursor = input.slice(cursor);
+    const lastAtPos = textBeforeCursor.lastIndexOf('@');
+
+    if (lastAtPos !== -1) {
+      const newInput = textBeforeCursor.slice(0, lastAtPos) + `@${file} ` + textAfterCursor;
+      setInput(newInput);
+      setMentionQuery(null);
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.focus();
+          const newPos = lastAtPos + file.length + 2;
+          textareaRef.current.setSelectionRange(newPos, newPos);
+        }
+      }, 10);
+    }
+  };
+
+  const handleRemoveAttachedFile = (fileToRemove: string) => {
+    setAttachedFiles((prev) => prev.filter((f) => f !== fileToRemove));
+  };
+
+  const handleClearAttachedFiles = () => {
+    setAttachedFiles([]);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOver(false);
+
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      const names: string[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const f = files[i];
+        if (f) names.push(f.name);
+      }
+      setAttachedFiles((prev) => Array.from(new Set([...prev, ...names])));
+      setTerminalLogs((prev) => [
+        ...prev,
+        {
+          id: `drop_${Date.now()}`,
+          type: 'info',
+          line: `Attached context file(s): ${names.join(', ')}`,
+          timestamp: Date.now(),
+        },
+      ]);
+    }
+  };
+
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const trimmed = input.trim();
@@ -279,17 +443,36 @@ export const App: React.FC<AppProps> = ({
 
     setMessages((prev) => [...prev, userMsg]);
     setInput('');
+    setMentionQuery(null);
     setErrorMessage(null);
 
-    // Send typed RPC to extension host
+    // Send typed RPC to extension host with attached files
+    const finalPrompt =
+      attachedFiles.length > 0
+        ? `${trimmed}\n\n[Attached Context: ${attachedFiles.map((f) => `@${f}`).join(', ')}]`
+        : trimmed;
+
+    setTerminalLogs((prev) => [
+      ...prev,
+      {
+        id: `log_${Date.now()}`,
+        type: 'info',
+        line: `Prompt submitted: "${trimmed.slice(0, 60)}${trimmed.length > 60 ? '...' : ''}"`,
+        timestamp: Date.now(),
+      },
+    ]);
+
     vscode?.postMessage({
       type: 'user.submit',
       payload: {
         id: userMsg.id,
-        text: trimmed,
+        text: finalPrompt,
         timestamp: userMsg.timestamp,
+        attachedFiles: attachedFiles.length > 0 ? attachedFiles : undefined,
       },
     });
+
+    setAttachedFiles([]);
   };
 
   const handleCancel = () => {
@@ -305,6 +488,7 @@ export const App: React.FC<AppProps> = ({
     setErrorMessage(null);
     setStatus('IDLE');
     setStatusDetail(undefined);
+    setAttachedFiles([]);
     vscode?.postMessage({
       type: 'ui.clear',
       payload: {},
@@ -354,7 +538,7 @@ export const App: React.FC<AppProps> = ({
 
   const handleApproveProposal = (proposalId: string, approvedFiles?: string[]) => {
     setProposals((prev) =>
-      prev.map((p) => (p.proposalId === proposalId ? { ...p, status: 'approved' } : p))
+      prev.map((p) => (p.proposalId === proposalId ? { ...p, status: 'approved' } : p)),
     );
     // Support both single proposalId and multi-file editSetId with selective approval
     vscode?.postMessage({
@@ -369,7 +553,7 @@ export const App: React.FC<AppProps> = ({
 
   const handleRejectProposal = (proposalId: string) => {
     setProposals((prev) =>
-      prev.map((p) => (p.proposalId === proposalId ? { ...p, status: 'rejected' } : p))
+      prev.map((p) => (p.proposalId === proposalId ? { ...p, status: 'rejected' } : p)),
     );
     vscode?.postMessage({
       type: 'agent.reject',
@@ -392,6 +576,36 @@ export const App: React.FC<AppProps> = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (mentionQuery !== null) {
+      const filtered = workspaceFiles
+        .filter((f) => f.toLowerCase().includes(mentionQuery.toLowerCase()))
+        .slice(0, 8);
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setMentionIndex((prev) => (prev + 1) % (filtered.length || 1));
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setMentionIndex((prev) => (prev - 1 + (filtered.length || 1)) % (filtered.length || 1));
+        return;
+      }
+      if ((e.key === 'Enter' || e.key === 'Tab') && filtered.length > 0) {
+        e.preventDefault();
+        const selected = filtered[mentionIndex] || filtered[0];
+        if (selected) {
+          handleSelectMention(selected);
+        }
+        return;
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setMentionQuery(null);
+        return;
+      }
+    }
+
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSubmit();
@@ -408,7 +622,8 @@ export const App: React.FC<AppProps> = ({
         boxSizing: 'border-box',
         backgroundColor: 'var(--vscode-sideBar-background, #18181b)',
         color: 'var(--vscode-sideBar-foreground, var(--vscode-foreground, #cccccc))',
-        fontFamily: 'var(--vscode-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif)',
+        fontFamily:
+          'var(--vscode-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif)',
         fontSize: 'var(--vscode-font-size, 13px)',
         overflow: 'hidden',
       }}
@@ -419,43 +634,20 @@ export const App: React.FC<AppProps> = ({
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          padding: '8px 12px',
-          borderBottom: '1px solid var(--vscode-sideBarSectionHeader-border, rgba(255, 255, 255, 0.08))',
-          backgroundColor: 'var(--vscode-sideBarSectionHeader-background, rgba(0, 0, 0, 0.15))',
+          padding: '8px 14px',
+          borderBottom:
+            '1px solid var(--vscode-sideBarSectionHeader-border, rgba(255, 255, 255, 0.06))',
+          backgroundColor: 'var(--vscode-sideBarSectionHeader-background, rgba(0, 0, 0, 0.1))',
           backdropFilter: 'blur(8px)',
-          minHeight: '42px',
+          minHeight: '32px',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {/* Coding Glasses Icon */}
-          <div
-            style={{
-              width: '24px',
-              height: '24px',
-              borderRadius: '6px',
-              backgroundColor: 'rgba(255, 255, 255, 0.08)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'var(--vscode-foreground, #ffffff)',
-            }}
-          >
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="2" y="6" width="8.5" height="9.5" rx="3" />
-              <rect x="13.5" y="6" width="8.5" height="9.5" rx="3" />
-              <path d="M10.5 9.5a2 2 0 0 1 3 0" />
-              <path d="M2 9.5H1" />
-              <path d="M23 9.5h-1" />
-              <path d="M7.5 9L5.5 10.75L7.5 12.5" />
-              <path d="M16.5 9L18.5 10.75L16.5 12.5" />
-            </svg>
-          </div>
-
           <span
             style={{
-              fontWeight: 700,
-              fontSize: '13px',
-              letterSpacing: '0.04em',
+              fontWeight: 600,
+              fontSize: '12.5px',
+              letterSpacing: '-0.02em',
               color: 'var(--vscode-foreground, #ffffff)',
             }}
           >
@@ -466,14 +658,13 @@ export const App: React.FC<AppProps> = ({
             data-testid="provider-badge"
             style={{
               fontSize: '9px',
-              padding: '2px 5px',
+              padding: '1px 5px',
               borderRadius: '4px',
-              backgroundColor: 'rgba(59, 130, 246, 0.15)',
-              color: '#60a5fa',
-              fontWeight: 600,
+              backgroundColor: 'rgba(255, 255, 255, 0.06)',
+              color: 'var(--vscode-descriptionForeground, #a1a1aa)',
+              fontWeight: 500,
               textTransform: 'uppercase',
               letterSpacing: '0.04em',
-              border: '1px solid rgba(59, 130, 246, 0.25)',
             }}
           >
             {activeConfig.provider}
@@ -486,70 +677,112 @@ export const App: React.FC<AppProps> = ({
             <button
               data-testid="clear-btn"
               onClick={handleClear}
-              title="Clear conversation and start fresh task"
+              title="Clear conversation"
               style={{
-                background: 'rgba(255, 255, 255, 0.06)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
+                background: 'transparent',
+                border: 'none',
                 color: 'var(--vscode-descriptionForeground, #858585)',
                 cursor: 'pointer',
                 fontSize: '11px',
-                padding: '3px 8px',
+                padding: '2px 6px',
                 borderRadius: '4px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                fontWeight: 500,
+                opacity: 0.7,
+                transition: 'opacity 0.15s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.opacity = '1';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.opacity = '0.7';
               }}
             >
-              <span>+</span>
               <span>Clear</span>
             </button>
           )}
         </div>
       </div>
 
-      {/* Trust & Safe Execution Guarantee Bar */}
+      {/* Trust & Safe Execution Guarantee Bar (Visually hidden for minimal aesthetic) */}
       <TrustBadgeBar state={status} />
 
       {/* 2. Conversation Area */}
       <div
         data-testid="conversation-area"
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
         style={{
           flex: 1,
           overflowY: 'auto',
-          padding: '14px',
+          padding: '16px 14px',
           display: 'flex',
           flexDirection: 'column',
           gap: '14px',
+          position: 'relative',
         }}
       >
+        {/* Minimalist Drag-and-Drop Overlay */}
+        {isDraggingOver && (
+          <div
+            data-testid="drag-drop-overlay"
+            style={{
+              position: 'absolute',
+              inset: 8,
+              backgroundColor: 'rgba(9, 9, 11, 0.85)',
+              backdropFilter: 'blur(6px)',
+              border: '2px dashed rgba(96, 165, 250, 0.7)',
+              borderRadius: '10px',
+              zIndex: 100,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              color: '#93c5fd',
+              pointerEvents: 'none',
+            }}
+          >
+            <span style={{ fontSize: '26px' }}>📄</span>
+            <span style={{ fontSize: '13px', fontWeight: 600 }}>Drop files to attach as context</span>
+            <span style={{ fontSize: '11px', opacity: 0.6 }}>Files will be grounded in prompt execution</span>
+          </div>
+        )}
+
         {messages.length === 0 ? (
           <div
             data-testid="empty-state"
             style={{
               margin: 'auto 0',
               textAlign: 'center',
-              padding: '24px 12px',
+              padding: '20px 8px',
               color: 'var(--vscode-descriptionForeground, #858585)',
             }}
           >
-            {/* Glowing Hero Icon */}
+            {/* Minimalist Glowing Hero Icon */}
             <div
               style={{
-                width: '64px',
-                height: '64px',
-                borderRadius: '16px',
-                background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(16, 185, 129, 0.15))',
-                border: '1px solid rgba(255, 255, 255, 0.12)',
+                width: '44px',
+                height: '44px',
+                borderRadius: '12px',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                margin: '0 auto 16px',
-                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.35)',
-                color: '#ffffff',
+                margin: '0 auto 14px',
+                color: 'var(--vscode-foreground, #ffffff)',
               }}
             >
-              <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                viewBox="0 0 24 24"
+                width="22"
+                height="22"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <rect x="2" y="6" width="8.5" height="9.5" rx="3" />
                 <rect x="13.5" y="6" width="8.5" height="9.5" rx="3" />
                 <path d="M10.5 9.5a2 2 0 0 1 3 0" />
@@ -562,111 +795,64 @@ export const App: React.FC<AppProps> = ({
 
             <div
               style={{
-                fontSize: '16px',
+                fontSize: '15px',
                 fontWeight: 600,
                 color: 'var(--vscode-foreground, #ffffff)',
-                marginBottom: '6px',
+                marginBottom: '16px',
                 letterSpacing: '-0.01em',
               }}
             >
               What would you like me to build?
             </div>
-            <p style={{ fontSize: '12px', lineHeight: 1.5, margin: '0 auto 16px', maxWidth: '300px', opacity: 0.85 }}>
-              Delegate multi-file implementations, refactoring, and test repairs without losing code control.
-            </p>
 
-            {/* Core Trust Guarantees */}
+            {/* Quick Prompt Cards - Minimal Blackbox/Antigravity style */}
             <div
               style={{
                 display: 'flex',
-                justifyContent: 'center',
-                flexWrap: 'wrap',
+                flexDirection: 'column',
                 gap: '6px',
-                margin: '0 auto 18px',
-                maxWidth: '320px',
+                maxWidth: '300px',
+                margin: '0 auto',
               }}
             >
-              <span
-                style={{
-                  fontSize: '10px',
-                  padding: '3px 7px',
-                  borderRadius: '12px',
-                  backgroundColor: 'rgba(52, 211, 153, 0.1)',
-                  color: '#34d399',
-                  border: '1px solid rgba(52, 211, 153, 0.25)',
-                  fontWeight: 500,
-                }}
-              >
-                ✓ Review-Gated
-              </span>
-              <span
-                style={{
-                  fontSize: '10px',
-                  padding: '3px 7px',
-                  borderRadius: '12px',
-                  backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                  color: '#60a5fa',
-                  border: '1px solid rgba(59, 130, 246, 0.25)',
-                  fontWeight: 500,
-                }}
-              >
-                ✓ Shadow Buffer
-              </span>
-              <span
-                style={{
-                  fontSize: '10px',
-                  padding: '3px 7px',
-                  borderRadius: '12px',
-                  backgroundColor: 'rgba(167, 139, 250, 0.1)',
-                  color: '#c084fc',
-                  border: '1px solid rgba(167, 139, 250, 0.25)',
-                  fontWeight: 500,
-                }}
-              >
-                ✓ Self-Healing Tests
-              </span>
-            </div>
-
-            {/* Quick Prompt Cards */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxWidth: '320px', margin: '0 auto' }}>
               {[
-                { title: 'Explain this project', desc: 'Index symbols & trace architecture' },
-                { title: 'Plan a new feature', desc: 'Formulate a verified multi-phase plan' },
-                { title: 'Diagnose compiler & test errors', desc: 'Collect LSP diagnostics and fix root cause' },
+                { title: 'Explain this project' },
+                { title: 'Plan a new feature' },
+                { title: 'Diagnose compiler & test errors' },
+                { title: 'Run tests & verify workspace' },
               ].map((item) => (
                 <button
                   key={item.title}
-                  onClick={() => setInput(item.title)}
+                  type="button"
+                  onClick={() => {
+                    setInput(item.title);
+                    textareaRef.current?.focus();
+                  }}
                   style={{
-                    padding: '9px 12px',
+                    padding: '8px 12px',
                     textAlign: 'left',
                     fontSize: '12px',
-                    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                    backgroundColor: 'rgba(255, 255, 255, 0.03)',
                     color: 'var(--vscode-foreground, #e4e4e7)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    border: '1px solid rgba(255, 255, 255, 0.07)',
                     borderRadius: '8px',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '10px',
-                    transition: 'all 0.18s ease',
+                    gap: '8px',
+                    transition: 'all 0.15s ease',
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
-                    e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.35)';
-                    e.currentTarget.style.transform = 'translateY(-1px)';
+                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.07)';
+                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.04)';
-                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
-                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.03)';
+                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.07)';
                   }}
                 >
-                  <span style={{ fontSize: '14px', color: '#60a5fa' }}>⚡</span>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-                    <span style={{ fontWeight: 500 }}>{item.title}</span>
-                    <span style={{ fontSize: '10.5px', color: 'var(--vscode-descriptionForeground, #858585)' }}>{item.desc}</span>
-                  </div>
+                  <span style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.4)' }}>⚡</span>
+                  <span style={{ fontWeight: 400 }}>{item.title}</span>
                 </button>
               ))}
             </div>
@@ -699,13 +885,43 @@ export const App: React.FC<AppProps> = ({
                   <>
                     <span>You</span>
                     <span>•</span>
-                    <span>{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    <span>
+                      {new Date(msg.timestamp).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </span>
                   </>
                 ) : (
                   <>
                     <span style={{ color: '#60a5fa', fontWeight: 600 }}>JAGGU</span>
                     <span>•</span>
-                    <span>{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    <span>
+                      {new Date(msg.timestamp).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => navigator.clipboard.writeText(msg.text)}
+                      title="Copy response"
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--vscode-descriptionForeground, #858585)',
+                        cursor: 'pointer',
+                        fontSize: '10px',
+                        padding: '1px 5px',
+                        borderRadius: '3px',
+                        opacity: 0.7,
+                        transition: 'opacity 0.15s ease',
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
+                      onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.7')}
+                    >
+                      Copy
+                    </button>
                   </>
                 )}
               </div>
@@ -716,7 +932,6 @@ export const App: React.FC<AppProps> = ({
                   borderRadius: msg.role === 'user' ? '12px 12px 3px 12px' : '12px 12px 12px 3px',
                   fontSize: '12px',
                   lineHeight: 1.55,
-                  whiteSpace: 'pre-wrap',
                   wordBreak: 'break-word',
                   backgroundColor:
                     msg.role === 'user'
@@ -726,17 +941,18 @@ export const App: React.FC<AppProps> = ({
                     msg.role === 'user'
                       ? 'var(--vscode-button-foreground, #ffffff)'
                       : 'var(--vscode-foreground, #e4e4e7)',
-                  border:
-                    msg.role === 'user'
-                      ? 'none'
-                      : '1px solid rgba(255, 255, 255, 0.08)',
+                  border: msg.role === 'user' ? 'none' : '1px solid rgba(255, 255, 255, 0.08)',
                   boxShadow:
                     msg.role === 'user'
                       ? '0 2px 8px rgba(0, 120, 212, 0.3)'
                       : '0 2px 8px rgba(0, 0, 0, 0.15)',
                 }}
               >
-                {msg.text}
+                {msg.role === 'assistant' ? (
+                  <MarkdownMessage content={msg.text} />
+                ) : (
+                  <div style={{ whiteSpace: 'pre-wrap' }}>{msg.text}</div>
+                )}
               </div>
               {msg.role === 'assistant' && msg.provenance && msg.provenance.length > 0 && (
                 <div style={{ marginTop: '4px', paddingLeft: '2px' }}>
@@ -778,7 +994,15 @@ export const App: React.FC<AppProps> = ({
               gap: '8px',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, color: '#facc15' }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontWeight: 600,
+                color: '#facc15',
+              }}
+            >
               <span>⚠️</span>
               <span>Scope Change Requested</span>
             </div>
@@ -883,8 +1107,12 @@ export const App: React.FC<AppProps> = ({
               boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
             }}
           >
-            <span style={{ display: 'inline-block', animation: 'spin 1s linear infinite' }}>⏳</span>
-            <span style={{ fontWeight: 500 }}>{statusDetail || 'JAGGU is processing your request...'}</span>
+            <span style={{ display: 'inline-block', animation: 'spin 1s linear infinite' }}>
+              ⏳
+            </span>
+            <span style={{ fontWeight: 500 }}>
+              {statusDetail || 'JAGGU is processing your request...'}
+            </span>
           </div>
         )}
 
@@ -901,11 +1129,33 @@ export const App: React.FC<AppProps> = ({
               color: '#fca5a5',
               display: 'flex',
               alignItems: 'center',
+              justifyContent: 'space-between',
               gap: '8px',
             }}
           >
-            <span>⚠️</span>
-            <span>{errorMessage}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>⚠️</span>
+              <span>{errorMessage}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setErrorMessage(null)}
+              title="Dismiss error"
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: '#fca5a5',
+                cursor: 'pointer',
+                fontSize: '14px',
+                padding: '0 4px',
+                lineHeight: 1,
+                opacity: 0.8,
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
+              onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.8')}
+            >
+              ✕
+            </button>
           </div>
         )}
 
@@ -916,13 +1166,25 @@ export const App: React.FC<AppProps> = ({
       <div
         style={{
           padding: '12px 14px 14px',
-          borderTop: '1px solid var(--vscode-sideBarSectionHeader-border, rgba(255, 255, 255, 0.08))',
+          borderTop:
+            '1px solid var(--vscode-sideBarSectionHeader-border, rgba(255, 255, 255, 0.08))',
           backgroundColor: 'var(--vscode-sideBar-background, #18181b)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '6px',
         }}
       >
+        {/* Attached Workspace Files Chips */}
+        <AttachedFilesBar
+          files={attachedFiles}
+          onRemove={handleRemoveAttachedFile}
+          onClearAll={handleClearAttachedFiles}
+        />
+
         <form onSubmit={handleSubmit}>
           <div
             style={{
+              position: 'relative',
               backgroundColor: 'var(--vscode-input-background, #222226)',
               border: '1px solid var(--vscode-input-border, rgba(255, 255, 255, 0.12))',
               borderRadius: '10px',
@@ -933,12 +1195,24 @@ export const App: React.FC<AppProps> = ({
               boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)',
             }}
           >
+            {/* @file Mention Autocomplete Dropdown */}
+            {mentionQuery !== null && (
+              <FileMentionDropdown
+                files={workspaceFiles}
+                query={mentionQuery}
+                selectedIndex={mentionIndex}
+                onSelect={handleSelectMention}
+                onClose={() => setMentionQuery(null)}
+              />
+            )}
+
             <textarea
+              ref={textareaRef}
               data-testid="prompt-input"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={handleInputChange}
               onKeyDown={handleKeyDown}
-              placeholder="Type a task... (Enter to send, Shift+Enter for newline)"
+              placeholder="Type a task... Type @ to reference files (Enter ↵ to send, Shift+Enter for newline)"
               rows={2}
               disabled={status === 'PROCESSING'}
               style={{
@@ -952,12 +1226,32 @@ export const App: React.FC<AppProps> = ({
                 lineHeight: 1.5,
                 resize: 'none',
                 outline: 'none',
+                minHeight: '44px',
+                maxHeight: '160px',
+                overflowY: 'auto',
               }}
             />
 
             {/* Inner Controls Bar */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '4px', gap: '8px', flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', flexWrap: 'wrap' }}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                paddingTop: '4px',
+                gap: '8px',
+                flexWrap: 'wrap',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontSize: '11px',
+                  flexWrap: 'wrap',
+                }}
+              >
                 <span
                   style={{
                     padding: '2px 6px',
@@ -970,6 +1264,47 @@ export const App: React.FC<AppProps> = ({
                 >
                   @workspace
                 </span>
+
+                {/* Collapsible Execution Terminal Toggle Button */}
+                <button
+                  type="button"
+                  data-testid="terminal-toggle-btn"
+                  onClick={() => setIsTerminalOpen((prev) => !prev)}
+                  title="Toggle execution terminal drawer"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    padding: '2px 7px',
+                    borderRadius: '4px',
+                    backgroundColor: isTerminalOpen
+                      ? 'rgba(59, 130, 246, 0.15)'
+                      : 'rgba(255, 255, 255, 0.05)',
+                    border: isTerminalOpen
+                      ? '1px solid rgba(59, 130, 246, 0.35)'
+                      : '1px solid rgba(255, 255, 255, 0.08)',
+                    color: isTerminalOpen ? '#93c5fd' : 'rgba(255, 255, 255, 0.65)',
+                    cursor: 'pointer',
+                    fontSize: '10px',
+                    fontFamily: 'monospace',
+                    transition: 'all 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = isTerminalOpen
+                      ? 'rgba(59, 130, 246, 0.15)'
+                      : 'rgba(255, 255, 255, 0.05)';
+                  }}
+                >
+                  <span>&gt;_</span>
+                  <span>Terminal</span>
+                  {terminalLogs.length > 0 && (
+                    <span style={{ opacity: 0.65, fontSize: '9px' }}>({terminalLogs.length})</span>
+                  )}
+                </button>
+
                 {availableModels.length > 0 && (
                   <ModelSelector
                     models={availableModels}
@@ -1011,25 +1346,31 @@ export const App: React.FC<AppProps> = ({
                   <button
                     data-testid="submit-btn"
                     type="submit"
-                    disabled={!input.trim()}
+                    disabled={!input.trim() && attachedFiles.length === 0}
                     style={{
                       padding: '5px 14px',
-                      backgroundColor: input.trim()
-                        ? 'var(--vscode-button-background, #0078d4)'
-                        : 'rgba(255, 255, 255, 0.08)',
-                      color: input.trim()
-                        ? 'var(--vscode-button-foreground, #ffffff)'
-                        : 'var(--vscode-disabledForeground, #71717a)',
+                      backgroundColor:
+                        input.trim() || attachedFiles.length > 0
+                          ? 'var(--vscode-button-background, #0078d4)'
+                          : 'rgba(255, 255, 255, 0.08)',
+                      color:
+                        input.trim() || attachedFiles.length > 0
+                          ? 'var(--vscode-button-foreground, #ffffff)'
+                          : 'var(--vscode-disabledForeground, #71717a)',
                       border: 'none',
                       borderRadius: '6px',
                       fontSize: '11px',
                       fontWeight: 600,
-                      cursor: input.trim() ? 'pointer' : 'not-allowed',
+                      cursor:
+                        input.trim() || attachedFiles.length > 0 ? 'pointer' : 'not-allowed',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '4px',
                       transition: 'all 0.15s ease',
-                      boxShadow: input.trim() ? '0 2px 8px rgba(0, 120, 212, 0.35)' : 'none',
+                      boxShadow:
+                        input.trim() || attachedFiles.length > 0
+                          ? '0 2px 8px rgba(0, 120, 212, 0.35)'
+                          : 'none',
                     }}
                   >
                     <span>Send</span>
@@ -1040,6 +1381,14 @@ export const App: React.FC<AppProps> = ({
             </div>
           </div>
         </form>
+
+        {/* Collapsible Terminal & Execution Output Drawer */}
+        <ExecutionDrawer
+          isOpen={isTerminalOpen}
+          logs={terminalLogs}
+          onToggle={() => setIsTerminalOpen((prev) => !prev)}
+          onClear={() => setTerminalLogs([])}
+        />
       </div>
     </div>
   );

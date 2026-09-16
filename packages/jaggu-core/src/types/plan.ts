@@ -11,15 +11,18 @@ export const PlanStepSchema = z.object({
   expectedOutcome: z.string().min(1, 'Expected outcome is required'),
   verification: z.string().min(1, 'Verification method is required'),
   status: z
-    .preprocess((val) => {
-      if (typeof val === 'string') {
-        const upper = val.toUpperCase();
-        if (['PENDING', 'IN_PROGRESS', 'COMPLETED', 'FAILED', 'SKIPPED'].includes(upper)) {
-          return upper;
+    .preprocess(
+      (val) => {
+        if (typeof val === 'string') {
+          const upper = val.toUpperCase();
+          if (['PENDING', 'IN_PROGRESS', 'COMPLETED', 'FAILED', 'SKIPPED'].includes(upper)) {
+            return upper;
+          }
         }
-      }
-      return 'PENDING';
-    }, z.enum(['PENDING', 'IN_PROGRESS', 'COMPLETED', 'FAILED', 'SKIPPED']))
+        return 'PENDING';
+      },
+      z.enum(['PENDING', 'IN_PROGRESS', 'COMPLETED', 'FAILED', 'SKIPPED']),
+    )
     .default('PENDING'),
 });
 

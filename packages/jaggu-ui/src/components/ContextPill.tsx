@@ -60,7 +60,11 @@ export const ContextPill: React.FC<ContextPillProps> = ({ provenance }) => {
         }}
       >
         <span>
-          📎 Context: <strong>{uniqueFiles.length} {uniqueFiles.length === 1 ? 'file' : 'files'}</strong> ({sizeKb} KB)
+          📎 Context:{' '}
+          <strong>
+            {uniqueFiles.length} {uniqueFiles.length === 1 ? 'file' : 'files'}
+          </strong>{' '}
+          ({sizeKb} KB)
         </span>
         <span style={{ fontSize: '10px', marginLeft: '8px' }}>
           {expanded ? 'Hide ▲' : 'Show details ▼'}
@@ -92,7 +96,9 @@ export const ContextPill: React.FC<ContextPillProps> = ({ provenance }) => {
                 fontSize: '10px',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden' }}>
+              <div
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden' }}
+              >
                 <span
                   style={{
                     fontFamily: 'var(--vscode-editor-font-family, monospace)',

@@ -3,25 +3,12 @@ import { z } from 'zod';
 export type ModelRuntimeType = 'cloud' | 'local' | 'openai-compatible';
 
 export type ModelHealthStatus =
-  | 'available'
-  | 'unreachable'
-  | 'missing_credentials'
-  | 'not_installed'
-  | 'unknown';
+  'available' | 'unreachable' | 'missing_credentials' | 'not_installed' | 'unknown';
 
 export type ModelAvailabilityStatus =
-  | 'available'
-  | 'auth-required'
-  | 'rate-limited'
-  | 'offline'
-  | 'unavailable'
-  | 'unknown';
+  'available' | 'auth-required' | 'rate-limited' | 'offline' | 'unavailable' | 'unknown';
 
-export type ModelAccessTier =
-  | 'free'
-  | 'local'
-  | 'paid'
-  | 'unknown';
+export type ModelAccessTier = 'free' | 'local' | 'paid' | 'unknown';
 
 export interface ModelHealthInfo {
   healthy: boolean;
@@ -94,4 +81,3 @@ export const ModelDescriptorSchema = z.object({
   hfModelId: z.string().optional(),
   huggingFaceModelId: z.string().optional(),
 });
-

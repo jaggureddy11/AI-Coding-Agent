@@ -135,8 +135,7 @@ export class ModelGateway {
       });
     } catch (error: unknown) {
       const isCancelled =
-        options.abortSignal?.aborted ||
-        (error instanceof ModelError && error.code === 'CANCELLED');
+        options.abortSignal?.aborted || (error instanceof ModelError && error.code === 'CANCELLED');
 
       if (isCancelled) {
         eventBus?.emit('model.cancelled', {
@@ -145,7 +144,13 @@ export class ModelGateway {
           model,
           timestamp: Date.now(),
         });
-        throw new ModelError('Operation cancelled by user', 'CANCELLED', provider.id, undefined, false);
+        throw new ModelError(
+          'Operation cancelled by user',
+          'CANCELLED',
+          provider.id,
+          undefined,
+          false,
+        );
       }
 
       const errMessage = error instanceof Error ? error.message : String(error);

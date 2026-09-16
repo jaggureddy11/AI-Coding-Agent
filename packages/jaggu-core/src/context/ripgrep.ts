@@ -250,7 +250,8 @@ export class RipgrepSearchService {
 
       for (const entry of entries) {
         if (matches.length >= maxResults || options.abortSignal?.aborted) break;
-        if (entry.name === '.git' || entry.name === 'node_modules' || entry.name === 'dist') continue;
+        if (entry.name === '.git' || entry.name === 'node_modules' || entry.name === 'dist')
+          continue;
 
         const full = path.join(dir, entry.name);
         if (entry.isDirectory()) {

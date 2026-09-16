@@ -63,7 +63,8 @@ export class ListDirectoryTool implements ITool<ListDirectoryInput, ListDirector
         properties: {
           path: {
             type: 'string',
-            description: 'Workspace-relative directory path to inspect (defaults to workspace root ".")',
+            description:
+              'Workspace-relative directory path to inspect (defaults to workspace root ".")',
           },
           recursive: {
             type: 'boolean',

@@ -434,11 +434,7 @@ export class ModelRegistry {
   /**
    * Updates health status and details for an existing registered model.
    */
-  public updateModelHealth(
-    id: string,
-    health: ModelHealthStatus,
-    healthDetail?: string,
-  ): void {
+  public updateModelHealth(id: string, health: ModelHealthStatus, healthDetail?: string): void {
     const existing = this.models.get(id);
     if (existing) {
       this.models.set(id, {

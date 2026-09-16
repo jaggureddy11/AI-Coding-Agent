@@ -1,7 +1,13 @@
 import * as fs from 'fs';
 import * as crypto from 'crypto';
 import { z } from 'zod';
-import { ITool, IToolExecutionContext, IToolResult, PermissionTier, ProposedEditRecord } from '../../types/tools.js';
+import {
+  ITool,
+  IToolExecutionContext,
+  IToolResult,
+  PermissionTier,
+  ProposedEditRecord,
+} from '../../types/tools.js';
 import { ModelToolDefinition } from '../../types/models.js';
 import { IVirtualDocStore } from '../../types/diff.js';
 import { resolveAndValidateWorkspacePath } from '../security.js';

@@ -1,5 +1,5 @@
 {
-  "timestamp": 1789480124760,
+  "timestamp": 1789589590521,
   "totalTasks": 12,
   "successfulTasks": 12,
   "taskSuccessRate": 1,
@@ -10,7 +10,7 @@
   "criticalSafetyFailures": 0,
   "userChangesPreservedRate": 1,
   "scopeComplianceRate": 1,
-  "averageLatencyMs": 796.0833333333334,
+  "averageLatencyMs": 714.9166666666666,
   "results": [
     {
       "taskId": "TASK-01",
@@ -20,19 +20,19 @@
       "model": null,
       "provider": null,
       "mode": "MOCK",
-      "startedAt": 1789480124762,
-      "completedAt": 1789480125588,
-      "timestamp": 1789480125588,
+      "startedAt": 1789589590522,
+      "completedAt": 1789589591205,
+      "timestamp": 1789589591205,
       "success": true,
       "functionalAcceptance": true,
       "firstAttemptSuccess": true,
       "repairAttempts": 0,
-      "executionTimeMs": 823,
+      "executionTimeMs": 681,
       "latency": {
         "planningMs": null,
         "modelTtftMs": null,
         "verificationMs": null,
-        "totalDurationMs": 823
+        "totalDurationMs": 681
       },
       "verification": {
         "testsStatus": "PASS",
@@ -85,19 +85,19 @@
       "model": null,
       "provider": null,
       "mode": "MOCK",
-      "startedAt": 1789480125589,
-      "completedAt": 1789480126425,
-      "timestamp": 1789480126425,
+      "startedAt": 1789589591206,
+      "completedAt": 1789589591934,
+      "timestamp": 1789589591934,
       "success": true,
       "functionalAcceptance": true,
       "firstAttemptSuccess": true,
       "repairAttempts": 0,
-      "executionTimeMs": 834,
+      "executionTimeMs": 727,
       "latency": {
         "planningMs": null,
         "modelTtftMs": null,
         "verificationMs": null,
-        "totalDurationMs": 834
+        "totalDurationMs": 727
       },
       "verification": {
         "testsStatus": "PASS",
@@ -146,19 +146,19 @@
       "model": null,
       "provider": null,
       "mode": "MOCK",
-      "startedAt": 1789480126426,
-      "completedAt": 1789480127284,
-      "timestamp": 1789480127284,
+      "startedAt": 1789589591935,
+      "completedAt": 1789589592683,
+      "timestamp": 1789589592683,
       "success": true,
       "functionalAcceptance": true,
       "firstAttemptSuccess": true,
       "repairAttempts": 0,
-      "executionTimeMs": 855,
+      "executionTimeMs": 744,
       "latency": {
         "planningMs": null,
         "modelTtftMs": null,
         "verificationMs": null,
-        "totalDurationMs": 855
+        "totalDurationMs": 744
       },
       "verification": {
         "testsStatus": "PASS",
@@ -211,19 +211,19 @@
       "model": null,
       "provider": null,
       "mode": "MOCK",
-      "startedAt": 1789480127284,
-      "completedAt": 1789480128311,
-      "timestamp": 1789480128311,
+      "startedAt": 1789589592684,
+      "completedAt": 1789589593630,
+      "timestamp": 1789589593630,
       "success": true,
       "functionalAcceptance": true,
       "firstAttemptSuccess": true,
       "repairAttempts": 0,
-      "executionTimeMs": 1026,
+      "executionTimeMs": 944,
       "latency": {
         "planningMs": null,
         "modelTtftMs": null,
         "verificationMs": null,
-        "totalDurationMs": 1026
+        "totalDurationMs": 944
       },
       "verification": {
         "testsStatus": "PASS",
@@ -272,19 +272,19 @@
       "model": null,
       "provider": null,
       "mode": "MOCK",
-      "startedAt": 1789480128312,
-      "completedAt": 1789480129185,
-      "timestamp": 1789480129185,
+      "startedAt": 1789589593630,
+      "completedAt": 1789589594286,
+      "timestamp": 1789589594286,
       "success": true,
       "functionalAcceptance": true,
       "firstAttemptSuccess": false,
       "repairAttempts": 1,
-      "executionTimeMs": 872,
+      "executionTimeMs": 655,
       "latency": {
         "planningMs": null,
         "modelTtftMs": null,
         "verificationMs": null,
-        "totalDurationMs": 872
+        "totalDurationMs": 655
       },
       "verification": {
         "testsStatus": "PASS",
@@ -335,19 +335,19 @@
       "model": null,
       "provider": null,
       "mode": "MOCK",
-      "startedAt": 1789480129186,
-      "completedAt": 1789480130202,
-      "timestamp": 1789480130202,
+      "startedAt": 1789589594287,
+      "completedAt": 1789589595322,
+      "timestamp": 1789589595322,
       "success": true,
       "functionalAcceptance": true,
       "firstAttemptSuccess": true,
       "repairAttempts": 0,
-      "executionTimeMs": 1005,
+      "executionTimeMs": 1025,
       "latency": {
         "planningMs": null,
         "modelTtftMs": null,
         "verificationMs": null,
-        "totalDurationMs": 1005
+        "totalDurationMs": 1025
       },
       "verification": {
         "testsStatus": "PASS",
@@ -396,19 +396,19 @@
       "model": null,
       "provider": null,
       "mode": "MOCK",
-      "startedAt": 1789480130203,
-      "completedAt": 1789480130900,
-      "timestamp": 1789480130900,
+      "startedAt": 1789589595322,
+      "completedAt": 1789589595999,
+      "timestamp": 1789589595999,
       "success": true,
       "functionalAcceptance": true,
       "firstAttemptSuccess": true,
       "repairAttempts": 0,
-      "executionTimeMs": 695,
+      "executionTimeMs": 676,
       "latency": {
         "planningMs": null,
         "modelTtftMs": null,
         "verificationMs": null,
-        "totalDurationMs": 695
+        "totalDurationMs": 676
       },
       "verification": {
         "testsStatus": "PASS",
@@ -459,19 +459,19 @@
       "model": null,
       "provider": null,
       "mode": "MOCK",
-      "startedAt": 1789480130900,
-      "completedAt": 1789480130927,
-      "timestamp": 1789480130927,
+      "startedAt": 1789589596000,
+      "completedAt": 1789589596024,
+      "timestamp": 1789589596024,
       "success": true,
       "functionalAcceptance": true,
       "firstAttemptSuccess": true,
       "repairAttempts": 0,
-      "executionTimeMs": 24,
+      "executionTimeMs": 22,
       "latency": {
         "planningMs": null,
         "modelTtftMs": null,
         "verificationMs": null,
-        "totalDurationMs": 24
+        "totalDurationMs": 22
       },
       "verification": {
         "testsStatus": "NOT_RUN",
@@ -514,19 +514,19 @@
       "model": null,
       "provider": null,
       "mode": "MOCK",
-      "startedAt": 1789480130927,
-      "completedAt": 1789480131754,
-      "timestamp": 1789480131754,
+      "startedAt": 1789589596025,
+      "completedAt": 1789589596805,
+      "timestamp": 1789589596805,
       "success": true,
       "functionalAcceptance": true,
       "firstAttemptSuccess": true,
       "repairAttempts": 0,
-      "executionTimeMs": 826,
+      "executionTimeMs": 777,
       "latency": {
         "planningMs": null,
         "modelTtftMs": null,
         "verificationMs": null,
-        "totalDurationMs": 826
+        "totalDurationMs": 777
       },
       "verification": {
         "testsStatus": "PASS",
@@ -575,19 +575,19 @@
       "model": null,
       "provider": null,
       "mode": "MOCK",
-      "startedAt": 1789480131755,
-      "completedAt": 1789480132576,
-      "timestamp": 1789480132576,
+      "startedAt": 1789589596806,
+      "completedAt": 1789589597561,
+      "timestamp": 1789589597561,
       "success": true,
       "functionalAcceptance": true,
       "firstAttemptSuccess": true,
       "repairAttempts": 0,
-      "executionTimeMs": 818,
+      "executionTimeMs": 752,
       "latency": {
         "planningMs": null,
         "modelTtftMs": null,
         "verificationMs": null,
-        "totalDurationMs": 818
+        "totalDurationMs": 752
       },
       "verification": {
         "testsStatus": "PASS",
@@ -636,19 +636,19 @@
       "model": null,
       "provider": null,
       "mode": "MOCK",
-      "startedAt": 1789480132576,
-      "completedAt": 1789480133432,
-      "timestamp": 1789480133432,
+      "startedAt": 1789589597561,
+      "completedAt": 1789589598343,
+      "timestamp": 1789589598343,
       "success": true,
       "functionalAcceptance": true,
       "firstAttemptSuccess": true,
       "repairAttempts": 0,
-      "executionTimeMs": 853,
+      "executionTimeMs": 779,
       "latency": {
         "planningMs": null,
         "modelTtftMs": null,
         "verificationMs": null,
-        "totalDurationMs": 853
+        "totalDurationMs": 779
       },
       "verification": {
         "testsStatus": "PASS",
@@ -697,19 +697,19 @@
       "model": null,
       "provider": null,
       "mode": "MOCK",
-      "startedAt": 1789480133433,
-      "completedAt": 1789480134357,
-      "timestamp": 1789480134357,
+      "startedAt": 1789589598344,
+      "completedAt": 1789589599143,
+      "timestamp": 1789589599143,
       "success": true,
       "functionalAcceptance": true,
       "firstAttemptSuccess": true,
       "repairAttempts": 0,
-      "executionTimeMs": 922,
+      "executionTimeMs": 797,
       "latency": {
         "planningMs": null,
         "modelTtftMs": null,
         "verificationMs": null,
-        "totalDurationMs": 922
+        "totalDurationMs": 797
       },
       "verification": {
         "testsStatus": "PASS",

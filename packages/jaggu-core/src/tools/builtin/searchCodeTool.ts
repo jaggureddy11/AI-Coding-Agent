@@ -44,7 +44,8 @@ export class SearchCodeTool implements ITool<SearchCodeInput, SearchCodeOutput> 
           },
           isRegex: {
             type: 'boolean',
-            description: 'Whether the query should be treated as a regular expression (default: false)',
+            description:
+              'Whether the query should be treated as a regular expression (default: false)',
           },
           caseSensitive: {
             type: 'boolean',

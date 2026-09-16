@@ -16,7 +16,8 @@ export enum AgentState {
   WAITING_FOR_APPROVAL = 'EDIT_REVIEW',
 }
 
-export type UiAgentStatus = 'IDLE' | 'PROCESSING' | 'AWAITING_APPROVAL' | 'SUCCESS' | 'ERROR' | 'CANCELLED';
+export type UiAgentStatus =
+  'IDLE' | 'PROCESSING' | 'AWAITING_APPROVAL' | 'SUCCESS' | 'ERROR' | 'CANCELLED';
 
 export function agentStateToUiStatus(state: AgentState): UiAgentStatus {
   switch (state) {

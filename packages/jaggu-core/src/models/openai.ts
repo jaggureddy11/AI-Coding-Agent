@@ -76,7 +76,11 @@ export class OpenAIProvider implements IModelProvider {
   ): AsyncIterable<ModelStreamChunk> {
     const apiKey = options.apiKey;
     if (!apiKey) {
-      throw new ModelError('OpenAI API key is missing. Configure it in JAGGU settings.', 'AUTH_FAILURE', this.id);
+      throw new ModelError(
+        'OpenAI API key is missing. Configure it in JAGGU settings.',
+        'AUTH_FAILURE',
+        this.id,
+      );
     }
 
     const baseUrl = options.baseUrl || 'https://api.openai.com/v1';
@@ -178,8 +182,16 @@ export class OpenAIProvider implements IModelProvider {
             for (const tc of delta.tool_calls) {
               const idx = tc.index;
               if (!activeToolCalls[idx]) {
-                activeToolCalls[idx] = { id: tc.id || `tc_${idx}`, name: tc.function?.name || '', args: '' };
-                yield { type: 'tool_call_start', id: activeToolCalls[idx].id, name: activeToolCalls[idx].name };
+                activeToolCalls[idx] = {
+                  id: tc.id || `tc_${idx}`,
+                  name: tc.function?.name || '',
+                  args: '',
+                };
+                yield {
+                  type: 'tool_call_start',
+                  id: activeToolCalls[idx].id,
+                  name: activeToolCalls[idx].name,
+                };
               }
               if (tc.function?.arguments) {
                 activeToolCalls[idx].args += tc.function.arguments;

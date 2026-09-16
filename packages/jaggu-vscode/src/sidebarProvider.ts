@@ -60,7 +60,10 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
   private readonly _toolExecutor: ToolExecutor;
   private readonly _pendingApprovals = new Map<string, (approved: boolean) => void>();
   private readonly _pendingPlanApprovals = new Map<string, (approved: boolean) => void>();
-  private readonly _pendingEditSetApprovals = new Map<string, (decision: boolean | EditApprovalDecision) => void>();
+  private readonly _pendingEditSetApprovals = new Map<
+    string,
+    (decision: boolean | EditApprovalDecision) => void
+  >();
   private readonly _pendingScopeApprovals = new Map<string, (approved: boolean) => void>();
   private _lastHealthCheckTime = 0;
   private static readonly HEALTH_CHECK_TTL_MS = 20000; // 20s cache to avoid excessive probing
@@ -81,17 +84,17 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
   ) {
     this._contextEngine = contextEngine;
     this._docStore = docStore || new InMemoryVirtualDocStore();
-    this._proposeEditTool = new ProposeEditTool(this._docStore, this._eventBus, this._proposalRegistry);
+    this._proposeEditTool = new ProposeEditTool(
+      this._docStore,
+      this._eventBus,
+      this._proposalRegistry,
+    );
     this._applyEditTool = new ApplyEditTool(this._docStore, this._proposalRegistry, this._eventBus);
 
-    this._modelRouter = new ModelRouter(
-      this._modelGateway.getModelRegistry(),
-      this._eventBus,
-      {
-        policy: 'free-first',
-        allowPaidFallbackInAuto: this._credentialManager?.getAllowPaidFallback() ?? false,
-      },
-    );
+    this._modelRouter = new ModelRouter(this._modelGateway.getModelRegistry(), this._eventBus, {
+      policy: 'free-first',
+      allowPaidFallbackInAuto: this._credentialManager?.getAllowPaidFallback() ?? false,
+    });
 
     this._toolExecutor = new ToolExecutor({ eventBus: this._eventBus });
     this._toolExecutor.registerTool(new ReadFileTool());
@@ -190,7 +193,10 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
         });
       },
       onRequestEditApproval: async (editSet: EditSet) => {
-        this._setStatus('PROCESSING', `Change set ready (${editSet.files.length} files) — awaiting user review`);
+        this._setStatus(
+          'PROCESSING',
+          `Change set ready (${editSet.files.length} files) — awaiting user review`,
+        );
         this.postMessageToWebview({
           type: 'agent.editset_requested',
           payload: {
@@ -245,9 +251,7 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
 
     webviewView.webview.options = {
       enableScripts: true,
-      localResourceRoots: [
-        vscode.Uri.joinPath(this._extensionUri, 'media'),
-      ],
+      localResourceRoots: [vscode.Uri.joinPath(this._extensionUri, 'media')],
     };
 
     webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
@@ -388,7 +392,8 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
 
     switch (message.type) {
       case 'ui.ready': {
-        const providerId = this._activeProviderId || this._credentialManager?.getActiveProvider() || 'auto';
+        const providerId =
+          this._activeProviderId || this._credentialManager?.getActiveProvider() || 'auto';
         const modelId = this._activeModelId || this._credentialManager?.getActiveModel() || 'auto';
         const models = this._modelGateway.getModelRegistry().listModels();
         this.postMessageToWebview({
@@ -440,6 +445,30 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
 
       case 'models.refresh_health': {
         await this.checkRuntimesHealth(true);
+        break;
+      }
+
+      case 'workspace.request_files': {
+        try {
+          const uris = await vscode.workspace.findFiles(
+            '**/*.{ts,tsx,js,jsx,json,md,py,rs,go,html,css,yml,yaml}',
+            '**/{node_modules,dist,out,.git}/**',
+            150,
+          );
+          const rootPath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+          const files = uris.map((u) => {
+            if (rootPath && u.fsPath.startsWith(rootPath)) {
+              return u.fsPath.slice(rootPath.length + 1);
+            }
+            return path.basename(u.fsPath);
+          });
+          this.postMessageToWebview({
+            type: 'workspace.files',
+            payload: { files },
+          });
+        } catch {
+          // ignore if workspace finding fails
+        }
         break;
       }
 
@@ -706,8 +735,12 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
     const localOnly = this._credentialManager?.getLocalOnly() ?? false;
     const registeredProviders = this._modelGateway.listProviders().map((p) => p.id);
     const configuredProviderIds = this._credentialManager
-      ? (await this._credentialManager.getConfiguredCloudProviders()).filter((p) => registeredProviders.includes(p))
-      : (registeredProviders.includes('mock') ? ['mock'] : registeredProviders);
+      ? (await this._credentialManager.getConfiguredCloudProviders()).filter((p) =>
+          registeredProviders.includes(p),
+        )
+      : registeredProviders.includes('mock')
+        ? ['mock']
+        : registeredProviders;
 
     let routingPolicy: import('@jaggu/core').ModelRoutingPolicy = 'free-first';
     if (localOnly) {
@@ -725,7 +758,8 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
     this._modelRouter.setAllowPaidFallback(allowPaid);
     this._modelRouter.setConfiguredProviders(configuredProviderIds);
 
-    const explicitModel = this._activeModelId && this._activeModelId !== 'auto' ? this._activeModelId : undefined;
+    const explicitModel =
+      this._activeModelId && this._activeModelId !== 'auto' ? this._activeModelId : undefined;
 
     let routeResult: ModelRouteResult;
     try {
@@ -770,7 +804,12 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
 
     let apiKey = await this._credentialManager?.getApiKey(providerId);
 
-    if (!apiKey && providerId !== 'mock' && providerId !== 'ollama' && providerId !== 'openai-compatible') {
+    if (
+      !apiKey &&
+      providerId !== 'mock' &&
+      providerId !== 'ollama' &&
+      providerId !== 'openai-compatible'
+    ) {
       // If Hugging Face is selected without token, check if we can fallback to local ollama or mock
       const fallback = this._modelRouter.routeFallback(routeResult, 'Missing authentication token');
       if (fallback) {
@@ -824,7 +863,8 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
 
     const engineRoots = this.getContextEngine().getWorkspaceRoots();
     const vscodeRoots = vscode.workspace.workspaceFolders?.map((f) => f.uri.fsPath) || [];
-    const workspaceRoots = vscodeRoots.length > 0 ? vscodeRoots : (engineRoots.length > 0 ? engineRoots : [process.cwd()]);
+    const workspaceRoots =
+      vscodeRoots.length > 0 ? vscodeRoots : engineRoots.length > 0 ? engineRoots : [process.cwd()];
     const workspaceRoot = workspaceRoots[0] || process.cwd();
     const toolCtx: IToolExecutionContext = {
       taskId: id,
@@ -845,7 +885,8 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
         iteration++;
 
         let turnHasToolCall = false;
-        let currentToolCall: { id: string; name: string; arguments: Record<string, unknown> } | undefined;
+        let currentToolCall:
+          { id: string; name: string; arguments: Record<string, unknown> } | undefined;
         let turnTokens = '';
 
         const descriptor = this._modelGateway.getModelRegistry().findModel(activeModel);
@@ -861,10 +902,10 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
               providerId === 'huggingface'
                 ? this._credentialManager?.getHuggingFaceBaseUrl()
                 : providerId === 'ollama'
-                ? this._credentialManager?.getOllamaBaseUrl()
-                : providerId === 'openai-compatible'
-                ? this._credentialManager?.getOpenAICompatibleBaseUrl()
-                : undefined,
+                  ? this._credentialManager?.getOllamaBaseUrl()
+                  : providerId === 'openai-compatible'
+                    ? this._credentialManager?.getOpenAICompatibleBaseUrl()
+                    : undefined,
             temperature: this._credentialManager?.getTemperature() ?? 0.2,
             abortSignal,
             tools: supportsTools ? this._toolExecutor.toModelToolDefinitions() : undefined,
@@ -1073,7 +1114,9 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
       }
 
       if (!loopFinished && iteration >= MAX_ITERATIONS) {
-        throw new Error(`Execution halted: maximum loop iterations (${MAX_ITERATIONS}) reached without concluding.`);
+        throw new Error(
+          `Execution halted: maximum loop iterations (${MAX_ITERATIONS}) reached without concluding.`,
+        );
       }
 
       if (!abortSignal.aborted) {

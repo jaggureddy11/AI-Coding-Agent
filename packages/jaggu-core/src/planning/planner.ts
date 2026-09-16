@@ -70,14 +70,23 @@ CRITICAL REQUIREMENTS:
   "verification": ["npm test"]
 }`;
 
-    const contextSummary = contextPackage.promptContextText ||
+    const contextSummary =
+      contextPackage.promptContextText ||
       (contextPackage.snippets && contextPackage.snippets.length > 0
-        ? contextPackage.snippets.map((s) => `--- File: ${s.relativeFilePath} (lines ${s.startLine}-${s.endLine}) ---\n${s.content}\n--- End File ---`).join('\n\n')
+        ? contextPackage.snippets
+            .map(
+              (s) =>
+                `--- File: ${s.relativeFilePath} (lines ${s.startLine}-${s.endLine}) ---\n${s.content}\n--- End File ---`,
+            )
+            .join('\n\n')
         : 'No specific workspace snippets found.');
 
     const messages: ModelMessage[] = [
       { role: 'system', content: systemPrompt },
-      { role: 'user', content: `Repository Context:\n${contextSummary}\n\nUser Request: ${userPrompt}\n\nGenerate the structured JSON plan:` },
+      {
+        role: 'user',
+        content: `Repository Context:\n${contextSummary}\n\nUser Request: ${userPrompt}\n\nGenerate the structured JSON plan:`,
+      },
     ];
 
     let attempts = 0;
@@ -147,7 +156,9 @@ CRITICAL REQUIREMENTS:
 
     return {
       success: false,
-      errors: [`Failed to produce a valid plan after ${this.maxPlanAttempts} attempts: ${lastErrors.join('; ')}`],
+      errors: [
+        `Failed to produce a valid plan after ${this.maxPlanAttempts} attempts: ${lastErrors.join('; ')}`,
+      ],
     };
   }
 

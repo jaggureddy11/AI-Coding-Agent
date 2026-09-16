@@ -19,12 +19,12 @@ const ALLOWED_TEST_PREFIXES = [
 ];
 
 const DISALLOWED_PATTERNS = [
-  /[;&|><$`\\]/,        // Shell injection & redirection metacharacters
-  /\brm\b/i,           // File deletion
+  /[;&|><$`\\]/, // Shell injection & redirection metacharacters
+  /\brm\b/i, // File deletion
   /\bdel\b/i,
-  /\bcurl\b/i,         // Network transfer / exfiltration
+  /\bcurl\b/i, // Network transfer / exfiltration
   /\bwget\b/i,
-  /\bsudo\b/i,         // Privilege escalation
+  /\bsudo\b/i, // Privilege escalation
   /\bchmod\b/i,
   /\bchown\b/i,
   /\bformat\b/i,

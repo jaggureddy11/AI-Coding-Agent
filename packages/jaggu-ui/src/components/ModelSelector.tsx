@@ -48,9 +48,18 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
   const isAuto = activeModelId === 'auto' || !activeModelId;
   const activeModel = models.find((m) => m.id === activeModelId);
 
-  const freeModels = models.filter((m) => m.access === 'free' && m.id !== 'mock-fast' && m.id !== 'mock-reasoning');
-  const localModels = models.filter((m) => (m.access === 'local' || m.runtimeType === 'local') && m.id !== 'mock-fast' && m.id !== 'mock-reasoning');
-  const paidModels = models.filter((m) => m.access === 'paid' || (m.runtimeType === 'cloud' && m.access !== 'free'));
+  const freeModels = models.filter(
+    (m) => m.access === 'free' && m.id !== 'mock-fast' && m.id !== 'mock-reasoning',
+  );
+  const localModels = models.filter(
+    (m) =>
+      (m.access === 'local' || m.runtimeType === 'local') &&
+      m.id !== 'mock-fast' &&
+      m.id !== 'mock-reasoning',
+  );
+  const paidModels = models.filter(
+    (m) => m.access === 'paid' || (m.runtimeType === 'cloud' && m.access !== 'free'),
+  );
   const mockModels = models.filter((m) => m.providerId === 'mock');
 
   let healthColor = '#4caf50';

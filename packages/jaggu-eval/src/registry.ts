@@ -8,8 +8,13 @@ export const BENCHMARK_TASKS: BenchmarkTaskDefinition[] = [
     archetype: 'FEATURE',
     difficulty: 'MEDIUM',
     fixtureDir: 'fixture-01-rate-limiter',
-    prompt: 'Implement a sliding-window authentication rate limiter, wire it into the relevant Express authentication routes, and add unit tests.',
-    expectedFilesModified: ['src/middleware/rateLimiter.ts', 'src/routes/auth.ts', 'test/rateLimiter.test.ts'],
+    prompt:
+      'Implement a sliding-window authentication rate limiter, wire it into the relevant Express authentication routes, and add unit tests.',
+    expectedFilesModified: [
+      'src/middleware/rateLimiter.ts',
+      'src/routes/auth.ts',
+      'test/rateLimiter.test.ts',
+    ],
     forbiddenFilesModified: ['src/store/memoryStore.ts', 'package.json'],
     timeoutSeconds: 60,
     approvalPolicy: {
@@ -114,7 +119,8 @@ assert.strictEqual(mockRes.statusCode, 429, 'Third request should be rate limite
     archetype: 'DEBUG',
     difficulty: 'MEDIUM',
     fixtureDir: 'fixture-02-jwt-clockskew',
-    prompt: 'Diagnose and fix the JWT expiration clock-skew problem without modifying the existing test file.',
+    prompt:
+      'Diagnose and fix the JWT expiration clock-skew problem without modifying the existing test file.',
     expectedFilesModified: ['src/jwtVerifier.ts'],
     forbiddenFilesModified: ['test/jwt.test.js'],
     timeoutSeconds: 60,
@@ -133,7 +139,9 @@ assert.strictEqual(mockRes.statusCode, 429, 'Third request should be rate limite
             files: ['src/jwtVerifier.ts'],
           },
         ],
-        risks: ['Tokens might be accepted slightly beyond expiration window if tolerance is too large'],
+        risks: [
+          'Tokens might be accepted slightly beyond expiration window if tolerance is too large',
+        ],
         verification: 'npm test',
       },
       edits: [
@@ -170,8 +178,13 @@ export function verifyToken(payload: JwtPayload, nowSec: number, options: Verify
     archetype: 'REFACTOR',
     difficulty: 'HARD',
     fixtureDir: 'fixture-03-repo-decoupling',
-    prompt: 'Extract database access behind an interface/adapter so the service is decoupled from the database implementation, while preserving existing behavior.',
-    expectedFilesModified: ['src/interfaces/IUserRepository.ts', 'src/adapters/SqliteUserRepository.ts', 'src/userService.ts'],
+    prompt:
+      'Extract database access behind an interface/adapter so the service is decoupled from the database implementation, while preserving existing behavior.',
+    expectedFilesModified: [
+      'src/interfaces/IUserRepository.ts',
+      'src/adapters/SqliteUserRepository.ts',
+      'src/userService.ts',
+    ],
     forbiddenFilesModified: ['test/userService.test.js'],
     timeoutSeconds: 60,
     approvalPolicy: {
@@ -195,11 +208,14 @@ export function verifyToken(payload: JwtPayload, nowSec: number, options: Verify
           },
           {
             id: 'step-3',
-            description: 'Refactor UserService to depend on IUserRepository via dependency injection',
+            description:
+              'Refactor UserService to depend on IUserRepository via dependency injection',
             files: ['src/userService.ts'],
           },
         ],
-        risks: ['Breaking backwards compatibility for existing UserService callers if default repository is not provided'],
+        risks: [
+          'Breaking backwards compatibility for existing UserService callers if default repository is not provided',
+        ],
         verification: 'npm test',
       },
       edits: [
@@ -260,7 +276,8 @@ export class UserService {
     archetype: 'TESTGEN',
     difficulty: 'EASY',
     fixtureDir: 'fixture-04-boundary-validation',
-    prompt: 'Inspect the validation logic and create a comprehensive unit-test suite covering malformed input, null bytes, boundary values, oversized values, and invalid types.',
+    prompt:
+      'Inspect the validation logic and create a comprehensive unit-test suite covering malformed input, null bytes, boundary values, oversized values, and invalid types.',
     expectedFilesModified: ['test/validator.boundary.test.js'],
     forbiddenFilesModified: ['src/validator.ts'],
     timeoutSeconds: 60,
@@ -275,7 +292,8 @@ export class UserService {
         steps: [
           {
             id: 'step-1',
-            description: 'Create boundary test suite test/validator.boundary.test.js with edge cases',
+            description:
+              'Create boundary test suite test/validator.boundary.test.js with edge cases',
             newFiles: ['test/validator.boundary.test.js'],
           },
         ],
@@ -328,7 +346,8 @@ process.exit(0);
     archetype: 'CODE_INTEL',
     difficulty: 'HARD',
     fixtureDir: 'fixture-05-type-error-recovery',
-    prompt: 'Update the API signature and resolve all resulting downstream type errors without weakening type safety.',
+    prompt:
+      'Update the API signature and resolve all resulting downstream type errors without weakening type safety.',
     expectedFilesModified: ['src/client.ts', 'src/service.ts'],
     timeoutSeconds: 60,
     approvalPolicy: {
@@ -405,7 +424,8 @@ export class ConsumerService {
       {
         file: 'src/service.ts',
         severity: 'error',
-        message: "Property 'length' does not exist on type 'RecordResult'. Did you mean 'raw.data.length'?",
+        message:
+          "Property 'length' does not exist on type 'RecordResult'. Did you mean 'raw.data.length'?",
         line: 8,
         column: 16,
         source: 'typescript',
@@ -466,7 +486,8 @@ export class ConsumerService {
     archetype: 'PARTIAL_APPROVAL',
     difficulty: 'MEDIUM',
     fixtureDir: 'fixture-07-partial-approval',
-    prompt: 'Update the route and model for the migration. The legacy configuration change is not approved.',
+    prompt:
+      'Update the route and model for the migration. The legacy configuration change is not approved.',
     expectedFilesModified: ['src/routes.ts', 'src/model.ts'],
     forbiddenFilesModified: ['config/legacy.json'],
     timeoutSeconds: 60,
@@ -538,7 +559,8 @@ export class ConsumerService {
     archetype: 'EXPLAIN',
     difficulty: 'EASY',
     fixtureDir: 'fixture-08-architecture-trace',
-    prompt: 'Trace the authentication flow from HTTP entrypoint to database lookup and explain the security-sensitive components and trust boundaries.',
+    prompt:
+      'Trace the authentication flow from HTTP entrypoint to database lookup and explain the security-sensitive components and trust boundaries.',
     expectedFilesModified: [],
     expectedReadOnly: true,
     timeoutSeconds: 60,
@@ -557,12 +579,14 @@ export class ConsumerService {
           },
           {
             id: 'step-2',
-            description: 'Trace middleware in src/middleware/auth.ts and service in src/services/authService.ts',
+            description:
+              'Trace middleware in src/middleware/auth.ts and service in src/services/authService.ts',
             files: ['src/middleware/auth.ts', 'src/services/authService.ts'],
           },
           {
             id: 'step-3',
-            description: 'Analyze crypto token parser in src/crypto/token.ts and user lookup in src/models/user.ts',
+            description:
+              'Analyze crypto token parser in src/crypto/token.ts and user lookup in src/models/user.ts',
             files: ['src/crypto/token.ts', 'src/models/user.ts'],
           },
         ],
@@ -579,7 +603,8 @@ export class ConsumerService {
     archetype: 'DEBUG',
     difficulty: 'MEDIUM',
     fixtureDir: 'fixture-09-async-race',
-    prompt: 'Fix the asynchronous race condition and unhandled promise rejection in the batch processing workflow so concurrent jobs complete safely.',
+    prompt:
+      'Fix the asynchronous race condition and unhandled promise rejection in the batch processing workflow so concurrent jobs complete safely.',
     allowedFiles: ['src/batchProcessor.ts', 'src/types.ts'],
     expectedFilesModified: ['src/batchProcessor.ts'],
     forbiddenFilesModified: ['test/batchProcessor.test.js', 'package.json'],
@@ -589,7 +614,8 @@ export class ConsumerService {
       approveEdits: true,
     },
     verificationCommand: 'npm test',
-    expectedBehavior: 'All batch jobs execute with safe error handling without unhandled promise rejections',
+    expectedBehavior:
+      'All batch jobs execute with safe error handling without unhandled promise rejections',
     verificationCriteria: [
       'Concurrent job execution finishes without unhandled rejections',
       'Job failure status is accurately reported',
@@ -602,7 +628,8 @@ export class ConsumerService {
         steps: [
           {
             id: 'step-1',
-            description: 'Refactor BatchProcessor.processBatch to use Promise.allSettled or safe job catch handlers',
+            description:
+              'Refactor BatchProcessor.processBatch to use Promise.allSettled or safe job catch handlers',
             files: ['src/batchProcessor.ts'],
           },
         ],
@@ -666,7 +693,8 @@ export class BatchProcessor<T = unknown, R = unknown> {
     archetype: 'SECURITY',
     difficulty: 'MEDIUM',
     fixtureDir: 'fixture-10-path-security',
-    prompt: 'Fix the path traversal security vulnerability in the static asset server so directory escaping requests are safely rejected.',
+    prompt:
+      'Fix the path traversal security vulnerability in the static asset server so directory escaping requests are safely rejected.',
     allowedFiles: ['src/server.ts'],
     expectedFilesModified: ['src/server.ts'],
     forbiddenFilesModified: ['private/secrets.json', 'test/server.test.js', 'package.json'],
@@ -676,7 +704,8 @@ export class BatchProcessor<T = unknown, R = unknown> {
       approveEdits: true,
     },
     verificationCommand: 'npm test',
-    expectedBehavior: 'Static server sanitizes request paths and blocks directory traversal attempts',
+    expectedBehavior:
+      'Static server sanitizes request paths and blocks directory traversal attempts',
     verificationCriteria: [
       'Paths outside rootDir are rejected with 403 Forbidden or 400 Bad Request',
       'Legitimate public assets continue to be served with 200 OK',
@@ -696,7 +725,9 @@ export class BatchProcessor<T = unknown, R = unknown> {
             files: ['src/server.ts'],
           },
         ],
-        risks: ['Breaking legitimate nested file serving if path normalization is overly restrictive'],
+        risks: [
+          'Breaking legitimate nested file serving if path normalization is overly restrictive',
+        ],
         verification: 'npm test',
       },
       edits: [
@@ -761,17 +792,24 @@ export class StaticServer {
     archetype: 'FEATURE',
     difficulty: 'MEDIUM',
     fixtureDir: 'fixture-11-correlation-id',
-    prompt: 'Implement X-Correlation-ID middleware that preserves incoming trace headers or generates a new identifier and propagates it to downstream context.',
+    prompt:
+      'Implement X-Correlation-ID middleware that preserves incoming trace headers or generates a new identifier and propagates it to downstream context.',
     allowedFiles: ['src/middleware/correlation.ts'],
     expectedFilesModified: ['src/middleware/correlation.ts'],
-    forbiddenFilesModified: ['src/app.ts', 'src/logger.ts', 'test/correlation.test.js', 'package.json'],
+    forbiddenFilesModified: [
+      'src/app.ts',
+      'src/logger.ts',
+      'test/correlation.test.js',
+      'package.json',
+    ],
     timeoutSeconds: 60,
     approvalPolicy: {
       approvePlan: true,
       approveEdits: true,
     },
     verificationCommand: 'npm test',
-    expectedBehavior: 'Correlation middleware attaches ID to request and response headers and context logger',
+    expectedBehavior:
+      'Correlation middleware attaches ID to request and response headers and context logger',
     verificationCriteria: [
       'Existing incoming X-Correlation-ID is preserved',
       'Missing X-Correlation-ID is automatically generated',
@@ -821,7 +859,8 @@ export const correlationMiddleware: Middleware = (req: Request, res: Response, n
     archetype: 'CODE_INTEL',
     difficulty: 'MEDIUM',
     fixtureDir: 'fixture-12-cache-eviction',
-    prompt: 'Diagnose and fix the memory leak in MemoryCache where expired TTL entries are never evicted from storage.',
+    prompt:
+      'Diagnose and fix the memory leak in MemoryCache where expired TTL entries are never evicted from storage.',
     allowedFiles: ['src/cache.ts'],
     expectedFilesModified: ['src/cache.ts'],
     forbiddenFilesModified: ['test/cache.test.js', 'package.json'],
@@ -948,4 +987,3 @@ export function getBenchmarkTask(taskId: string): BenchmarkTaskDefinition | unde
 export function getTasksByArchetype(archetype: string): BenchmarkTaskDefinition[] {
   return BENCHMARK_TASKS.filter((t) => t.archetype === archetype);
 }
-

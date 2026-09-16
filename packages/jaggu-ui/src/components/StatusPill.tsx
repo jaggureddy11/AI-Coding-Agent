@@ -17,7 +17,17 @@ export const StatusPill: React.FC<StatusPillProps> = ({ state }) => {
     normalizedStatus = 'ERROR';
   } else if (s === 'CANCELLED') {
     normalizedStatus = 'CANCELLED';
-  } else if (['INITIALIZING', 'READING_CONTEXT', 'PLANNING', 'AWAITING_APPROVAL', 'EXECUTING', 'VALIDATING', 'PROCESSING'].includes(s)) {
+  } else if (
+    [
+      'INITIALIZING',
+      'READING_CONTEXT',
+      'PLANNING',
+      'AWAITING_APPROVAL',
+      'EXECUTING',
+      'VALIDATING',
+      'PROCESSING',
+    ].includes(s)
+  ) {
     normalizedStatus = 'PROCESSING';
   } else {
     normalizedStatus = state as UiAgentStatus;

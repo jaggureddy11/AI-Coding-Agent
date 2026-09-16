@@ -190,8 +190,12 @@ export class OllamaProvider implements IModelProvider {
     baseUrlOrOptions?: string | { baseUrl?: string; apiKey?: string; abortSignal?: AbortSignal },
     explicitAbortSignal?: AbortSignal,
   ): Promise<{ reachable: boolean; models?: string[]; error?: string; detail?: string }> {
-    const rawBaseUrl = typeof baseUrlOrOptions === 'string' ? baseUrlOrOptions : baseUrlOrOptions?.baseUrl;
-    const abortSignal = typeof baseUrlOrOptions === 'object' && baseUrlOrOptions?.abortSignal ? baseUrlOrOptions.abortSignal : explicitAbortSignal;
+    const rawBaseUrl =
+      typeof baseUrlOrOptions === 'string' ? baseUrlOrOptions : baseUrlOrOptions?.baseUrl;
+    const abortSignal =
+      typeof baseUrlOrOptions === 'object' && baseUrlOrOptions?.abortSignal
+        ? baseUrlOrOptions.abortSignal
+        : explicitAbortSignal;
     const url = `${(rawBaseUrl || 'http://localhost:11434').replace(/\/+$/, '')}/api/tags`;
 
     try {
@@ -210,7 +214,11 @@ export class OllamaProvider implements IModelProvider {
         const models = Array.isArray(data.models) ? data.models.map((m) => m.name) : [];
         return { reachable: true, models };
       }
-      return { reachable: false, models: [], error: `HTTP ${response.status} ${response.statusText}` };
+      return {
+        reachable: false,
+        models: [],
+        error: `HTTP ${response.status} ${response.statusText}`,
+      };
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       return { reachable: false, models: [], error: msg };

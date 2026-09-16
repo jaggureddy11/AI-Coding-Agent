@@ -62,8 +62,7 @@ export const VoiceTypingButton: React.FC<VoiceTypingButtonProps> = ({
   useEffect(() => {
     // Check speech recognition support safely (handles SSR)
     if (typeof window !== 'undefined') {
-      const SpeechRecognitionClass =
-        window.SpeechRecognition || window.webkitSpeechRecognition;
+      const SpeechRecognitionClass = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognitionClass) {
         setIsSupported(false);
       }
@@ -73,8 +72,7 @@ export const VoiceTypingButton: React.FC<VoiceTypingButtonProps> = ({
   const startListening = () => {
     if (typeof window === 'undefined') return;
 
-    const SpeechRecognitionClass =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
+    const SpeechRecognitionClass = window.SpeechRecognition || window.webkitSpeechRecognition;
 
     if (!SpeechRecognitionClass) {
       setIsSupported(false);
@@ -172,8 +170,8 @@ export const VoiceTypingButton: React.FC<VoiceTypingButtonProps> = ({
           isListening
             ? 'Listening... Click to stop voice dictation'
             : isSupported
-            ? 'Voice typing: Dictate your coding task'
-            : 'Voice typing not supported in this webview'
+              ? 'Voice typing: Dictate your coding task'
+              : 'Voice typing not supported in this webview'
         }
         style={{
           display: 'flex',
@@ -185,16 +183,12 @@ export const VoiceTypingButton: React.FC<VoiceTypingButtonProps> = ({
           border: isListening
             ? '1px solid rgba(239, 68, 68, 0.6)'
             : '1px solid rgba(255, 255, 255, 0.1)',
-          backgroundColor: isListening
-            ? 'rgba(239, 68, 68, 0.2)'
-            : 'rgba(255, 255, 255, 0.05)',
+          backgroundColor: isListening ? 'rgba(239, 68, 68, 0.2)' : 'rgba(255, 255, 255, 0.05)',
           color: isListening ? '#f87171' : 'var(--vscode-foreground, #cccccc)',
           cursor: disabled ? 'not-allowed' : 'pointer',
           fontSize: '11px',
           transition: 'all 0.18s ease',
-          boxShadow: isListening
-            ? '0 0 12px rgba(239, 68, 68, 0.35)'
-            : 'none',
+          boxShadow: isListening ? '0 0 12px rgba(239, 68, 68, 0.35)' : 'none',
         }}
       >
         {/* Microphone SVG Icon */}
@@ -218,9 +212,7 @@ export const VoiceTypingButton: React.FC<VoiceTypingButtonProps> = ({
 
         {isListening && (
           <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-            <span style={{ fontSize: '10px', fontWeight: 600, color: '#fca5a5' }}>
-              Listening
-            </span>
+            <span style={{ fontSize: '10px', fontWeight: 600, color: '#fca5a5' }}>Listening</span>
             {/* Animated Audio Wave bars */}
             <span
               style={{

@@ -207,9 +207,16 @@ export class OpenAICompatibleProvider implements IModelProvider {
     explicitApiKey?: string,
     explicitAbortSignal?: AbortSignal,
   ): Promise<{ reachable: boolean; models?: string[]; error?: string; detail?: string }> {
-    const rawBaseUrl = typeof baseUrlOrOptions === 'string' ? baseUrlOrOptions : baseUrlOrOptions?.baseUrl;
-    const apiKey = typeof baseUrlOrOptions === 'object' && baseUrlOrOptions?.apiKey ? baseUrlOrOptions.apiKey : explicitApiKey;
-    const abortSignal = typeof baseUrlOrOptions === 'object' && baseUrlOrOptions?.abortSignal ? baseUrlOrOptions.abortSignal : explicitAbortSignal;
+    const rawBaseUrl =
+      typeof baseUrlOrOptions === 'string' ? baseUrlOrOptions : baseUrlOrOptions?.baseUrl;
+    const apiKey =
+      typeof baseUrlOrOptions === 'object' && baseUrlOrOptions?.apiKey
+        ? baseUrlOrOptions.apiKey
+        : explicitApiKey;
+    const abortSignal =
+      typeof baseUrlOrOptions === 'object' && baseUrlOrOptions?.abortSignal
+        ? baseUrlOrOptions.abortSignal
+        : explicitAbortSignal;
     const url = `${(rawBaseUrl || 'http://localhost:1234/v1').replace(/\/+$/, '')}/models`;
     const headers: Record<string, string> = {};
     if (apiKey) {

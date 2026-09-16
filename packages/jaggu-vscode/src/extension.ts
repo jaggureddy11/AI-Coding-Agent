@@ -64,15 +64,11 @@ export function activate(context: vscode.ExtensionContext): {
     docStore,
   );
   context.subscriptions.push(
-    vscode.window.registerWebviewViewProvider(
-      JagguSidebarProvider.VIEW_ID,
-      sidebarProvider,
-      {
-        webviewOptions: {
-          retainContextWhenHidden: true,
-        },
+    vscode.window.registerWebviewViewProvider(JagguSidebarProvider.VIEW_ID, sidebarProvider, {
+      webviewOptions: {
+        retainContextWhenHidden: true,
       },
-    ),
+    }),
   );
 
   // 6. Register Review Diff & Edit Commands (M4)
@@ -183,7 +179,9 @@ export function activate(context: vscode.ExtensionContext): {
 
       if (apiKey !== undefined) {
         await credentialManager.setApiKey(provider, apiKey);
-        vscode.window.showInformationMessage(`JAGGU: API Key for [${provider}] updated in SecretStorage.`);
+        vscode.window.showInformationMessage(
+          `JAGGU: API Key for [${provider}] updated in SecretStorage.`,
+        );
       }
     }),
   );
@@ -200,7 +198,9 @@ export function activate(context: vscode.ExtensionContext): {
       if (token !== undefined) {
         await credentialManager.setHuggingFaceToken(token);
         if (token.trim()) {
-          vscode.window.showInformationMessage('JAGGU: Hugging Face token saved securely in SecretStorage.');
+          vscode.window.showInformationMessage(
+            'JAGGU: Hugging Face token saved securely in SecretStorage.',
+          );
         } else {
           vscode.window.showInformationMessage('JAGGU: Hugging Face token removed.');
         }
@@ -219,7 +219,9 @@ export function activate(context: vscode.ExtensionContext): {
     vscode.commands.registerCommand('jaggu.testHuggingFaceConnection', async () => {
       const token = await credentialManager.getHuggingFaceToken();
       if (!token) {
-        vscode.window.showWarningMessage('JAGGU: No Hugging Face token found. Run "JAGGU: Set Hugging Face Token" first.');
+        vscode.window.showWarningMessage(
+          'JAGGU: No Hugging Face token found. Run "JAGGU: Set Hugging Face Token" first.',
+        );
         return;
       }
 
@@ -232,25 +234,36 @@ export function activate(context: vscode.ExtensionContext): {
         async () => {
           try {
             const hfProvider = modelGateway.getProvider('huggingface');
-            const stream = hfProvider.streamChat(
-              [{ role: 'user', content: 'Ping' }],
-              { apiKey: token, maxTokens: 4, model: 'Qwen/Qwen3-Coder-30B-A3B-Instruct' },
-            );
+            const stream = hfProvider.streamChat([{ role: 'user', content: 'Ping' }], {
+              apiKey: token,
+              maxTokens: 4,
+              model: 'Qwen/Qwen3-Coder-30B-A3B-Instruct',
+            });
             // Read at least 1 chunk to verify credentials and endpoint
             for await (const _chunk of stream) {
               break;
             }
-            vscode.window.showInformationMessage('✓ Connected — Model available (Qwen 3 Coder 30B via Hugging Face)');
+            vscode.window.showInformationMessage(
+              '✓ Connected — Model available (Qwen 3 Coder 30B via Hugging Face)',
+            );
           } catch (err: any) {
             const code = err?.code || '';
             if (code === 'AUTH_FAILURE') {
-              vscode.window.showErrorMessage('✗ Authentication failed — Invalid or expired Hugging Face token.');
+              vscode.window.showErrorMessage(
+                '✗ Authentication failed — Invalid or expired Hugging Face token.',
+              );
             } else if (code === 'RATE_LIMITED') {
-              vscode.window.showWarningMessage('✗ Rate limited — Hugging Face inference is temporarily busy.');
+              vscode.window.showWarningMessage(
+                '✗ Rate limited — Hugging Face inference is temporarily busy.',
+              );
             } else if (code === 'NETWORK_ERROR') {
-              vscode.window.showErrorMessage('✗ Network error — Unable to reach Hugging Face inference router.');
+              vscode.window.showErrorMessage(
+                '✗ Network error — Unable to reach Hugging Face inference router.',
+              );
             } else {
-              vscode.window.showErrorMessage(`✗ Hugging Face connection test failed: ${err?.message || String(err)}`);
+              vscode.window.showErrorMessage(
+                `✗ Hugging Face connection test failed: ${err?.message || String(err)}`,
+              );
             }
           }
         },
@@ -262,7 +275,9 @@ export function activate(context: vscode.ExtensionContext): {
     vscode.commands.registerCommand('jaggu.checkProviderStatus', async () => {
       await sidebarProvider.checkRuntimesHealth();
       const status = sidebarProvider.currentStatus;
-      vscode.window.showInformationMessage(`JAGGU: Runtime health check completed. Current state: [${status}]`);
+      vscode.window.showInformationMessage(
+        `JAGGU: Runtime health check completed. Current state: [${status}]`,
+      );
     }),
   );
 
@@ -347,7 +362,15 @@ export function activate(context: vscode.ExtensionContext): {
     updateStatusBar(e.state);
   });
 
-  return { eventBus, docStore, sidebarProvider, statusBarItem, credentialManager, modelGateway, contextEngine };
+  return {
+    eventBus,
+    docStore,
+    sidebarProvider,
+    statusBarItem,
+    credentialManager,
+    modelGateway,
+    contextEngine,
+  };
 }
 
 export function deactivate(): void {

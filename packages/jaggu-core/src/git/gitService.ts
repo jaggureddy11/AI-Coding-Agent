@@ -98,7 +98,10 @@ export class GitCliService implements IGitService {
   /**
    * Run a read-only git query with security checks (disallowing mutating verbs & path traversal).
    */
-  public async runGitQuery(cwd: string, args: string[]): Promise<{ code: number; stdout: string; stderr: string }> {
+  public async runGitQuery(
+    cwd: string,
+    args: string[],
+  ): Promise<{ code: number; stdout: string; stderr: string }> {
     for (const arg of args) {
       if (arg.includes('..')) {
         throw new Error(`Security violation: Argument contains path traversal "${arg}"`);
@@ -110,7 +113,10 @@ export class GitCliService implements IGitService {
   /**
    * Execute git query command safely without shell expansion.
    */
-  private runGit(args: string[], cwd: string): Promise<{ code: number; stdout: string; stderr: string }> {
+  private runGit(
+    args: string[],
+    cwd: string,
+  ): Promise<{ code: number; stdout: string; stderr: string }> {
     // Defense: Disallow any destructive or mutating commands
     const FORBIDDEN_VERBS = [
       'commit',
@@ -128,7 +134,9 @@ export class GitCliService implements IGitService {
 
     const verb = args[0]?.toLowerCase() || '';
     if (FORBIDDEN_VERBS.includes(verb)) {
-      throw new Error(`Security violation: GitCliService disallows destructive/mutating verb "${verb}"`);
+      throw new Error(
+        `Security violation: GitCliService disallows destructive/mutating verb "${verb}"`,
+      );
     }
 
     return new Promise((resolve) => {

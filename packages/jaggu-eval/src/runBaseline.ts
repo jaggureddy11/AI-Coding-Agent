@@ -16,17 +16,27 @@ async function main() {
   console.log('                 BASELINE EVALUATION SCORECARD                 ');
   console.log('===============================================================');
   console.log(`Total Benchmark Tasks:         ${scorecard.totalTasks}`);
-  console.log(`Successful Tasks:              ${scorecard.successfulTasks} / ${scorecard.totalTasks}`);
+  console.log(
+    `Successful Tasks:              ${scorecard.successfulTasks} / ${scorecard.totalTasks}`,
+  );
   console.log(`Task Success Rate (TSR):       ${(scorecard.taskSuccessRate * 100).toFixed(1)}%`);
-  console.log(`First-Attempt Success (FAS):   ${scorecard.firstAttemptSuccessCount} / ${scorecard.totalTasks} (${(scorecard.firstAttemptSuccessRate * 100).toFixed(1)}%)`);
+  console.log(
+    `First-Attempt Success (FAS):   ${scorecard.firstAttemptSuccessCount} / ${scorecard.totalTasks} (${(scorecard.firstAttemptSuccessRate * 100).toFixed(1)}%)`,
+  );
   console.log(`Average Repair Attempts:       ${scorecard.averageRepairAttempts.toFixed(2)}`);
   console.log(`Max Repair Attempts:           ${scorecard.maxRepairAttempts}`);
   console.log(`Critical Safety Failures:      ${scorecard.criticalSafetyFailures}`);
-  console.log(`User Changes Preserved Rate:   ${(scorecard.userChangesPreservedRate * 100).toFixed(1)}%`);
-  console.log(`Scope Compliance Rate:         ${(scorecard.scopeComplianceRate * 100).toFixed(1)}%`);
+  console.log(
+    `User Changes Preserved Rate:   ${(scorecard.userChangesPreservedRate * 100).toFixed(1)}%`,
+  );
+  console.log(
+    `Scope Compliance Rate:         ${(scorecard.scopeComplianceRate * 100).toFixed(1)}%`,
+  );
   console.log(`Average Latency:               ${(scorecard.averageLatencyMs / 1000).toFixed(2)}s`);
   console.log('---------------------------------------------------------------');
-  console.log('| Task ID | Archetype        | Result | 1st Att | Repairs | Tests | Diags | Scope | User Chg |');
+  console.log(
+    '| Task ID | Archetype        | Result | 1st Att | Repairs | Tests | Diags | Scope | User Chg |',
+  );
   console.log('---------------------------------------------------------------');
 
   for (const r of scorecard.results) {
@@ -36,10 +46,18 @@ async function main() {
     const fas = (r.firstAttemptSuccess ? 'YES' : 'NO').padEnd(7);
     const rep = String(r.repairAttempts).padEnd(7);
     const tst = r.verification.testsStatus.padEnd(5);
-    const dia = (r.verification.diagnosticsStatus === 'CLEAN' ? 'CLEAN' : r.verification.diagnosticsStatus === 'ERRORS' ? 'ERR' : 'N/A').padEnd(5);
+    const dia = (
+      r.verification.diagnosticsStatus === 'CLEAN'
+        ? 'CLEAN'
+        : r.verification.diagnosticsStatus === 'ERRORS'
+          ? 'ERR'
+          : 'N/A'
+    ).padEnd(5);
     const scp = (r.scope.compliant ? 'OK' : 'VIOL').padEnd(5);
     const uch = (r.gitSafety.userChangesPreserved ? 'PRESERVED' : 'DESTROYED').padEnd(8);
-    console.log(`| ${id} | ${arch} | ${res} | ${fas} | ${rep} | ${tst} | ${dia} | ${scp} | ${uch} |`);
+    console.log(
+      `| ${id} | ${arch} | ${res} | ${fas} | ${rep} | ${tst} | ${dia} | ${scp} | ${uch} |`,
+    );
   }
   console.log('---------------------------------------------------------------\n');
   process.exit(0);

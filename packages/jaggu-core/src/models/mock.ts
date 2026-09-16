@@ -87,19 +87,31 @@ export class MockModelProvider implements IModelProvider {
     } else if (this.config.simulateError === 'NETWORK_ERROR') {
       throw new ModelError('Mock network socket error', 'NETWORK_ERROR', this.id, undefined, true);
     } else if (this.config.simulateError === 'MALFORMED_RESPONSE') {
-      throw new ModelError('Unexpected payload schema from mock server', 'MALFORMED_RESPONSE', this.id, 500, false);
+      throw new ModelError(
+        'Unexpected payload schema from mock server',
+        'MALFORMED_RESPONSE',
+        this.id,
+        500,
+        false,
+      );
     }
 
     // Multi-turn simulation if configured
     if (this.config.turns && this.config.turns.length > 0) {
-      const turn = this.config.turns[this._turnIndex] || this.config.turns[this.config.turns.length - 1];
+      const turn =
+        this.config.turns[this._turnIndex] || this.config.turns[this.config.turns.length - 1];
       this._turnIndex++;
       if (turn?.simulateError) {
         throw new ModelError('Mock error in turn', turn.simulateError, this.id);
       }
       if (turn?.toolCall) {
         yield { type: 'tool_call_start', id: turn.toolCall.id, name: turn.toolCall.name };
-        yield { type: 'tool_call_complete', id: turn.toolCall.id, name: turn.toolCall.name, arguments: turn.toolCall.arguments };
+        yield {
+          type: 'tool_call_complete',
+          id: turn.toolCall.id,
+          name: turn.toolCall.name,
+          arguments: turn.toolCall.arguments,
+        };
         return;
       }
       const turnText = turn?.text ?? turn?.textResponse;
@@ -130,7 +142,13 @@ export class MockModelProvider implements IModelProvider {
 
     for (const token of tokens) {
       if (options.abortSignal?.aborted) {
-        throw new ModelError('Request was cancelled by user', 'CANCELLED', this.id, undefined, false);
+        throw new ModelError(
+          'Request was cancelled by user',
+          'CANCELLED',
+          this.id,
+          undefined,
+          false,
+        );
       }
       if (delay > 0) {
         await new Promise<void>((resolve) => {
@@ -150,7 +168,13 @@ export class MockModelProvider implements IModelProvider {
         });
       }
       if (options.abortSignal?.aborted) {
-        throw new ModelError('Request was cancelled by user', 'CANCELLED', this.id, undefined, false);
+        throw new ModelError(
+          'Request was cancelled by user',
+          'CANCELLED',
+          this.id,
+          undefined,
+          false,
+        );
       }
       yield { type: 'token', text: token };
     }

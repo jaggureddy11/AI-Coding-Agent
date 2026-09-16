@@ -17,9 +17,7 @@ export class VSCodeDiagnosticsProvider implements IDiagnosticsProvider {
     const results: Diagnostic[] = [];
 
     for (const relFile of files) {
-      const fullPath = path.isAbsolute(relFile)
-        ? relFile
-        : path.join(this.workspaceRoot, relFile);
+      const fullPath = path.isAbsolute(relFile) ? relFile : path.join(this.workspaceRoot, relFile);
       const uri = vscode.Uri.file(fullPath);
       const rawDiags = vscode.languages.getDiagnostics(uri);
 

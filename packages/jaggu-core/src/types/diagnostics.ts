@@ -1,12 +1,12 @@
 export type DiagnosticSeverity = 'error' | 'warning' | 'info' | 'hint';
 
 export interface Diagnostic {
-  file: string;           // Relative workspace path
+  file: string; // Relative workspace path
   severity: DiagnosticSeverity;
   message: string;
-  line: number;           // 1-indexed
-  column: number;         // 1-indexed
-  source?: string;        // e.g. "typescript", "eslint", "pylance"
+  line: number; // 1-indexed
+  column: number; // 1-indexed
+  source?: string; // e.g. "typescript", "eslint", "pylance"
   code?: string | number; // e.g. 2345, "no-unused-vars"
 }
 

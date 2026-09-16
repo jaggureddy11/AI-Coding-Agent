@@ -76,7 +76,11 @@ export class AnthropicProvider implements IModelProvider {
   ): AsyncIterable<ModelStreamChunk> {
     const apiKey = options.apiKey;
     if (!apiKey) {
-      throw new ModelError('Anthropic API key is missing. Configure it in JAGGU settings.', 'AUTH_FAILURE', this.id);
+      throw new ModelError(
+        'Anthropic API key is missing. Configure it in JAGGU settings.',
+        'AUTH_FAILURE',
+        this.id,
+      );
     }
 
     const baseUrl = options.baseUrl || 'https://api.anthropic.com';
@@ -177,7 +181,11 @@ export class AnthropicProvider implements IModelProvider {
         if (event.type === 'content_block_delta') {
           if (event.delta?.type === 'text_delta' && event.delta.text) {
             yield { type: 'token', text: event.delta.text };
-          } else if (event.delta?.type === 'input_json_delta' && event.delta.partial_json && currentToolCall) {
+          } else if (
+            event.delta?.type === 'input_json_delta' &&
+            event.delta.partial_json &&
+            currentToolCall
+          ) {
             currentToolCall.args += event.delta.partial_json;
             yield {
               type: 'tool_call_delta',

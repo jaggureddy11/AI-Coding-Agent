@@ -170,7 +170,10 @@ export class TaskCheckpointManager {
       .trim();
 
     const scopePart = scope ? `(${scope})` : '';
-    const subject = cleanGoal.length > 0 ? `${cleanGoal[0]?.toLowerCase()}${cleanGoal.slice(1)}` : 'update codebase';
+    const subject =
+      cleanGoal.length > 0
+        ? `${cleanGoal[0]?.toLowerCase()}${cleanGoal.slice(1)}`
+        : 'update codebase';
 
     return `${type}${scopePart}: ${subject}`;
   }

@@ -4,10 +4,7 @@ import { ModelDescriptor } from '../types/modelRegistry.js';
 import { ModelError } from '../types/models.js';
 
 export type ModelRoutingPolicy =
-  | 'free-first'
-  | 'free-and-local-only'
-  | 'local-only'
-  | 'configured-providers';
+  'free-first' | 'free-and-local-only' | 'local-only' | 'configured-providers';
 
 export type TaskCategory =
   | 'CODE_MUTATION'
@@ -62,8 +59,7 @@ export interface ModelRouteResult {
  */
 export class TaskClassifier {
   public static classify(input: TaskClassificationInput | string): TaskClassification {
-    const rawInput: TaskClassificationInput =
-      typeof input === 'string' ? { prompt: input } : input;
+    const rawInput: TaskClassificationInput = typeof input === 'string' ? { prompt: input } : input;
     const prompt = rawInput.prompt.trim();
     const lower = prompt.toLowerCase();
     const command = rawInput.explicitCommand?.toLowerCase() || '';
@@ -107,7 +103,9 @@ export class TaskClassifier {
     }
     // 2. Natural language heuristics
     else if (
-      /\b(how does|what is|why does|explain|walk me through|describe|clarify|what are)\b/i.test(lower) &&
+      /\b(how does|what is|why does|explain|walk me through|describe|clarify|what are)\b/i.test(
+        lower,
+      ) &&
       !/\b(fix|change|update|add|write|create|implement|modify|delete|remove)\b/i.test(lower)
     ) {
       category = 'EXPLANATION';
@@ -130,7 +128,9 @@ export class TaskClassifier {
     } else if (/\b(find|search|grep|locate|where is|files containing)\b/i.test(lower)) {
       category = 'SEARCH';
       requiresTools = true;
-    } else if (/\b(implement|create|add|build|generate|write|update|modify|change)\b/i.test(lower)) {
+    } else if (
+      /\b(implement|create|add|build|generate|write|update|modify|change)\b/i.test(lower)
+    ) {
       category = 'CODE_MUTATION';
       requiresTools = true;
       codingWeight = 0.9;
@@ -138,7 +138,9 @@ export class TaskClassifier {
 
     // 3. Multi-file heuristic
     const requiresMultiFile =
-      /\b(all files|project|workspace|across|components|entire|multiple files|modules)\b/i.test(lower) ||
+      /\b(all files|project|workspace|across|components|entire|multiple files|modules)\b/i.test(
+        lower,
+      ) ||
       (rawInput.workspaceFilesCount !== undefined && rawInput.workspaceFilesCount > 20);
 
     // 4. Deterministic token estimation
@@ -311,9 +313,7 @@ export class ModelRouter {
     // If policy is 'free-first', paid models are filtered out if any free/local candidates exist.
     let pool = eligibleModels;
     if (policy === 'free-first') {
-      const freeOrLocal = eligibleModels.filter(
-        (m) => m.access === 'free' || m.access === 'local',
-      );
+      const freeOrLocal = eligibleModels.filter((m) => m.access === 'free' || m.access === 'local');
       if (freeOrLocal.length > 0) {
         pool = freeOrLocal;
       } else {
@@ -451,7 +451,7 @@ export class ModelRouter {
     if (model.access === 'free') {
       accessBonus = 0.35;
     } else if (model.access === 'local') {
-      accessBonus = 0.30;
+      accessBonus = 0.3;
     } else if (model.access === 'paid') {
       accessBonus = 0.0;
     }
@@ -476,8 +476,8 @@ export class ModelRouter {
       coding * 0.35 +
       reasoning * 0.15 +
       toolScore * 0.15 +
-      contextFit * 0.10 +
-      accessBonus * 0.20 +
+      contextFit * 0.1 +
+      accessBonus * 0.2 +
       healthFactor * 0.05 -
       failurePenalty;
 
@@ -493,8 +493,8 @@ export class ModelRouter {
       model.access === 'free'
         ? 'Free/Open model'
         : model.access === 'local'
-        ? 'Local offline model'
-        : 'Configured provider';
+          ? 'Local offline model'
+          : 'Configured provider';
 
     const toolDesc = task.requiresTools ? 'tool calling supported' : 'explanation optimized';
     return `${accessDesc} (${model.displayName}): coding rating ${model.capabilities.coding ?? 80}, ${toolDesc}, score: ${score}`;

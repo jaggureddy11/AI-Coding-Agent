@@ -6,4 +6,8 @@ export * from './components/ModelSelector.js';
 export * from './components/ContextPill.js';
 export * from './components/VoiceTypingButton.js';
 export * from './components/TrustBadgeBar.js';
+export * from './components/MarkdownMessage.js';
+export * from './components/FileMentionDropdown.js';
+export * from './components/AttachedFilesBar.js';
+export * from './components/ExecutionDrawer.js';
 export * from './App.js';

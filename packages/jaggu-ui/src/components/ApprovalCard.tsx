@@ -133,7 +133,9 @@ export const ApprovalCard: React.FC<ApprovalCardProps> = ({
                 opacity: status === 'pending' && !isSelected ? 0.6 : 1,
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
+              <div
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}
+              >
                 {status === 'pending' && fileList.length > 1 && (
                   <input
                     type="checkbox"
@@ -143,7 +145,14 @@ export const ApprovalCard: React.FC<ApprovalCardProps> = ({
                     style={{ cursor: 'pointer' }}
                   />
                 )}
-                <span style={{ wordBreak: 'break-all', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <span
+                  style={{
+                    wordBreak: 'break-all',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                  }}
+                >
                   📄 {item.relativePath}
                   {item.isNew && (
                     <span

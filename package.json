@@ -13,6 +13,8 @@
     "typecheck": "npm run typecheck --workspaces",
     "lint": "eslint packages/*/src/**/*.{ts,tsx}",
     "test": "vitest run",
+    "server:dev": "npm run dev --workspace=@jaggu/server",
+    "server:start": "npm run start --workspace=@jaggu/server",
     "eval": "npm run eval --workspace=@jaggu/eval",
     "clean": "rm -rf packages/*/dist packages/*/*.tsbuildinfo packages/jaggu-vscode/*.vsix",
     "format": "prettier --write \"packages/*/src/**/*.{ts,tsx,json,css}\""

@@ -35,7 +35,8 @@ export type FailureCategory =
 export interface TaskApprovalPolicy {
   approvePlan: boolean;
   approveEdits: boolean | { approved: boolean; approvedFiles?: string[]; rejectedFiles?: string[] };
-  approveRepairs?: boolean | { approved: boolean; approvedFiles?: string[]; rejectedFiles?: string[] };
+  approveRepairs?:
+    boolean | { approved: boolean; approvedFiles?: string[]; rejectedFiles?: string[] };
 }
 
 export interface BenchmarkTaskDefinition {
@@ -135,14 +136,16 @@ export const BenchmarkTaskDefinitionSchema = z.object({
         rejectedFiles: z.array(z.string()).optional(),
       }),
     ]),
-    approveRepairs: z.union([
-      z.boolean(),
-      z.object({
-        approved: z.boolean(),
-        approvedFiles: z.array(z.string()).optional(),
-        rejectedFiles: z.array(z.string()).optional(),
-      }),
-    ]).optional(),
+    approveRepairs: z
+      .union([
+        z.boolean(),
+        z.object({
+          approved: z.boolean(),
+          approvedFiles: z.array(z.string()).optional(),
+          rejectedFiles: z.array(z.string()).optional(),
+        }),
+      ])
+      .optional(),
   }),
   verificationCommand: z.string().optional(),
   expectedBehavior: z.string().optional(),
@@ -153,17 +156,19 @@ export const BenchmarkTaskDefinitionSchema = z.object({
       id: z.string().optional(),
       goal: z.string().min(5),
       assumptions: z.array(z.string()).optional(),
-      steps: z.array(
-        z.object({
-          id: z.string().optional(),
-          description: z.string().min(3),
-          files: z.array(z.string()).optional(),
-          newFiles: z.array(z.string()).optional(),
-          dependencies: z.array(z.string()).optional(),
-          expectedOutcome: z.string().optional(),
-          verification: z.string().optional(),
-        })
-      ).min(1),
+      steps: z
+        .array(
+          z.object({
+            id: z.string().optional(),
+            description: z.string().min(3),
+            files: z.array(z.string()).optional(),
+            newFiles: z.array(z.string()).optional(),
+            dependencies: z.array(z.string()).optional(),
+            expectedOutcome: z.string().optional(),
+            verification: z.string().optional(),
+          }),
+        )
+        .min(1),
       risks: z.array(z.string()).optional(),
       verification: z.union([z.string(), z.array(z.string())]).optional(),
     }),
@@ -172,22 +177,26 @@ export const BenchmarkTaskDefinitionSchema = z.object({
         relativePath: z.string().min(1),
         proposedContent: z.string(),
         isNewFile: z.boolean(),
-      })
+      }),
     ),
-    diagnosticRepairs: z.array(
-      z.object({
-        relativePath: z.string().min(1),
-        proposedContent: z.string(),
-        isNewFile: z.boolean(),
-      })
-    ).optional(),
-    testRepairs: z.array(
-      z.object({
-        relativePath: z.string().min(1),
-        proposedContent: z.string(),
-        isNewFile: z.boolean(),
-      })
-    ).optional(),
+    diagnosticRepairs: z
+      .array(
+        z.object({
+          relativePath: z.string().min(1),
+          proposedContent: z.string(),
+          isNewFile: z.boolean(),
+        }),
+      )
+      .optional(),
+    testRepairs: z
+      .array(
+        z.object({
+          relativePath: z.string().min(1),
+          proposedContent: z.string(),
+          isNewFile: z.boolean(),
+        }),
+      )
+      .optional(),
   }),
 });
 

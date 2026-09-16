@@ -37,7 +37,10 @@ export class EditSetManager {
 
     for (const fileInput of files) {
       try {
-        const absolutePath = resolveAndValidateWorkspacePath(fileInput.relativePath, this.workspaceRoots);
+        const absolutePath = resolveAndValidateWorkspacePath(
+          fileInput.relativePath,
+          this.workspaceRoots,
+        );
         const exists = fs.existsSync(absolutePath);
         const isNew = fileInput.isNewFile ?? !exists;
 
@@ -46,7 +49,10 @@ export class EditSetManager {
 
         if (exists) {
           originalContent = fs.readFileSync(absolutePath, 'utf-8');
-          baseContentHash = crypto.createHash('sha256').update(originalContent, 'utf-8').digest('hex');
+          baseContentHash = crypto
+            .createHash('sha256')
+            .update(originalContent, 'utf-8')
+            .digest('hex');
         } else {
           baseContentHash = crypto.createHash('sha256').update('', 'utf-8').digest('hex');
         }
@@ -140,18 +146,37 @@ export class EditSetManager {
    * Enforces SHA-256 pre-validation across approved files.
    * If any file fails validation or has changed on disk, rejects without writing anything.
    */
-  public applyEditSet(id: string, approved: boolean, approvedFilesFilter?: string[]): EditSetApplyResult {
+  public applyEditSet(
+    id: string,
+    approved: boolean,
+    approvedFilesFilter?: string[],
+  ): EditSetApplyResult {
     const editSet = this.editSets.get(id);
     if (!editSet) {
-      return { success: false, editSetId: id, appliedFiles: [], error: `EditSet "${id}" not found` };
+      return {
+        success: false,
+        editSetId: id,
+        appliedFiles: [],
+        error: `EditSet "${id}" not found`,
+      };
     }
 
     if (!approved) {
-      return { success: false, editSetId: id, appliedFiles: [], error: 'EditSet requires explicit user approval before apply' };
+      return {
+        success: false,
+        editSetId: id,
+        appliedFiles: [],
+        error: 'EditSet requires explicit user approval before apply',
+      };
     }
 
     if (editSet.status !== 'PROPOSED') {
-      return { success: false, editSetId: id, appliedFiles: [], error: `EditSet is in status "${editSet.status}", cannot apply` };
+      return {
+        success: false,
+        editSetId: id,
+        appliedFiles: [],
+        error: `EditSet is in status "${editSet.status}", cannot apply`,
+      };
     }
 
     // Determine target files based on selective approval filter
@@ -256,7 +281,10 @@ export class EditSetManager {
         }
 
         const currentDiskContent = fs.readFileSync(f.absolutePath, 'utf-8');
-        const currentHash = crypto.createHash('sha256').update(currentDiskContent, 'utf-8').digest('hex');
+        const currentHash = crypto
+          .createHash('sha256')
+          .update(currentDiskContent, 'utf-8')
+          .digest('hex');
 
         if (currentHash !== f.baseContentHash) {
           editSet.status = 'CONFLICT';

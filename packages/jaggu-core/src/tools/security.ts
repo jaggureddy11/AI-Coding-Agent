@@ -4,7 +4,8 @@ import * as fs from 'fs';
 export class WorkspaceSecurityError extends Error {
   constructor(
     message: string,
-    public readonly code: 'PATH_TRAVERSAL_DETECTED' | 'OUTSIDE_WORKSPACE' | 'INVALID_PATH' | 'SYMLINK_ESCAPE',
+    public readonly code:
+      'PATH_TRAVERSAL_DETECTED' | 'OUTSIDE_WORKSPACE' | 'INVALID_PATH' | 'SYMLINK_ESCAPE',
     public readonly targetPath: string,
   ) {
     super(`[Security ${code}] ${message}: ${targetPath}`);
@@ -21,16 +22,28 @@ export function resolveAndValidateWorkspacePath(
   workspaceRoots: string[],
 ): string {
   if (!untrustedPath || typeof untrustedPath !== 'string' || untrustedPath.trim().length === 0) {
-    throw new WorkspaceSecurityError('Empty or invalid path provided', 'INVALID_PATH', untrustedPath);
+    throw new WorkspaceSecurityError(
+      'Empty or invalid path provided',
+      'INVALID_PATH',
+      untrustedPath,
+    );
   }
 
   // Reject NULL byte injection
   if (untrustedPath.includes('\0')) {
-    throw new WorkspaceSecurityError('Path contains null byte characters', 'INVALID_PATH', untrustedPath);
+    throw new WorkspaceSecurityError(
+      'Path contains null byte characters',
+      'INVALID_PATH',
+      untrustedPath,
+    );
   }
 
   if (!workspaceRoots || workspaceRoots.length === 0) {
-    throw new WorkspaceSecurityError('No active workspace roots configured', 'OUTSIDE_WORKSPACE', untrustedPath);
+    throw new WorkspaceSecurityError(
+      'No active workspace roots configured',
+      'OUTSIDE_WORKSPACE',
+      untrustedPath,
+    );
   }
 
   // Normalize path separators to current platform
@@ -90,7 +103,8 @@ export function resolveAndValidateWorkspacePath(
             const realAncestor = fs.realpathSync(ancestor);
             const ancestorRelative = path.relative(realRoot, realAncestor);
             const isAncestorContained =
-              ancestorRelative === '' || (!ancestorRelative.startsWith('..') && !path.isAbsolute(ancestorRelative));
+              ancestorRelative === '' ||
+              (!ancestorRelative.startsWith('..') && !path.isAbsolute(ancestorRelative));
 
             if (!isAncestorContained) {
               throw new WorkspaceSecurityError(

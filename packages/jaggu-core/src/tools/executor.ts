@@ -43,7 +43,10 @@ export class ToolExecutor {
       taskId: context.taskId,
       toolCallId,
       toolName,
-      arguments: (typeof rawArgs === 'object' && rawArgs !== null ? rawArgs : {}) as Record<string, unknown>,
+      arguments: (typeof rawArgs === 'object' && rawArgs !== null ? rawArgs : {}) as Record<
+        string,
+        unknown
+      >,
       timestamp: startTime,
     });
 
@@ -124,10 +127,7 @@ export class ToolExecutor {
         });
       });
 
-      const result = await Promise.race([
-        tool.execute(parsed.data, context),
-        timeoutPromise,
-      ]);
+      const result = await Promise.race([tool.execute(parsed.data, context), timeoutPromise]);
 
       const durationMs = Date.now() - startTime;
 

@@ -20,3 +20,9 @@ Thumbs.db
 
 # Evaluation raw outputs
 packages/jaggu-eval/results/raw/
+
+# Environment and Secrets
+.env
+.env.*
+!.env.example
+

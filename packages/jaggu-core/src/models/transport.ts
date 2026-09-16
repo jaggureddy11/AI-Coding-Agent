@@ -15,7 +15,12 @@ export const DEFAULT_RETRY_OPTIONS: Required<RetryOptions> = {
 /**
  * Parses HTTP status code into standard ModelError with retry classification.
  */
-export function classifyHttpStatus(status: number, providerId: string, statusText: string, bodyText?: string): ModelError {
+export function classifyHttpStatus(
+  status: number,
+  providerId: string,
+  statusText: string,
+  bodyText?: string,
+): ModelError {
   let code: ModelErrorCode;
   let retryable = false;
 
@@ -68,7 +73,13 @@ export async function resilientFetch(
 
   while (true) {
     if (init.signal?.aborted) {
-      throw new ModelError('Request was cancelled by user', 'CANCELLED', providerId, undefined, false);
+      throw new ModelError(
+        'Request was cancelled by user',
+        'CANCELLED',
+        providerId,
+        undefined,
+        false,
+      );
     }
 
     try {
@@ -98,7 +109,13 @@ export async function resilientFetch(
       }
 
       if (init.signal?.aborted || (error instanceof Error && error.name === 'AbortError')) {
-        throw new ModelError('Request was cancelled by user', 'CANCELLED', providerId, undefined, false);
+        throw new ModelError(
+          'Request was cancelled by user',
+          'CANCELLED',
+          providerId,
+          undefined,
+          false,
+        );
       }
 
       // Network failures (e.g. ECONNREFUSED, fetch failed)
@@ -127,7 +144,10 @@ export async function resilientFetch(
 /**
  * Converts a Response ReadableStream into an async generator of Server-Sent Event (SSE) lines.
  */
-export async function* parseSseStream(response: Response, abortSignal?: AbortSignal): AsyncGenerator<string> {
+export async function* parseSseStream(
+  response: Response,
+  abortSignal?: AbortSignal,
+): AsyncGenerator<string> {
   if (!response.body) {
     return;
   }
@@ -140,7 +160,13 @@ export async function* parseSseStream(response: Response, abortSignal?: AbortSig
     while (true) {
       if (abortSignal?.aborted) {
         await reader.cancel().catch(() => {});
-        throw new ModelError('Request was cancelled by user', 'CANCELLED', 'transport', undefined, false);
+        throw new ModelError(
+          'Request was cancelled by user',
+          'CANCELLED',
+          'transport',
+          undefined,
+          false,
+        );
       }
 
       let readResult: Awaited<ReturnType<typeof reader.read>>;
@@ -148,7 +174,13 @@ export async function* parseSseStream(response: Response, abortSignal?: AbortSig
         readResult = await reader.read();
       } catch (err: unknown) {
         if (abortSignal?.aborted || (err instanceof Error && err.name === 'AbortError')) {
-          throw new ModelError('Request was cancelled by user', 'CANCELLED', 'transport', undefined, false);
+          throw new ModelError(
+            'Request was cancelled by user',
+            'CANCELLED',
+            'transport',
+            undefined,
+            false,
+          );
         }
         throw err;
       }
@@ -186,7 +218,10 @@ export async function* parseSseStream(response: Response, abortSignal?: AbortSig
 /**
  * Converts a Response ReadableStream into an async generator of NDJSON objects.
  */
-export async function* parseNdjsonStream<T = unknown>(response: Response, abortSignal?: AbortSignal): AsyncGenerator<T> {
+export async function* parseNdjsonStream<T = unknown>(
+  response: Response,
+  abortSignal?: AbortSignal,
+): AsyncGenerator<T> {
   if (!response.body) {
     return;
   }
@@ -199,7 +234,13 @@ export async function* parseNdjsonStream<T = unknown>(response: Response, abortS
     while (true) {
       if (abortSignal?.aborted) {
         await reader.cancel().catch(() => {});
-        throw new ModelError('Request was cancelled by user', 'CANCELLED', 'transport', undefined, false);
+        throw new ModelError(
+          'Request was cancelled by user',
+          'CANCELLED',
+          'transport',
+          undefined,
+          false,
+        );
       }
 
       let readResult: Awaited<ReturnType<typeof reader.read>>;
@@ -207,7 +248,13 @@ export async function* parseNdjsonStream<T = unknown>(response: Response, abortS
         readResult = await reader.read();
       } catch (err: unknown) {
         if (abortSignal?.aborted || (err instanceof Error && err.name === 'AbortError')) {
-          throw new ModelError('Request was cancelled by user', 'CANCELLED', 'transport', undefined, false);
+          throw new ModelError(
+            'Request was cancelled by user',
+            'CANCELLED',
+            'transport',
+            undefined,
+            false,
+          );
         }
         throw err;
       }

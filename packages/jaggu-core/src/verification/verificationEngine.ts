@@ -24,7 +24,10 @@ export class VerificationEngine {
   /**
    * Infers the appropriate test verification command from plan specifications or repository conventions.
    */
-  public determineVerificationCommand(planVerification?: string[], modifiedFiles?: string[]): string {
+  public determineVerificationCommand(
+    planVerification?: string[],
+    modifiedFiles?: string[],
+  ): string {
     // 1. If plan explicitly lists a valid command, prefer it
     if (planVerification && planVerification.length > 0 && planVerification[0]) {
       const explicit = planVerification[0].trim();
@@ -50,7 +53,7 @@ export class VerificationEngine {
               pkg.devDependencies?.mocha ||
               pkg.dependencies?.jest ||
               pkg.dependencies?.vitest ||
-              pkg.dependencies?.mocha
+              pkg.dependencies?.mocha,
             );
 
           // If specific test file was modified and runner supports targeted arguments, pass file target
@@ -71,7 +74,9 @@ export class VerificationEngine {
       fs.existsSync(path.join(primaryRoot, 'setup.py')) ||
       fs.existsSync(path.join(primaryRoot, 'pyproject.toml'))
     ) {
-      const pyTestFile = modifiedFiles?.find((f) => f.startsWith('test_') || f.endsWith('_test.py'));
+      const pyTestFile = modifiedFiles?.find(
+        (f) => f.startsWith('test_') || f.endsWith('_test.py'),
+      );
       if (pyTestFile) {
         return `pytest ${pyTestFile}`;
       }
@@ -122,11 +127,13 @@ export class VerificationEngine {
 
       const durationMs = Date.now() - startTime;
 
-      const outputData = execution.data as {
-        exitCode: number;
-        stdout: string;
-        stderr: string;
-      } | undefined;
+      const outputData = execution.data as
+        | {
+            exitCode: number;
+            stdout: string;
+            stderr: string;
+          }
+        | undefined;
 
       if (!outputData) {
         const errMessage = execution.error || 'Verification execution failed';
@@ -218,7 +225,10 @@ export class VerificationEngine {
   /**
    * Parses common test framework outputs (Vitest/Jest, Pytest, Go, Cargo) for passed/failed numbers.
    */
-  public parseTestSummary(stdout: string, stderr: string): { passed?: number; failed?: number; summary: string } {
+  public parseTestSummary(
+    stdout: string,
+    stderr: string,
+  ): { passed?: number; failed?: number; summary: string } {
     const combined = `${stdout}\n${stderr}`;
 
     // Vitest / Jest: "Tests  2 passed (2)" or "Tests  1 failed | 5 passed (6)"
@@ -258,7 +268,8 @@ export class VerificationEngine {
     }
 
     return {
-      summary: combined.includes('FAIL') || combined.includes('error') ? 'Tests failed' : 'Tests passed',
+      summary:
+        combined.includes('FAIL') || combined.includes('error') ? 'Tests failed' : 'Tests passed',
     };
   }
 }

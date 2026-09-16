@@ -1,11 +1,5 @@
 export type FileClassification =
-  | 'source'
-  | 'test'
-  | 'config'
-  | 'documentation'
-  | 'asset'
-  | 'generated'
-  | 'unknown';
+  'source' | 'test' | 'config' | 'documentation' | 'asset' | 'generated' | 'unknown';
 
 export interface WorkspaceFile {
   relativePath: string;
@@ -85,7 +79,7 @@ export interface ContextBudgetPolicy {
 
 export const DEFAULT_CONTEXT_BUDGET_POLICY: ContextBudgetPolicy = {
   maxFiles: 6,
-  maxBytesPerFile: 32 * 1024,      // 32 KB
+  maxBytesPerFile: 32 * 1024, // 32 KB
   maxTotalContextBytes: 128 * 1024, // 128 KB
   maxLinesPerSnippet: 100,
   maxContextTokens: 12000,

@@ -52,8 +52,9 @@ export const PlanCard: React.FC<PlanCardProps> = ({
     description: s.description || '',
     files: s.files || s.targetFiles || [],
   }));
-  const actualRisks: string[] = risks.length > 0 ? risks : (plan?.risks || []);
-  const actualVerification: string[] = verification.length > 0 ? verification : (plan?.verification || []);
+  const actualRisks: string[] = risks.length > 0 ? risks : plan?.risks || [];
+  const actualVerification: string[] =
+    verification.length > 0 ? verification : plan?.verification || [];
   return (
     <div
       style={{
@@ -68,10 +69,23 @@ export const PlanCard: React.FC<PlanCardProps> = ({
         boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '8px',
+        }}
+      >
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <span style={{ fontSize: '14px' }}>📋</span>
-          <span style={{ fontWeight: 600, fontSize: '13px', color: 'var(--vscode-editor-foreground, #ffffff)' }}>
+          <span
+            style={{
+              fontWeight: 600,
+              fontSize: '13px',
+              color: 'var(--vscode-editor-foreground, #ffffff)',
+            }}
+          >
             Engineering Plan
           </span>
         </div>
@@ -89,7 +103,13 @@ export const PlanCard: React.FC<PlanCardProps> = ({
       </div>
 
       <div style={{ marginBottom: '10px' }}>
-        <div style={{ fontWeight: 500, color: 'var(--vscode-textPreformat-foreground, #dcdcaa)', marginBottom: '3px' }}>
+        <div
+          style={{
+            fontWeight: 500,
+            color: 'var(--vscode-textPreformat-foreground, #dcdcaa)',
+            marginBottom: '3px',
+          }}
+        >
           GOAL
         </div>
         <div style={{ lineHeight: '1.4' }}>{actualGoal}</div>
@@ -97,7 +117,13 @@ export const PlanCard: React.FC<PlanCardProps> = ({
 
       {actualSteps.length > 0 && (
         <div style={{ marginBottom: '10px' }}>
-          <div style={{ fontWeight: 500, color: 'var(--vscode-textPreformat-foreground, #dcdcaa)', marginBottom: '4px' }}>
+          <div
+            style={{
+              fontWeight: 500,
+              color: 'var(--vscode-textPreformat-foreground, #dcdcaa)',
+              marginBottom: '4px',
+            }}
+          >
             STEPS
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -115,11 +141,15 @@ export const PlanCard: React.FC<PlanCardProps> = ({
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ color: 'var(--vscode-charts-blue, #3794ff)', fontWeight: 600 }}>☐</span>
+                  <span style={{ color: 'var(--vscode-charts-blue, #3794ff)', fontWeight: 600 }}>
+                    ☐
+                  </span>
                   <span style={{ fontWeight: 500 }}>{step.description}</span>
                 </div>
                 {step.files.length > 0 && (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginLeft: '16px' }}>
+                  <div
+                    style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginLeft: '16px' }}
+                  >
                     {step.files.map((file) => (
                       <span
                         key={file}
@@ -145,7 +175,13 @@ export const PlanCard: React.FC<PlanCardProps> = ({
 
       {actualRisks.length > 0 && (
         <div style={{ marginBottom: '10px' }}>
-          <div style={{ fontWeight: 500, color: 'var(--vscode-editorWarning-foreground, #cca700)', marginBottom: '2px' }}>
+          <div
+            style={{
+              fontWeight: 500,
+              color: 'var(--vscode-editorWarning-foreground, #cca700)',
+              marginBottom: '2px',
+            }}
+          >
             POTENTIAL RISKS
           </div>
           <ul style={{ margin: '0', paddingLeft: '18px', lineHeight: '1.4' }}>
@@ -158,7 +194,13 @@ export const PlanCard: React.FC<PlanCardProps> = ({
 
       {actualVerification.length > 0 && (
         <div style={{ marginBottom: '12px' }}>
-          <div style={{ fontWeight: 500, color: 'var(--vscode-charts-green, #89d185)', marginBottom: '2px' }}>
+          <div
+            style={{
+              fontWeight: 500,
+              color: 'var(--vscode-charts-green, #89d185)',
+              marginBottom: '2px',
+            }}
+          >
             VERIFICATION STRATEGY
           </div>
           <ul style={{ margin: '0', paddingLeft: '18px', lineHeight: '1.4' }}>
@@ -183,8 +225,13 @@ export const PlanCard: React.FC<PlanCardProps> = ({
             cursor: 'pointer',
             fontSize: '11px',
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--vscode-button-hoverBackground, #1177bb)')}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--vscode-button-background, #0e639c)')}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.backgroundColor =
+              'var(--vscode-button-hoverBackground, #1177bb)')
+          }
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.backgroundColor = 'var(--vscode-button-background, #0e639c)')
+          }
         >
           ✓ Approve Plan
         </button>
@@ -200,8 +247,14 @@ export const PlanCard: React.FC<PlanCardProps> = ({
             cursor: 'pointer',
             fontSize: '11px',
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--vscode-button-secondaryHoverBackground, #45494e)')}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--vscode-button-secondaryBackground, #3a3d41)')}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.backgroundColor =
+              'var(--vscode-button-secondaryHoverBackground, #45494e)')
+          }
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.backgroundColor =
+              'var(--vscode-button-secondaryBackground, #3a3d41)')
+          }
         >
           Reject Plan
         </button>

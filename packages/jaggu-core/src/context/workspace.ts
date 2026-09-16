@@ -170,10 +170,22 @@ export class WorkspaceDiscovery {
       const relativePath = path.relative(workspaceRoot, fullPath).replace(/\\/g, '/');
 
       if (entry.isDirectory()) {
-        if (DEFAULT_IGNORED_DIRS.has(entry.name) || customExcludes.has(entry.name) || entry.name.startsWith('.')) {
+        if (
+          DEFAULT_IGNORED_DIRS.has(entry.name) ||
+          customExcludes.has(entry.name) ||
+          entry.name.startsWith('.')
+        ) {
           continue;
         }
-        await this.scanDir(fullPath, workspaceRoot, currentDepth + 1, maxDepth, maxFiles, customExcludes, accumulator);
+        await this.scanDir(
+          fullPath,
+          workspaceRoot,
+          currentDepth + 1,
+          maxDepth,
+          maxFiles,
+          customExcludes,
+          accumulator,
+        );
       } else if (entry.isFile() || entry.isSymbolicLink()) {
         if (
           customExcludes.has(entry.name) ||
@@ -293,7 +305,11 @@ export class WorkspaceDiscovery {
       return 'config';
     }
 
-    if (basename.endsWith('.min.js') || basename.endsWith('.min.css') || basename.endsWith('.map')) {
+    if (
+      basename.endsWith('.min.js') ||
+      basename.endsWith('.min.css') ||
+      basename.endsWith('.map')
+    ) {
       return 'generated';
     }
 

@@ -58,7 +58,9 @@ export class PlanValidator {
           // Dangerous path patterns
           const normalized = file.replace(/\\/g, '/');
           if (normalized.includes('.git/') || normalized.includes('node_modules/')) {
-            errors.push(`[Security] Step "${step.id}" targets protected system/vendor path: "${file}"`);
+            errors.push(
+              `[Security] Step "${step.id}" targets protected system/vendor path: "${file}"`,
+            );
           }
 
           // Existence check

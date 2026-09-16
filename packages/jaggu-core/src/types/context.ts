@@ -11,4 +11,3 @@ export interface IContextEngine {
   gatherContext(query: ContextQuery, abortSignal?: AbortSignal): Promise<unknown>;
   estimateTokens(text: string): number;
 }
-

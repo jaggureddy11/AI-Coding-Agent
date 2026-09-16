@@ -19,14 +19,59 @@ export class AgentStateMachine {
   // Explicit allowed state transitions
   private static readonly ALLOWED_TRANSITIONS: Record<AgentState, ReadonlySet<AgentState>> = {
     [AgentState.IDLE]: new Set([AgentState.UNDERSTANDING, AgentState.CANCELLED]),
-    [AgentState.UNDERSTANDING]: new Set([AgentState.PLANNING, AgentState.COMPLETED, AgentState.FAILED, AgentState.CANCELLED]),
-    [AgentState.PLANNING]: new Set([AgentState.PLAN_REVIEW, AgentState.EDIT_REVIEW, AgentState.EXECUTING, AgentState.FAILED, AgentState.CANCELLED]),
-    [AgentState.PLAN_REVIEW]: new Set([AgentState.EXECUTING, AgentState.PLANNING, AgentState.FAILED, AgentState.CANCELLED]),
-    [AgentState.EXECUTING]: new Set([AgentState.EDIT_REVIEW, AgentState.VERIFYING, AgentState.COMPLETED, AgentState.FAILED, AgentState.CANCELLED]),
-    [AgentState.EDIT_REVIEW]: new Set([AgentState.APPLYING, AgentState.EXECUTING, AgentState.FAILED, AgentState.CANCELLED]),
-    [AgentState.APPLYING]: new Set([AgentState.VERIFYING, AgentState.DIAGNOSING, AgentState.EXECUTING, AgentState.COMPLETED, AgentState.FAILED, AgentState.CANCELLED]),
-    [AgentState.VERIFYING]: new Set([AgentState.COMPLETED, AgentState.DIAGNOSING, AgentState.EXECUTING, AgentState.FAILED, AgentState.CANCELLED]),
-    [AgentState.DIAGNOSING]: new Set([AgentState.EXECUTING, AgentState.PLANNING, AgentState.FAILED, AgentState.CANCELLED]),
+    [AgentState.UNDERSTANDING]: new Set([
+      AgentState.PLANNING,
+      AgentState.COMPLETED,
+      AgentState.FAILED,
+      AgentState.CANCELLED,
+    ]),
+    [AgentState.PLANNING]: new Set([
+      AgentState.PLAN_REVIEW,
+      AgentState.EDIT_REVIEW,
+      AgentState.EXECUTING,
+      AgentState.FAILED,
+      AgentState.CANCELLED,
+    ]),
+    [AgentState.PLAN_REVIEW]: new Set([
+      AgentState.EXECUTING,
+      AgentState.PLANNING,
+      AgentState.FAILED,
+      AgentState.CANCELLED,
+    ]),
+    [AgentState.EXECUTING]: new Set([
+      AgentState.EDIT_REVIEW,
+      AgentState.VERIFYING,
+      AgentState.COMPLETED,
+      AgentState.FAILED,
+      AgentState.CANCELLED,
+    ]),
+    [AgentState.EDIT_REVIEW]: new Set([
+      AgentState.APPLYING,
+      AgentState.EXECUTING,
+      AgentState.FAILED,
+      AgentState.CANCELLED,
+    ]),
+    [AgentState.APPLYING]: new Set([
+      AgentState.VERIFYING,
+      AgentState.DIAGNOSING,
+      AgentState.EXECUTING,
+      AgentState.COMPLETED,
+      AgentState.FAILED,
+      AgentState.CANCELLED,
+    ]),
+    [AgentState.VERIFYING]: new Set([
+      AgentState.COMPLETED,
+      AgentState.DIAGNOSING,
+      AgentState.EXECUTING,
+      AgentState.FAILED,
+      AgentState.CANCELLED,
+    ]),
+    [AgentState.DIAGNOSING]: new Set([
+      AgentState.EXECUTING,
+      AgentState.PLANNING,
+      AgentState.FAILED,
+      AgentState.CANCELLED,
+    ]),
     [AgentState.COMPLETED]: new Set([AgentState.IDLE]),
     [AgentState.FAILED]: new Set([AgentState.IDLE]),
     [AgentState.CANCELLED]: new Set([AgentState.IDLE]),
@@ -60,7 +105,10 @@ export class AgentStateMachine {
     if (nextState === AgentState.EXECUTING) {
       this.currentIteration++;
       if (this.currentIteration > this.limits.maxIterations) {
-        this.transitionTo(AgentState.FAILED, `Exceeded maximum iteration limit (${this.limits.maxIterations})`);
+        this.transitionTo(
+          AgentState.FAILED,
+          `Exceeded maximum iteration limit (${this.limits.maxIterations})`,
+        );
         return;
       }
     }
@@ -71,7 +119,10 @@ export class AgentStateMachine {
     ) {
       this.repairAttempts++;
       if (this.repairAttempts > this.limits.maxRepairAttempts) {
-        this.transitionTo(AgentState.FAILED, `Exceeded maximum test-repair attempts (${this.limits.maxRepairAttempts})`);
+        this.transitionTo(
+          AgentState.FAILED,
+          `Exceeded maximum test-repair attempts (${this.limits.maxRepairAttempts})`,
+        );
         return;
       }
     }

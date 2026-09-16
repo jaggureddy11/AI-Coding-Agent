@@ -15,9 +15,38 @@ import { PromptInjectionSanitizer } from './promptInjection.js';
 import { EventBus } from '../events/eventBus.js';
 
 const STOP_WORDS = new Set([
-  'the', 'is', 'at', 'which', 'on', 'a', 'an', 'and', 'or', 'in', 'for', 'to', 'of',
-  'with', 'by', 'how', 'what', 'where', 'why', 'who', 'does', 'project', 'code',
-  'this', 'that', 'implemented', 'explain', 'show', 'tell', 'me', 'please', 'find',
+  'the',
+  'is',
+  'at',
+  'which',
+  'on',
+  'a',
+  'an',
+  'and',
+  'or',
+  'in',
+  'for',
+  'to',
+  'of',
+  'with',
+  'by',
+  'how',
+  'what',
+  'where',
+  'why',
+  'who',
+  'does',
+  'project',
+  'code',
+  'this',
+  'that',
+  'implemented',
+  'explain',
+  'show',
+  'tell',
+  'me',
+  'please',
+  'find',
 ]);
 
 /**
@@ -28,8 +57,15 @@ export function isSensitiveFilePath(relativePath: string): boolean {
   const normalized = relativePath.replace(/\\/g, '/').toLowerCase();
   const base = path.basename(normalized);
   if (base === '.env' || base.startsWith('.env.') || base.endsWith('.env')) return true;
-  if (base.endsWith('.pem') || base.endsWith('.key') || base.endsWith('.pfx') || base.endsWith('.pkcs12')) return true;
-  if (base === 'id_rsa' || base === 'id_ed25519' || base === 'id_ecdsa' || base === 'id_dsa') return true;
+  if (
+    base.endsWith('.pem') ||
+    base.endsWith('.key') ||
+    base.endsWith('.pfx') ||
+    base.endsWith('.pkcs12')
+  )
+    return true;
+  if (base === 'id_rsa' || base === 'id_ed25519' || base === 'id_ecdsa' || base === 'id_dsa')
+    return true;
   if (base === 'credentials.json' || base === 'service-account.json') return true;
   if (normalized.includes('.git/config') || normalized.includes('.git/credentials')) return true;
   return false;
@@ -149,7 +185,14 @@ export class ContextEngine {
           const matched = this._repoMap.findFilesByName(cleanToken);
           for (const file of matched.slice(0, 2)) {
             if (!candidates.some((c) => c.relativeFilePath === file.relativePath)) {
-              const snippet = await this.loadFileSnippet(file.absolutePath, file.relativePath, 1, 80, 'explicit_reference', 0.9);
+              const snippet = await this.loadFileSnippet(
+                file.absolutePath,
+                file.relativePath,
+                1,
+                80,
+                'explicit_reference',
+                0.9,
+              );
               if (snippet) candidates.push(snippet);
             }
           }
@@ -165,13 +208,23 @@ export class ContextEngine {
         if (kw.length < 3) continue;
         const matched = this._repoMap.findFilesByName(kw);
         for (const file of matched.slice(0, 3)) {
-          if (isSensitiveFilePath(file.relativePath) && !prompt.toLowerCase().includes(path.basename(file.relativePath).toLowerCase())) {
+          if (
+            isSensitiveFilePath(file.relativePath) &&
+            !prompt.toLowerCase().includes(path.basename(file.relativePath).toLowerCase())
+          ) {
             continue; // Shield sensitive credential files from automatic context inclusion
           }
           if (!candidates.some((c) => c.relativeFilePath === file.relativePath)) {
             const isSource = file.classification === 'source';
-            const score = isSource ? 0.90 : 0.80;
-            const snippet = await this.loadFileSnippet(file.absolutePath, file.relativePath, 1, 80, 'filename_match', score);
+            const score = isSource ? 0.9 : 0.8;
+            const snippet = await this.loadFileSnippet(
+              file.absolutePath,
+              file.relativePath,
+              1,
+              80,
+              'filename_match',
+              score,
+            );
             if (snippet) candidates.push(snippet);
           }
         }
@@ -198,7 +251,10 @@ export class ContextEngine {
         );
 
         for (const match of matches) {
-          if (isSensitiveFilePath(match.relativeFilePath) && !prompt.toLowerCase().includes(path.basename(match.relativeFilePath).toLowerCase())) {
+          if (
+            isSensitiveFilePath(match.relativeFilePath) &&
+            !prompt.toLowerCase().includes(path.basename(match.relativeFilePath).toLowerCase())
+          ) {
             continue; // Shield sensitive credential files from automatic context inclusion
           }
           if (candidates.some((c) => c.relativeFilePath === match.relativeFilePath)) {
@@ -234,7 +290,14 @@ export class ContextEngine {
         if (cand.reason === 'active_file' || cand.reason === 'text_search_match') {
           const testFile = this.findPairedTest(cand.relativeFilePath);
           if (testFile && !candidates.some((c) => c.relativeFilePath === testFile.relativePath)) {
-            const testSnippet = await this.loadFileSnippet(testFile.absolutePath, testFile.relativePath, 1, 60, 'test_pairing', 0.6);
+            const testSnippet = await this.loadFileSnippet(
+              testFile.absolutePath,
+              testFile.relativePath,
+              1,
+              60,
+              'test_pairing',
+              0.6,
+            );
             if (testSnippet) candidates.push(testSnippet);
           }
         }
@@ -271,7 +334,8 @@ export class ContextEngine {
       // Enforce per-file byte limit
       let snippetContent = cand.content;
       if (cand.byteSize > this.budgetPolicy.maxBytesPerFile) {
-        snippetContent = snippetContent.slice(0, this.budgetPolicy.maxBytesPerFile) + '\n... [truncated]';
+        snippetContent =
+          snippetContent.slice(0, this.budgetPolicy.maxBytesPerFile) + '\n... [truncated]';
       }
 
       const snippetBytes = Buffer.byteLength(snippetContent, 'utf8');
