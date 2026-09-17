@@ -29,7 +29,11 @@ async function main() {
   }
 }
 
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
+
 // If invoked as entrypoint
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
   main();
 }
+
