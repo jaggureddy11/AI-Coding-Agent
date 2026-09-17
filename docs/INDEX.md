@@ -50,7 +50,7 @@ Built directly on the VS Code extension runtime, JAGGU indexes your codebase wit
 ## 🎬 Demo
 
 <p align="center">
-  <img src="./docs/images/demo.png" alt="JAGGU VS Code Extension Live Interface" width="100%" style="border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.25);" />
+  <img src="./images/demo.png" alt="JAGGU VS Code Extension Live Interface" width="100%" style="border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.25);" />
 </p>
 
 *Above: JAGGU's interactive sidebar inside VS Code with model switching, autonomous plan formulation, approval gates, and native side-by-side diff review.*
