@@ -1,106 +1,726 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>JAGGU UI Live Preview</title>
+  <title>AI-Coding-Agent — Visual Studio Code</title>
   <link rel="stylesheet" href="./webview.css">
   <style>
-    :root {
-      --vscode-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    /* VS Code Light Theme Tokens (Default) */
+    :root, [data-theme="light"] {
+      --vscode-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --vscode-editor-font: 'JetBrains Mono', 'Fira Code', Menlo, Monaco, Consolas, 'Courier New', monospace;
+      
+      --ide-window-bg: #f8f9fa;
+      --ide-titlebar-bg: #f3f3f3;
+      --ide-titlebar-border: #e1e4e8;
+      --ide-titlebar-text: #4b5563;
+
+      --ide-activity-bg: #f8f9fa;
+      --ide-activity-border: #e1e4e8;
+      --ide-activity-icon: #64748b;
+      --ide-activity-icon-active: #007acc;
+      --ide-activity-indicator: #007acc;
+
+      --vscode-sideBar-background: #f8f9fa;
+      --vscode-sideBar-foreground: #24292f;
+      --vscode-foreground: #24292f;
+      --vscode-editor-foreground: #24292f;
+      --vscode-editor-background: #ffffff;
+      --vscode-descriptionForeground: #57606a;
+      --vscode-input-background: #ffffff;
+      --vscode-input-border: #d0d7de;
+      --vscode-input-foreground: #24292f;
+      --vscode-button-background: #007acc;
+      --vscode-button-foreground: #ffffff;
+      --vscode-button-secondaryBackground: #e1e4e8;
+      --vscode-button-secondaryForeground: #24292f;
+      --vscode-editorWidget-background: #ffffff;
+      --vscode-editorWidget-border: #e1e4e8;
+      --vscode-widget-border: #e1e4e8;
+      --vscode-sideBarSectionHeader-background: #f0f2f5;
+      --vscode-sideBarSectionHeader-border: #e1e4e8;
+      --vscode-badge-background: #e1e4e8;
+      --vscode-badge-foreground: #24292f;
+      --vscode-textPreformat-foreground: #795e26;
+      --vscode-charts-blue: #007acc;
+      --vscode-charts-green: #1a7f37;
+      --vscode-scrollbarSlider-background: rgba(100, 100, 100, 0.2);
+      --vscode-scrollbarSlider-hoverBackground: rgba(100, 100, 100, 0.4);
+
+      --ide-editor-bg: #ffffff;
+      --ide-editor-tab-bar-bg: #f0f2f5;
+      --ide-editor-tab-active-bg: #ffffff;
+      --ide-editor-tab-text: #24292f;
+      --ide-editor-tab-border: #e1e4e8;
+      --ide-editor-diff-add-bg: #e6ffed;
+      --ide-editor-diff-add-border: #1a7f37;
+      --ide-editor-code-color: #24292f;
+
+      --ide-statusbar-bg: #007acc;
+      --ide-statusbar-color: #ffffff;
+
+      /* Light Theme Syntax Tokens */
+      --syn-keyword: #0000ff;
+      --syn-type: #267f99;
+      --syn-func: #795e26;
+      --syn-string: #a31515;
+      --syn-var: #001080;
+      --syn-num: #098658;
+      --syn-comment: #008000;
+    }
+
+    /* Dark Theme Tokens (Optional Toggle) */
+    [data-theme="dark"] {
+      --ide-window-bg: #18181b;
+      --ide-titlebar-bg: #141417;
+      --ide-titlebar-border: rgba(255, 255, 255, 0.08);
+      --ide-titlebar-text: #94a3b8;
+
+      --ide-activity-bg: #111114;
+      --ide-activity-border: rgba(255, 255, 255, 0.08);
+      --ide-activity-icon: #71717a;
+      --ide-activity-icon-active: #ffffff;
+      --ide-activity-indicator: #ffffff;
+
       --vscode-sideBar-background: #18181b;
       --vscode-sideBar-foreground: #e4e4e7;
       --vscode-foreground: #e4e4e7;
+      --vscode-editor-foreground: #e4e4e7;
+      --vscode-editor-background: #1e1e24;
       --vscode-descriptionForeground: #a1a1aa;
       --vscode-input-background: #222226;
       --vscode-input-border: rgba(255, 255, 255, 0.12);
       --vscode-input-foreground: #ffffff;
       --vscode-button-background: #0078d4;
       --vscode-button-foreground: #ffffff;
+      --vscode-button-secondaryBackground: rgba(255, 255, 255, 0.08);
+      --vscode-button-secondaryForeground: #ffffff;
       --vscode-editorWidget-background: rgba(255, 255, 255, 0.04);
+      --vscode-editorWidget-border: rgba(255, 255, 255, 0.08);
       --vscode-widget-border: rgba(255, 255, 255, 0.08);
-      --vscode-sideBarSectionHeader-background: rgba(0, 0, 0, 0.2);
+      --vscode-sideBarSectionHeader-background: #161619;
       --vscode-sideBarSectionHeader-border: rgba(255, 255, 255, 0.08);
+      --vscode-badge-background: #333333;
+      --vscode-badge-foreground: #ffffff;
+      --vscode-textPreformat-foreground: #dcdcaa;
+      --vscode-charts-blue: #3794ff;
+      --vscode-charts-green: #4ec9b0;
+
+      --ide-editor-bg: #1b1b22;
+      --ide-editor-tab-bar-bg: #141418;
+      --ide-editor-tab-active-bg: #1e1e24;
+      --ide-editor-tab-text: #e4e4e7;
+      --ide-editor-tab-border: rgba(255, 255, 255, 0.06);
+      --ide-editor-diff-add-bg: rgba(46, 160, 67, 0.15);
+      --ide-editor-diff-add-border: #3fb950;
+      --ide-editor-code-color: #e4e4e7;
+
+      --ide-statusbar-bg: #007acc;
+      --ide-statusbar-color: #ffffff;
+
+      /* Dark Theme Syntax Tokens */
+      --syn-keyword: #ff7b72;
+      --syn-type: #4ec9b0;
+      --syn-func: #dcdcaa;
+      --syn-string: #ce9178;
+      --syn-var: #9cdcfe;
+      --syn-num: #b5cea8;
+      --syn-comment: #6a9955;
     }
-    html, body {
+
+    * {
+      box-sizing: border-box;
       margin: 0;
       padding: 0;
-      background: #0d0d11;
+    }
+
+    html, body {
       height: 100%;
       width: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      background: var(--ide-window-bg);
+      color: var(--vscode-foreground);
       font-family: var(--vscode-font-family);
-    }
-    .preview-wrapper {
+      overflow: hidden;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      gap: 16px;
+      user-select: none;
     }
-    .preview-header {
-      color: #94a3b8;
-      font-size: 13px;
+
+    /* Outer application window */
+    .ide-window {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      width: 100%;
+      background: var(--vscode-sideBar-background);
+      overflow: hidden;
+    }
+
+    /* Window Title Bar */
+    .ide-titlebar {
+      height: 38px;
+      background: var(--ide-titlebar-bg);
+      border-bottom: 1px solid var(--ide-titlebar-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      position: relative;
+    }
+
+    .traffic-lights {
       display: flex;
       align-items: center;
       gap: 8px;
+      z-index: 2;
     }
-    .preview-container {
-      width: 400px;
-      height: 740px;
-      background: #18181b;
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      border-radius: 12px;
+
+    .traffic-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    .dot-close { background: #ff5f56; border: 1px solid #e0443e; }
+    .dot-min   { background: #ffbd2e; border: 1px solid #dea123; }
+    .dot-max   { background: #27c93f; border: 1px solid #1aab29; }
+
+    .window-title {
+      position: absolute;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--ide-titlebar-text);
+      pointer-events: none;
+      letter-spacing: 0.2px;
+    }
+
+    .theme-toggle-btn {
+      z-index: 5;
+      background: var(--vscode-editorWidget-background);
+      border: 1px solid var(--vscode-widget-border);
+      color: var(--vscode-foreground);
+      font-size: 11px;
+      font-weight: 500;
+      padding: 4px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .theme-toggle-btn:hover {
+      background: var(--vscode-button-background);
+      color: #ffffff;
+      border-color: var(--vscode-button-background);
+    }
+
+    /* Main IDE Body */
+    .ide-main {
+      flex: 1;
+      display: flex;
       overflow: hidden;
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+    }
+
+    /* Activity Bar */
+    .activity-bar {
+      width: 48px;
+      background: var(--ide-activity-bg);
+      border-right: 1px solid var(--ide-activity-border);
       display: flex;
       flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 0;
+      z-index: 10;
+    }
+
+    .activity-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+    }
+
+    .activity-icon {
+      width: 48px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--ide-activity-icon);
+      cursor: pointer;
+      position: relative;
+      transition: color 0.15s ease;
+    }
+
+    .activity-icon:hover {
+      color: var(--vscode-foreground);
+    }
+
+    .activity-icon.active {
+      color: var(--ide-activity-icon-active);
+    }
+
+    .activity-icon.active::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 6px;
+      bottom: 6px;
+      width: 3px;
+      background: var(--ide-activity-indicator);
+      border-radius: 0 2px 2px 0;
+    }
+
+    /* Sidebar Container */
+    .ide-sidebar {
+      width: 390px;
+      min-width: 350px;
+      max-width: 450px;
+      background: var(--vscode-sideBar-background);
+      border-right: 1px solid var(--vscode-widget-border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .sidebar-header {
+      height: 35px;
+      padding: 0 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--vscode-sideBarSectionHeader-border);
+      background: var(--vscode-sideBarSectionHeader-background);
+    }
+
+    .sidebar-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      color: var(--vscode-foreground);
+      text-transform: uppercase;
+    }
+
+    .sidebar-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--vscode-charts-green);
+    }
+
+    .status-dot-green {
+      width: 8px;
+      height: 8px;
+      background: var(--vscode-charts-green);
+      border-radius: 50%;
+      box-shadow: 0 0 6px rgba(26, 127, 55, 0.4);
+    }
+
+    .sidebar-content {
+      flex: 1;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    #root {
+      height: 100%;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Editor Container */
+    .ide-editor {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--ide-editor-bg);
+      overflow: hidden;
+    }
+
+    .editor-tabs {
+      height: 36px;
+      background: var(--ide-editor-tab-bar-bg);
+      border-bottom: 1px solid var(--ide-editor-tab-border);
+      display: flex;
+      align-items: flex-end;
+    }
+
+    .editor-tab {
+      height: 36px;
+      background: var(--ide-editor-tab-active-bg);
+      border-top: 2px solid var(--vscode-charts-blue);
+      border-right: 1px solid var(--ide-editor-tab-border);
+      padding: 0 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      color: var(--ide-editor-tab-text);
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .tab-close {
+      color: var(--vscode-descriptionForeground);
+      font-size: 12px;
+      border-radius: 4px;
+      padding: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .tab-close:hover {
+      background: rgba(0, 0, 0, 0.08);
+      color: var(--vscode-foreground);
+    }
+
+    /* Code View Pane */
+    .code-view {
+      flex: 1;
+      overflow: auto;
+      padding: 24px;
+      font-family: var(--vscode-editor-font);
+      font-size: 13.5px;
+      line-height: 1.65;
+      background: var(--ide-editor-bg);
+      color: var(--ide-editor-code-color);
+      user-select: text;
+    }
+
+    .code-line {
+      display: flex;
+      white-space: pre;
+      min-height: 22px;
+    }
+
+    .code-line.diff-add {
+      background-color: var(--ide-editor-diff-add-bg);
+      margin: 0 -24px;
+      padding: 1px 24px;
+    }
+
+    .diff-prefix {
+      color: var(--ide-editor-diff-add-border);
+      font-weight: 700;
+      margin-right: 8px;
+      user-select: none;
+    }
+
+    .t-keyword { color: var(--syn-keyword); font-weight: 600; }
+    .t-type    { color: var(--syn-type); }
+    .t-func    { color: var(--syn-func); }
+    .t-string  { color: var(--syn-string); }
+    .t-var     { color: var(--syn-var); }
+    .t-prop    { color: var(--syn-var); }
+    .t-param   { color: var(--syn-var); }
+    .t-num     { color: var(--syn-num); }
+    .t-punct   { color: var(--vscode-foreground); }
+
+    /* VS Code Status Bar */
+    .ide-statusbar {
+      height: 22px;
+      background: var(--ide-statusbar-bg);
+      color: var(--ide-statusbar-color);
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 12px;
+      z-index: 10;
+    }
+
+    .status-group {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      opacity: 0.95;
+    }
+
+    .status-item:hover {
+      opacity: 1;
     }
   </style>
 </head>
 <body>
-  <div class="preview-wrapper">
-    <div class="preview-header">
-      <span style="font-weight: 600; color: #f8fafc;">JAGGU Autonomous AI Coding Agent</span>
-      <span>•</span>
-      <span>VS Code Sidebar Live Webview</span>
+  <div class="ide-window">
+    <!-- 1. Window Titlebar with Theme Switcher -->
+    <div class="ide-titlebar">
+      <div class="traffic-lights">
+        <div class="traffic-dot dot-close"></div>
+        <div class="traffic-dot dot-min"></div>
+        <div class="traffic-dot dot-max"></div>
+      </div>
+      <div class="window-title">AI-Coding-Agent — Visual Studio Code</div>
+      <button id="themeToggleBtn" class="theme-toggle-btn" title="Toggle Light / Dark theme">
+        <span id="themeIcon">☀️</span>
+        <span id="themeLabel">Light Theme</span>
+      </button>
     </div>
-    <div class="preview-container">
-      <div id="root" style="height: 100%; width: 100%;"></div>
+
+    <!-- 2. Main IDE Body: Activity Bar + Sidebar + Editor -->
+    <div class="ide-main">
+      <!-- Activity Bar -->
+      <div class="activity-bar">
+        <div class="activity-group">
+          <!-- Files Explorer -->
+          <div class="activity-icon" title="Explorer">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+              <polyline points="13 2 13 9 20 9"></polyline>
+            </svg>
+          </div>
+          <!-- Search -->
+          <div class="activity-icon" title="Search">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+          </div>
+          <!-- Source Control -->
+          <div class="activity-icon" title="Source Control">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="18" cy="18" r="3"></circle>
+              <circle cx="6" cy="6" r="3"></circle>
+              <path d="M6 9v12"></path>
+              <path d="M18 9a9 9 0 0 0-9 9"></path>
+            </svg>
+          </div>
+          <!-- JAGGU Glasses Logo (Active) -->
+          <div class="activity-icon active" title="JAGGU Agent">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="6" width="8.5" height="9.5" rx="3" />
+              <rect x="13.5" y="6" width="8.5" height="9.5" rx="3" />
+              <path d="M10.5 9.5a2 2 0 0 1 3 0" />
+              <path d="M2 9.5H1" />
+              <path d="M23 9.5h-1" />
+              <path d="M7.5 9L5.5 10.75L7.5 12.5" />
+              <path d="M16.5 9L18.5 10.75L16.5 12.5" />
+            </svg>
+          </div>
+        </div>
+
+        <div class="activity-group">
+          <!-- User Profile -->
+          <div class="activity-icon" title="Accounts">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+          </div>
+          <!-- Settings Gear -->
+          <div class="activity-icon" title="Settings">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sidebar: JAGGU AGENT -->
+      <div class="ide-sidebar">
+        <div class="sidebar-header">
+          <span class="sidebar-title">JAGGU AGENT</span>
+          <div class="sidebar-badge">
+            <span class="status-dot-green"></span>
+            <span>READY</span>
+          </div>
+        </div>
+        <div class="sidebar-content">
+          <div id="root"></div>
+        </div>
+      </div>
+
+      <!-- Editor Area -->
+      <div class="ide-editor">
+        <!-- Editor Tab Bar -->
+        <div class="editor-tabs">
+          <div class="editor-tab">
+            <span>src/middleware/auth.ts</span>
+            <span class="tab-close">✕</span>
+          </div>
+        </div>
+
+        <!-- Code Content with Diff Highlighting -->
+        <div class="code-view">
+<div class="code-line"><span class="t-keyword">import</span> { <span class="t-type">Request</span>, <span class="t-type">Response</span>, <span class="t-type">NextFunction</span> } <span class="t-keyword">from</span> <span class="t-string">'express'</span>;</div>
+<div class="code-line"><span class="t-keyword">import</span> { <span class="t-func">verifyToken</span> } <span class="t-keyword">from</span> <span class="t-string">'../utils/jwt'</span>;</div>
+<div class="code-line">&nbsp;</div>
+<div class="code-line diff-add"><span class="diff-prefix">+</span><span class="t-keyword">export function</span> <span class="t-func">authMiddleware</span>(<span class="t-param">req</span>: <span class="t-type">Request</span>, <span class="t-param">res</span>: <span class="t-type">Response</span>, <span class="t-param">next</span>: <span class="t-type">NextFunction</span>) {</div>
+<div class="code-line diff-add"><span class="diff-prefix">+</span>  <span class="t-keyword">const</span> <span class="t-var">authHeader</span> = <span class="t-param">req</span>.<span class="t-prop">headers</span>.<span class="t-prop">authorization</span>;</div>
+<div class="code-line diff-add"><span class="diff-prefix">+</span>  <span class="t-keyword">if</span> (!<span class="t-var">authHeader</span>?.<span class="t-func">startsWith</span>(<span class="t-string">'Bearer '</span>)) {</div>
+<div class="code-line diff-add"><span class="diff-prefix">+</span>    <span class="t-keyword">return</span> <span class="t-param">res</span>.<span class="t-func">status</span>(<span class="t-num">401</span>).<span class="t-func">json</span>({ <span class="t-prop">error</span>: <span class="t-string">'Unauthorized: Missing Bearer Token'</span> });</div>
+<div class="code-line diff-add"><span class="diff-prefix">+</span>  }</div>
+<div class="code-line diff-add"><span class="diff-prefix">+</span>  <span class="t-keyword">const</span> <span class="t-var">token</span> = <span class="t-var">authHeader</span>.<span class="t-func">split</span>(<span class="t-string">' '</span>)[<span class="t-num">1</span>];</div>
+<div class="code-line diff-add"><span class="diff-prefix">+</span>  <span class="t-keyword">const</span> <span class="t-var">payload</span> = <span class="t-func">verifyToken</span>(<span class="t-var">token</span>);</div>
+<div class="code-line diff-add"><span class="diff-prefix">+</span>  <span class="t-keyword">if</span> (!<span class="t-var">payload</span>) {</div>
+<div class="code-line diff-add"><span class="diff-prefix">+</span>    <span class="t-keyword">return</span> <span class="t-param">res</span>.<span class="t-func">status</span>(<span class="t-num">403</span>).<span class="t-func">json</span>({ <span class="t-prop">error</span>: <span class="t-string">'Forbidden: Invalid or expired token'</span> });</div>
+<div class="code-line diff-add"><span class="diff-prefix">+</span>  }</div>
+<div class="code-line diff-add"><span class="diff-prefix">+</span>  (<span class="t-param">req</span> <span class="t-keyword">as any</span>).<span class="t-prop">user</span> = <span class="t-var">payload</span>;</div>
+<div class="code-line diff-add"><span class="diff-prefix">+</span>  <span class="t-func">next</span>();</div>
+<div class="code-line diff-add"><span class="diff-prefix">+</span>}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Bottom Status Bar -->
+    <div class="ide-statusbar">
+      <div class="status-group">
+        <div class="status-item">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="6" y1="3" x2="6" y2="15"></line>
+            <circle cx="18" cy="6" r="3"></circle>
+            <circle cx="6" cy="18" r="3"></circle>
+            <path d="M18 9a9 9 0 0 1-9 9"></path>
+          </svg>
+          <span>main</span>
+        </div>
+        <div class="status-item">
+          <span>✓ 0 errors, 0 warnings</span>
+        </div>
+      </div>
+
+      <div class="status-group">
+        <div class="status-item">
+          <span>✨ JAGGU: Ready (mock)</span>
+        </div>
+        <div class="status-item">
+          <span>TypeScript</span>
+        </div>
+        <div class="status-item">
+          <span>UTF-8</span>
+        </div>
+      </div>
     </div>
   </div>
 
   <script>
-    // Mock acquireVsCodeApi for standalone browser preview
+    // Theme toggle handling
+    const toggleBtn = document.getElementById('themeToggleBtn');
+    const themeIcon = document.getElementById('themeIcon');
+    const themeLabel = document.getElementById('themeLabel');
+
+    function setTheme(theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+      if (theme === 'light') {
+        themeIcon.textContent = '☀️';
+        themeLabel.textContent = 'Light Theme';
+      } else {
+        themeIcon.textContent = '🌙';
+        themeLabel.textContent = 'Dark Theme';
+      }
+    }
+
+    toggleBtn.addEventListener('click', () => {
+      const current = document.documentElement.getAttribute('data-theme') || 'light';
+      setTheme(current === 'light' ? 'dark' : 'light');
+    });
+
+    // Default to light theme
+    setTheme('light');
+
+    // Full interactive mock VS Code RPC bridge for standalone browser execution
     window.acquireVsCodeApi = () => ({
       postMessage: (msg) => {
         console.log('[Mock VS Code RPC] Message sent:', msg);
+
         if (msg.type === 'ui.ready') {
+          // Initialize with mock configuration matching the screenshot
           window.postMessage({
             type: 'agent.config',
             payload: {
-              provider: 'openai',
-              model: 'gpt-4o',
+              provider: 'mock',
+              model: 'mock-fast',
               models: [
-                { id: 'auto', name: 'Auto (Recommended)', provider: 'openai', costTier: 'free', maxContextTokens: 128000, description: 'Smart automatic router' },
-                { id: 'gpt-4o', name: 'GPT-4o', provider: 'openai', costTier: 'paid', maxContextTokens: 128000, description: 'High intelligence coding model' },
-                { id: 'claude-3-5-sonnet', name: 'Claude 3.5 Sonnet', provider: 'anthropic', costTier: 'paid', maxContextTokens: 200000, description: 'State of the art coding model' }
+                { id: 'mock-fast', name: 'mock-fast', provider: 'mock', costTier: 'free', maxContextTokens: 128000, description: 'High speed mock testing model' },
+                { id: 'auto', name: 'Auto (Recommended)', provider: 'mock', costTier: 'free', maxContextTokens: 128000, description: 'Smart intelligence router' },
+                { id: 'gpt-4o', name: 'GPT-4o', provider: 'openai', costTier: 'paid', maxContextTokens: 128000, description: 'OpenAI GPT-4o' },
+                { id: 'claude-3-5-sonnet', name: 'Claude 3.5 Sonnet', provider: 'anthropic', costTier: 'paid', maxContextTokens: 200000, description: 'Anthropic Sonnet' }
+              ]
+            }
+          }, '*');
+
+          // Set status to EDIT_REVIEW
+          window.postMessage({
+            type: 'agent.status',
+            payload: { state: 'EDIT_REVIEW', detail: 'Reviewing plan and file changes' }
+          }, '*');
+
+          // Populate the Plan Card
+          window.postMessage({
+            type: 'agent.plan_requested',
+            payload: {
+              taskId: 'task_auth_01',
+              planId: 'plan_auth_01',
+              goal: 'Implement JWT Auth Middleware',
+              steps: [
+                { id: 's1', description: 'Analyze existing auth and express routes', status: 'pending' },
+                { id: 's2', description: 'Draft authMiddleware in src/middleware/auth.ts', status: 'pending' },
+                { id: 's3', description: 'Add unit tests for valid/invalid token scenarios in test/auth.test.ts', status: 'pending' }
+              ],
+              risks: [
+                'Ensure secret rotation fallback is supported',
+                'Token expiration must return 403 HTTP status'
+              ],
+              verification: [
+                'Run npm test to ensure all auth test cases pass'
+              ]
+            }
+          }, '*');
+
+          // Populate Scope Change Requested Card
+          window.postMessage({
+            type: 'agent.scope_change_requested',
+            payload: {
+              taskId: 'task_auth_01',
+              unplannedFiles: ['src/config/jwtSecret.ts'],
+              reason: 'JWT Secret configuration file is required for token verification'
+            }
+          }, '*');
+
+          // Populate Proposed Changes Diff Card
+          window.postMessage({
+            type: 'agent.editset_requested',
+            payload: {
+              editSetId: 'es_auth_01',
+              files: [
+                { filePath: 'src/middleware/auth.ts', additions: 14, deletions: 0, status: 'staged' },
+                { filePath: 'src/config/jwtSecret.ts', additions: 8, deletions: 0, status: 'staged' }
               ]
             }
           }, '*');
         } else if (msg.type === 'user.submit') {
-          // 1. Live processing status
+          // Live status feedback
           window.postMessage({
             type: 'agent.status',
-            payload: { state: 'PROCESSING', detail: 'Analyzing workspace symbols & test suites...' }
+            payload: { state: 'PROCESSING', detail: 'Processing prompt...' }
           }, '*');
 
-          // 2. Simulated response with code blocks, copy button, and plan
           setTimeout(() => {
             window.postMessage({
               type: 'agent.status',
-              payload: { state: 'IDLE', detail: 'Ready' }
+              payload: { state: 'EDIT_REVIEW', detail: 'Ready' }
             }, '*');
 
             window.postMessage({
@@ -108,23 +728,27 @@
               payload: {
                 id: 'asst_' + Date.now(),
                 role: 'assistant',
-                text: 'I have analyzed the workspace. Here is the verified implementation plan and sample code:\\n\\n```typescript\\nimport { ModelGateway, ToolExecutor } from \"@jaggu/core\";\\n\\n// Initialize autonomous coding agent\\nconst gateway = new ModelGateway();\\nconst executor = new ToolExecutor();\\nconsole.log(\"JAGGU Ready: Zero silent writes enforced\");\\n```\\n\\nAll 250 tests passed across all packages. You can review the proposed changes below.',
+                text: 'I have updated the authorization logic and generated the corresponding test fixtures in `test/auth.test.ts`. All test suites are passing.',
                 timestamp: Date.now()
               }
             }, '*');
-
-            // 3. Simulated review proposal
-            setTimeout(() => {
-              window.postMessage({
-                type: 'agent.approval_requested',
-                payload: {
-                  proposalId: 'prop_001',
-                  filePath: 'packages/jaggu-core/src/index.ts',
-                  diffSummary: '+12 lines: Registered new production router & verified safety guards'
-                }
-              }, '*');
-            }, 600);
-          }, 800);
+          }, 600);
+        } else if (msg.type === 'plan.approve') {
+          window.postMessage({
+            type: 'agent.status',
+            payload: { state: 'PROCESSING', detail: 'Plan approved. Staging verified diffs...' }
+          }, '*');
+          setTimeout(() => {
+            window.postMessage({
+              type: 'agent.status',
+              payload: { state: 'EDIT_REVIEW', detail: 'Diffs staged for final review' }
+            }, '*');
+          }, 500);
+        } else if (msg.type === 'scope.approve') {
+          window.postMessage({
+            type: 'agent.status',
+            payload: { state: 'EDIT_REVIEW', detail: 'Scope change approved: src/config/jwtSecret.ts added' }
+          }, '*');
         }
       },
       getState: () => ({}),

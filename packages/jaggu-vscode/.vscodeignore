@@ -23,5 +23,6 @@ dist/virtualDocProvider.js*
 dist/diagnostics/**
 **/*.map
 media/preview.html
+media/index.html
 .DS_Store
 **/.DS_Store
