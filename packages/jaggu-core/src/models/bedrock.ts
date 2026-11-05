@@ -105,6 +105,32 @@ export const BEDROCK_SUPPORTED_MODELS: ModelMetadata[] = [
       maxOutputTokens: 8192,
     },
   },
+  {
+    id: 'amazon.nova-pro-v1:0',
+    displayName: 'Amazon Nova Pro (AWS Bedrock)',
+    providerId: 'bedrock',
+    capabilities: {
+      streaming: true,
+      toolCalling: true,
+      vision: true,
+      structuredOutput: true,
+      maxContextTokens: 300000,
+      maxOutputTokens: 5000,
+    },
+  },
+  {
+    id: 'amazon.nova-lite-v1:0',
+    displayName: 'Amazon Nova Lite (AWS Bedrock)',
+    providerId: 'bedrock',
+    capabilities: {
+      streaming: true,
+      toolCalling: true,
+      vision: true,
+      structuredOutput: true,
+      maxContextTokens: 300000,
+      maxOutputTokens: 5000,
+    },
+  },
 ];
 
 export class BedrockProvider implements IModelProvider {
