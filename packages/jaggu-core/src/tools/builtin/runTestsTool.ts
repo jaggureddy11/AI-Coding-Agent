@@ -133,6 +133,13 @@ export class RunTestsTool implements ITool<RunTestsInput, RunTestsOutput> {
     const timeout = Math.min(60000, args.timeoutMs ?? this.timeoutMs);
     const primaryRoot = context.workspaceRoots?.[0] || context.workspaceRoot;
 
+    const majorVersion = parseInt(process.versions.node.split('.')[0] || '0', 10);
+    const currentOptions = process.env.NODE_OPTIONS || '';
+    const updatedOptions =
+      majorVersion >= 22 && !currentOptions.includes('--experimental-strip-types')
+        ? `${currentOptions} --experimental-strip-types`.trim()
+        : currentOptions;
+
     return new Promise<IToolResult<RunTestsOutput>>((resolve) => {
       let stdout = '';
       let stderr = '';
@@ -140,7 +147,11 @@ export class RunTestsTool implements ITool<RunTestsInput, RunTestsOutput> {
 
       const proc = spawn(executable, cmdArgs, {
         cwd: primaryRoot,
-        env: { ...process.env, CI: 'true' },
+        env: {
+          ...process.env,
+          CI: 'true',
+          ...(updatedOptions ? { NODE_OPTIONS: updatedOptions } : {}),
+        },
         shell: false,
       });
 
