@@ -23,6 +23,12 @@ export function activate(context: vscode.ExtensionContext): {
   const eventBus = new EventBus();
   const docStore = new InMemoryVirtualDocStore();
   const credentialManager = new CredentialManager(context.secrets);
+  const config = vscode.workspace.getConfiguration('jaggu');
+  const configuredRegion = config.get<string>('bedrock.region') || 'ap-southeast-2';
+  if (!process.env.AWS_REGION) {
+    process.env.AWS_REGION = configuredRegion;
+  }
+
   const modelGateway = new ModelGateway();
 
   // 1. Initialize Context Engine with current workspace roots

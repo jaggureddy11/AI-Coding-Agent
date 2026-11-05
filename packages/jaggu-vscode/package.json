@@ -216,8 +216,8 @@
         },
         "jaggu.bedrock.region": {
           "type": "string",
-          "default": "us-east-1",
-          "description": "AWS Region for Amazon Bedrock (e.g. us-east-1, us-west-2, ap-southeast-2)"
+          "default": "ap-southeast-2",
+          "description": "AWS Region for Amazon Bedrock (e.g. ap-southeast-2, us-east-1, us-west-2)"
         },
         "jaggu.huggingface.endpoint": {
           "type": "string",
