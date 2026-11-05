@@ -27,7 +27,7 @@ export class CredentialManager {
 
   public getActiveProvider(): string {
     const config = vscode.workspace.getConfiguration('jaggu');
-    return config.get<string>('provider', 'mock');
+    return config.get<string>('provider', 'bedrock');
   }
 
   public async setActiveProvider(providerId: string): Promise<void> {
@@ -37,12 +37,27 @@ export class CredentialManager {
 
   public getActiveModel(): string {
     const config = vscode.workspace.getConfiguration('jaggu');
-    return config.get<string>('model', 'mock-fast');
+    return config.get<string>('model', 'anthropic.claude-3-5-sonnet-20241022-v2:0');
   }
 
   public async setActiveModel(modelId: string): Promise<void> {
     const config = vscode.workspace.getConfiguration('jaggu');
     await config.update('model', modelId, vscode.ConfigurationTarget.Global);
+  }
+
+  public getBedrockRegion(): string {
+    const config = vscode.workspace.getConfiguration('jaggu');
+    return (
+      config.get<string>('bedrock.region') ||
+      process.env.AWS_REGION ||
+      process.env.AWS_DEFAULT_REGION ||
+      'us-east-1'
+    );
+  }
+
+  public async setBedrockRegion(region: string): Promise<void> {
+    const config = vscode.workspace.getConfiguration('jaggu');
+    await config.update('bedrock.region', region.trim(), vscode.ConfigurationTarget.Global);
   }
 
   public getOllamaBaseUrl(): string {
@@ -96,7 +111,7 @@ export class CredentialManager {
 
   public async getConfiguredCloudProviders(): Promise<string[]> {
     const providers = ['openai', 'anthropic', 'gemini', 'huggingface'];
-    const configured: string[] = ['mock', 'ollama', 'openai-compatible'];
+    const configured: string[] = ['bedrock', 'mock'];
     for (const p of providers) {
       const key = await this.getApiKey(p);
       if (key && key.trim().length > 0) {

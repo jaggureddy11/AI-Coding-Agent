@@ -349,14 +349,18 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
     }
 
     // 3. Probe Cloud provider credentials (non-secret availability check)
-    const cloudProviders = ['openai', 'anthropic', 'gemini', 'huggingface'] as const;
+    const cloudProviders = ['bedrock', 'openai', 'anthropic', 'gemini', 'huggingface'] as const;
     for (const p of cloudProviders) {
       try {
         const key = await this._credentialManager?.getApiKey(p);
         const models = registry.listByProvider(p);
         for (const m of models) {
-          const status = key ? 'available' : 'missing_credentials';
-          const detail = key ? undefined : `Missing API key in VS Code SecretStorage for [${p}]`;
+          // Bedrock can resolve credentials from AWS CLI SSO / env automatically
+          const status = key || p === 'bedrock' ? 'available' : 'missing_credentials';
+          const detail =
+            key || p === 'bedrock'
+              ? undefined
+              : `Missing API key in VS Code SecretStorage for [${p}]`;
           registry.updateModelHealth(m.id, status, detail);
           this.postMessageToWebview({
             type: 'model.health_changed',
@@ -807,10 +811,11 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
     if (
       !apiKey &&
       providerId !== 'mock' &&
+      providerId !== 'bedrock' &&
       providerId !== 'ollama' &&
       providerId !== 'openai-compatible'
     ) {
-      // If Hugging Face is selected without token, check if we can fallback to local ollama or mock
+      // If a cloud model without credentials is selected, fallback to available providers
       const fallback = this._modelRouter.routeFallback(routeResult, 'Missing authentication token');
       if (fallback) {
         routeResult = fallback;
@@ -823,7 +828,7 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
             fromModel: routeResult.selectedModel.displayName,
             toModel: fallback.selectedModel.displayName,
             provider: providerId,
-            reason: 'Missing access token for cloud model; switched to local/fallback model.',
+            reason: 'Missing access token for cloud model; switched to fallback model.',
             attempt: fallback.attempt,
           },
         });
@@ -832,7 +837,7 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
           type: 'agent.error',
           payload: {
             code: 'MISSING_API_KEY',
-            message: `Hugging Face / Provider token is required for [${providerId}]. Please set jaggu.apiKey.${providerId} in SecretStorage or connect local Ollama.`,
+            message: `API token is required for [${providerId}]. Please configure credentials in Settings or AWS CLI.`,
           },
         });
         this._setStatus('ERROR', 'API key missing');
@@ -884,9 +889,11 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
         if (abortSignal.aborted) break;
         iteration++;
 
-        let turnHasToolCall = false;
-        let currentToolCall:
-          { id: string; name: string; arguments: Record<string, unknown> } | undefined;
+        const turnToolCalls: Array<{
+          id: string;
+          name: string;
+          arguments: Record<string, unknown>;
+        }> = [];
         let turnTokens = '';
 
         const descriptor = this._modelGateway.getModelRegistry().findModel(activeModel);
@@ -928,188 +935,189 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
               },
             });
           } else if (chunk.type === 'tool_call_complete') {
-            turnHasToolCall = true;
-            currentToolCall = {
+            turnToolCalls.push({
               id: chunk.id,
               name: chunk.name,
               arguments: chunk.arguments,
-            };
+            });
           }
         }
 
         if (abortSignal.aborted) break;
 
-        // If turn has no tool call, the model has delivered its final textual response
-        if (!turnHasToolCall || !currentToolCall) {
+        // If turn has no tool calls, the model has delivered its final textual response
+        if (turnToolCalls.length === 0) {
           loopFinished = true;
           break;
         }
 
-        if (totalToolCalls >= MAX_TOOL_CALLS) {
+        if (totalToolCalls + turnToolCalls.length > MAX_TOOL_CALLS) {
           throw new Error(`Execution halted: maximum tool call limit (${MAX_TOOL_CALLS}) reached.`);
         }
-        totalToolCalls++;
 
-        // Activity message mapping
-        const toolName = currentToolCall.name;
-        const toolArgs = currentToolCall.arguments;
-        let activityMsg = `Executing ${toolName}...`;
-
-        if (toolName === 'search_code') {
-          activityMsg = `Searching repository for "${toolArgs.query || ''}"...`;
-        } else if (toolName === 'read_file') {
-          activityMsg = `Reading ${toolArgs.filePath || ''}...`;
-        } else if (toolName === 'list_directory') {
-          activityMsg = `Listing directory ${toolArgs.directoryPath || '.'}...`;
-        } else if (toolName === 'propose_edit') {
-          activityMsg = `Preparing changes for ${toolArgs.filePath || ''}...`;
-        } else if (toolName === 'apply_edit') {
-          activityMsg = `Applying changes...`;
-        } else if (toolName === 'run_tests') {
-          activityMsg = `Running tests...`;
-        }
-
-        this._setStatus('PROCESSING', activityMsg);
-        this.postMessageToWebview({
-          type: 'agent.activity',
-          payload: { message: activityMsg },
-        });
-
-        // Record assistant turn with tool call
+        // Record assistant turn with all tool calls
         messages.push({
           role: 'assistant',
           content: turnTokens,
-          toolCalls: [
-            {
-              id: currentToolCall.id,
-              name: currentToolCall.name,
-              arguments: JSON.stringify(currentToolCall.arguments),
-            },
-          ],
+          toolCalls: turnToolCalls.map((tc) => ({
+            id: tc.id,
+            name: tc.name,
+            arguments: JSON.stringify(tc.arguments),
+          })),
         });
 
-        // Mutating tool handling (propose_edit requires human approval before apply)
-        if (toolName === 'propose_edit') {
-          const proposeResult = await this._toolExecutor.executeTool(
-            currentToolCall.id,
-            'propose_edit',
-            toolArgs,
-            toolCtx,
-          );
+        // Execute all tool calls for this turn sequentially
+        for (const currentToolCall of turnToolCalls) {
+          if (abortSignal.aborted) break;
+          totalToolCalls++;
 
-          if (!proposeResult.success || !proposeResult.data) {
-            messages.push({
-              role: 'tool',
-              toolCallId: currentToolCall.id,
-              name: currentToolCall.name,
-              content: JSON.stringify(proposeResult),
-            });
-            continue;
+          const toolName = currentToolCall.name;
+          const toolArgs = currentToolCall.arguments;
+          let activityMsg = `Executing ${toolName}...`;
+
+          if (toolName === 'search_code') {
+            activityMsg = `Searching repository for "${toolArgs.query || ''}"...`;
+          } else if (toolName === 'read_file') {
+            activityMsg = `Reading ${toolArgs.filePath || ''}...`;
+          } else if (toolName === 'list_directory') {
+            activityMsg = `Listing directory ${toolArgs.directoryPath || '.'}...`;
+          } else if (toolName === 'propose_edit') {
+            activityMsg = `Preparing changes for ${toolArgs.filePath || ''}...`;
+          } else if (toolName === 'apply_edit') {
+            activityMsg = `Applying changes...`;
+          } else if (toolName === 'run_tests') {
+            activityMsg = `Running tests...`;
           }
 
-          const proposal = proposeResult.data as ProposedEditRecord;
-
-          // Post approval request to Webview
-          this._setStatus('PROCESSING', 'Waiting for user approval...');
-          this.postMessageToWebview({
-            type: 'agent.approval_requested',
-            payload: {
-              proposalId: proposal.proposalId,
-              filePath: proposal.filePath,
-              diffSummary: proposal.diffSummary,
-              timestamp: Date.now(),
-            },
-          });
+          this._setStatus('PROCESSING', activityMsg);
           this.postMessageToWebview({
             type: 'agent.activity',
-            payload: { message: `Waiting for approval on ${proposal.filePath}` },
+            payload: { message: activityMsg },
           });
 
-          if (abortSignal.aborted) break;
-
-          // Wait for user approval or rejection
-          const approved = await new Promise<boolean>((resolve) => {
-            if (abortSignal.aborted) {
-              resolve(false);
-              return;
-            }
-            this._pendingApprovals.set(proposal.proposalId, resolve);
-            const onAbort = () => {
-              this._pendingApprovals.delete(proposal.proposalId);
-              resolve(false);
-            };
-            abortSignal.addEventListener('abort', onAbort, { once: true });
-          });
-
-          if (abortSignal.aborted) break;
-
-          if (approved) {
-            this._setStatus('PROCESSING', `Applying changes to ${proposal.filePath}...`);
-            this.postMessageToWebview({
-              type: 'agent.activity',
-              payload: { message: `Applying changes to ${proposal.filePath}...` },
-            });
-
-            const applyResult = await this._toolExecutor.executeTool(
-              `${currentToolCall.id}_apply`,
-              'apply_edit',
-              { proposalId: proposal.proposalId },
+          // Mutating tool handling (propose_edit requires human approval before apply)
+          if (toolName === 'propose_edit') {
+            const proposeResult = await this._toolExecutor.executeTool(
+              currentToolCall.id,
+              'propose_edit',
+              toolArgs,
               toolCtx,
             );
 
-            messages.push({
-              role: 'tool',
-              toolCallId: currentToolCall.id,
-              name: currentToolCall.name,
-              content: JSON.stringify({
-                proposal: proposeResult,
-                applyResult,
-                applied: applyResult.success,
-              }),
+            if (!proposeResult.success || !proposeResult.data) {
+              messages.push({
+                role: 'tool',
+                toolCallId: currentToolCall.id,
+                name: currentToolCall.name,
+                content: JSON.stringify(proposeResult),
+              });
+              continue;
+            }
+
+            const proposal = proposeResult.data as ProposedEditRecord;
+
+            // Post approval request to Webview
+            this._setStatus('PROCESSING', 'Waiting for user approval...');
+            this.postMessageToWebview({
+              type: 'agent.approval_requested',
+              payload: {
+                proposalId: proposal.proposalId,
+                filePath: proposal.filePath,
+                diffSummary: proposal.diffSummary,
+                timestamp: Date.now(),
+              },
             });
+            this.postMessageToWebview({
+              type: 'agent.activity',
+              payload: { message: `Waiting for approval on ${proposal.filePath}` },
+            });
+
+            if (abortSignal.aborted) break;
+
+            // Wait for user approval or rejection
+            const approved = await new Promise<boolean>((resolve) => {
+              if (abortSignal.aborted) {
+                resolve(false);
+                return;
+              }
+              this._pendingApprovals.set(proposal.proposalId, resolve);
+              const onAbort = () => {
+                this._pendingApprovals.delete(proposal.proposalId);
+                resolve(false);
+              };
+              abortSignal.addEventListener('abort', onAbort, { once: true });
+            });
+
+            if (abortSignal.aborted) break;
+
+            if (approved) {
+              this._setStatus('PROCESSING', `Applying changes to ${proposal.filePath}...`);
+              this.postMessageToWebview({
+                type: 'agent.activity',
+                payload: { message: `Applying changes to ${proposal.filePath}...` },
+              });
+
+              const applyResult = await this._toolExecutor.executeTool(
+                `${currentToolCall.id}_apply`,
+                'apply_edit',
+                { proposalId: proposal.proposalId },
+                toolCtx,
+              );
+
+              messages.push({
+                role: 'tool',
+                toolCallId: currentToolCall.id,
+                name: currentToolCall.name,
+                content: JSON.stringify({
+                  proposal: proposeResult,
+                  applyResult,
+                  applied: applyResult.success,
+                }),
+              });
+            } else {
+              this._setStatus('PROCESSING', `Edit proposal rejected by user.`);
+              this.postMessageToWebview({
+                type: 'agent.activity',
+                payload: { message: `Changes rejected by user.` },
+              });
+
+              messages.push({
+                role: 'tool',
+                toolCallId: currentToolCall.id,
+                name: currentToolCall.name,
+                content: JSON.stringify({
+                  success: false,
+                  rejected: true,
+                  message: 'User reviewed the diff and rejected this change. Do not apply it.',
+                }),
+              });
+            }
           } else {
-            this._setStatus('PROCESSING', `Edit proposal rejected by user.`);
-            this.postMessageToWebview({
-              type: 'agent.activity',
-              payload: { message: `Changes rejected by user.` },
-            });
+            // Execute SAFE or EXECUTION tool
+            const result = await this._toolExecutor.executeTool(
+              currentToolCall.id,
+              currentToolCall.name,
+              currentToolCall.arguments,
+              toolCtx,
+            );
+
+            if (toolName === 'run_tests') {
+              const testData = result.data as { exitCode?: number; stdout?: string } | undefined;
+              const passed = testData?.exitCode === 0;
+              const testMsg = passed ? 'Tests passed' : 'Tests failed';
+              this.postMessageToWebview({
+                type: 'agent.activity',
+                payload: { message: testMsg },
+              });
+            }
 
             messages.push({
               role: 'tool',
               toolCallId: currentToolCall.id,
               name: currentToolCall.name,
-              content: JSON.stringify({
-                success: false,
-                rejected: true,
-                message: 'User reviewed the diff and rejected this change. Do not apply it.',
-              }),
+              content: JSON.stringify(result),
             });
           }
-        } else {
-          // Execute SAFE or EXECUTION tool
-          const result = await this._toolExecutor.executeTool(
-            currentToolCall.id,
-            currentToolCall.name,
-            currentToolCall.arguments,
-            toolCtx,
-          );
-
-          if (toolName === 'run_tests') {
-            const testData = result.data as { exitCode?: number; stdout?: string } | undefined;
-            const passed = testData?.exitCode === 0;
-            const testMsg = passed ? 'Tests passed' : 'Tests failed';
-            this.postMessageToWebview({
-              type: 'agent.activity',
-              payload: { message: testMsg },
-            });
-          }
-
-          messages.push({
-            role: 'tool',
-            toolCallId: currentToolCall.id,
-            name: currentToolCall.name,
-            content: JSON.stringify(result),
-          });
         }
       }
 

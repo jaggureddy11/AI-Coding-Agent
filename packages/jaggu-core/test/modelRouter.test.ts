@@ -261,5 +261,15 @@ describe('JAGGU ModelRouter & TaskClassifier (Milestone: Multi-Model Gateway)', 
       expect(routedEvent.score).toBeGreaterThan(0);
       expect(routedEvent.fallbackAttempt).toBe(0);
     });
+
+    it('prioritizes Claude 3.5 Sonnet on AWS Bedrock when policy is bedrock-first', () => {
+      const bedrockRouter = new ModelRouter(registry, eventBus, {
+        policy: 'bedrock-first',
+      });
+      const result = bedrockRouter.route('Refactor authentication service and add tests');
+      expect(result.selectedModel.providerId).toBe('bedrock');
+      expect(result.selectedModel.id).toBe('anthropic.claude-3-5-sonnet-20241022-v2:0');
+      expect(result.selectedModel.displayName).toContain('AWS Bedrock');
+    });
   });
 });

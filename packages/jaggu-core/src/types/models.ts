@@ -8,6 +8,7 @@ export interface ModelCapabilities {
 }
 
 export type ModelProviderId =
+  | 'bedrock'
   | 'openai'
   | 'anthropic'
   | 'gemini'

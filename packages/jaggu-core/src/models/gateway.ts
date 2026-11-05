@@ -6,6 +6,7 @@ import {
   ModelError,
 } from '../types/models.js';
 import { EventBus } from '../events/eventBus.js';
+import { BedrockProvider } from './bedrock.js';
 import { OpenAIProvider } from './openai.js';
 import { AnthropicProvider } from './anthropic.js';
 import { GeminiProvider } from './gemini.js';
@@ -32,6 +33,7 @@ export class ModelGateway {
 
   constructor(modelRegistry?: ModelRegistry) {
     this.modelRegistry = modelRegistry ?? new ModelRegistry();
+    this.registerProvider(new BedrockProvider());
     this.registerProvider(new OpenAIProvider());
     this.registerProvider(new AnthropicProvider());
     this.registerProvider(new GeminiProvider());

@@ -41,10 +41,48 @@ export class GeminiProvider implements IModelProvider {
         maxOutputTokens: 8192,
       },
     },
+    {
+      id: 'gemini-1.5-pro-latest',
+      displayName: 'Gemini 1.5 Pro (Latest)',
+      providerId: 'gemini',
+      capabilities: {
+        streaming: true,
+        toolCalling: true,
+        vision: true,
+        structuredOutput: true,
+        maxContextTokens: 2097152,
+        maxOutputTokens: 8192,
+      },
+    },
+    {
+      id: 'gemini-1.5-flash',
+      displayName: 'Gemini 1.5 Flash',
+      providerId: 'gemini',
+      capabilities: {
+        streaming: true,
+        toolCalling: true,
+        vision: true,
+        structuredOutput: true,
+        maxContextTokens: 1048576,
+        maxOutputTokens: 8192,
+      },
+    },
   ];
 
+  private normalizeModel(rawModel?: string): string {
+    if (!rawModel) return this.defaultModel;
+    const aliases: Record<string, string> = {
+      'gemini-1.5-pro': 'gemini-1.5-pro-latest',
+      'gemini-1.5-flash': 'gemini-1.5-flash-latest',
+      'gemini-pro': 'gemini-2.0-flash',
+      'gemini-flash': 'gemini-2.0-flash',
+    };
+    return aliases[rawModel] || rawModel;
+  }
+
   public getCapabilities(model: string): ModelCapabilities {
-    const found = this.supportedModels.find((m) => m.id === model);
+    const normalized = this.normalizeModel(model);
+    const found = this.supportedModels.find((m) => m.id === model || m.id === normalized);
     return (
       found?.capabilities || {
         streaming: true,
@@ -64,15 +102,15 @@ export class GeminiProvider implements IModelProvider {
     const apiKey = options.apiKey;
     if (!apiKey) {
       throw new ModelError(
-        'Google Gemini API key is missing. Configure it in JAGGU settings.',
+        'Google Gemini API key is missing. Configure it in settings.',
         'AUTH_FAILURE',
         this.id,
       );
     }
 
-    const model = options.model || this.defaultModel;
+    const requestedModel = options.model || this.defaultModel;
+    const primaryModel = this.normalizeModel(requestedModel);
     const baseUrl = options.baseUrl || 'https://generativelanguage.googleapis.com';
-    const url = `${baseUrl.replace(/\/+$/, '')}/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${apiKey}`;
 
     const systemMessages = messages.filter((m) => m.role === 'system');
     const systemInstruction =
@@ -99,18 +137,37 @@ export class GeminiProvider implements IModelProvider {
       body.systemInstruction = systemInstruction;
     }
 
-    const response = await resilientFetch(
-      url,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+    const executeRequest = async (modelName: string) => {
+      const url = `${baseUrl.replace(/\/+$/, '')}/v1beta/models/${modelName}:streamGenerateContent?alt=sse&key=${apiKey}`;
+      return await resilientFetch(
+        url,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(body),
+          signal: options.abortSignal,
         },
-        body: JSON.stringify(body),
-        signal: options.abortSignal,
-      },
-      this.id,
-    );
+        this.id,
+      );
+    };
+
+    let response: Response;
+    try {
+      response = await executeRequest(primaryModel);
+    } catch (err) {
+      // If the primary model returned 404 (e.g. models/gemini-1.5-pro not found), fallback to default gemini-2.0-flash
+      if (
+        err instanceof ModelError &&
+        err.code === 'MODEL_NOT_FOUND' &&
+        primaryModel !== this.defaultModel
+      ) {
+        response = await executeRequest(this.defaultModel);
+      } else {
+        throw err;
+      }
+    }
 
     for await (const line of parseSseStream(response, options.abortSignal)) {
       try {

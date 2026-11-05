@@ -19,6 +19,8 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.1162.0",
+    "@aws-sdk/credential-providers": "^3.1162.0",
     "@vscode/ripgrep": "^1.18.0",
     "zod": "^3.24.1"
   }

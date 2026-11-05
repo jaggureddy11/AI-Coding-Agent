@@ -57,7 +57,15 @@ export const AttachedFilesBar: React.FC<AttachedFilesBarProps> = ({
             }}
           >
             <span>📄</span>
-            <span title={file} style={{ maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <span
+              title={file}
+              style={{
+                maxWidth: '160px',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
               {fileName}
             </span>
             <button

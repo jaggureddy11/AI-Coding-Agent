@@ -8,6 +8,8 @@ export * from './agent/fsm.js';
 export * from './types/models.js';
 export * from './types/modelRegistry.js';
 export * from './models/transport.js';
+export * from './models/bedrockAuth.js';
+export * from './models/bedrock.js';
 export * from './models/openai.js';
 export * from './models/anthropic.js';
 export * from './models/gemini.js';

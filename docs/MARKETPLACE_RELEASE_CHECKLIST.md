@@ -4,9 +4,10 @@
 - [x] All commands defined in `package.json` have corresponding handlers in `extension.ts`.
 - [x] Safe configuration defaults established (`jaggu.model = "auto"`, `jaggu.allowPaidFallbackInAuto = false`).
 - [x] Zero hardcoded secrets in repository.
-- [x] Typecheck (`npm run typecheck`) passes with 0 errors across all 4 monorepo workspaces.
+- [x] Typecheck (`npm run typecheck`) passes with 0 errors across all 5 monorepo workspaces.
 - [x] Linter (`npm run lint`) passes with 0 errors and 0 warnings.
-- [x] Test suite (`npm test`) passes 100% (34 suites, 233 tests).
-- [x] VSIX package generated with `vsce package` containing strictly runtime assets (536.5 KB, 12 files).
+- [x] Test suite (`npm test`) passes 100% (40 suites, 265 tests).
+- [x] AWS Bedrock integration with Claude 3.5 Sonnet v2 and cross-region inference validated.
+- [x] VSIX package generated with `vsce package` containing strictly runtime assets (1.3 MB, 10 files).
 - [x] User-facing documentation and README updated.
 - [x] Clean installation validated.

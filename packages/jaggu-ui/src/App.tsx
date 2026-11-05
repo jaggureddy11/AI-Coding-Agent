@@ -11,6 +11,7 @@ import { MarkdownMessage } from './components/MarkdownMessage.js';
 import { FileMentionDropdown } from './components/FileMentionDropdown.js';
 import { AttachedFilesBar } from './components/AttachedFilesBar.js';
 import { ExecutionDrawer, LogEntry } from './components/ExecutionDrawer.js';
+import { ErrorBoundary } from './components/ErrorBoundary.js';
 import {
   VsCodeApi,
   ChatMessage,
@@ -217,7 +218,7 @@ export const App: React.FC<AppProps> = ({
         case 'agent.plan_requested': {
           const { taskId, planId, goal, steps, risks, verification } = msg.payload;
           setActivePlan({ taskId, planId, goal, steps, risks, verification });
-          setStatus('PLAN_REVIEW' as any);
+          setStatus('AWAITING_APPROVAL');
           setStatusDetail('Engineering plan generated — review required');
           break;
         }
@@ -235,7 +236,7 @@ export const App: React.FC<AppProps> = ({
               },
             ];
           });
-          setStatus('EDIT_REVIEW' as any);
+          setStatus('AWAITING_APPROVAL');
           setStatusDetail(`Change set ready: ${files.length} files awaiting review`);
           break;
         }
@@ -613,783 +614,791 @@ export const App: React.FC<AppProps> = ({
   };
 
   return (
-    <div
-      data-testid="jaggu-sidebar"
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100vh',
-        boxSizing: 'border-box',
-        backgroundColor: 'var(--vscode-sideBar-background, #18181b)',
-        color: 'var(--vscode-sideBar-foreground, var(--vscode-foreground, #cccccc))',
-        fontFamily:
-          'var(--vscode-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif)',
-        fontSize: 'var(--vscode-font-size, 13px)',
-        overflow: 'hidden',
-      }}
-    >
-      {/* 1. Header with branding, model selector & status */}
+    <ErrorBoundary fallbackTitle="JAGGU Sidebar Error">
       <div
+        data-testid="jaggu-sidebar"
         style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '8px 14px',
-          borderBottom:
-            '1px solid var(--vscode-sideBarSectionHeader-border, rgba(255, 255, 255, 0.06))',
-          backgroundColor: 'var(--vscode-sideBarSectionHeader-background, rgba(0, 0, 0, 0.1))',
-          backdropFilter: 'blur(8px)',
-          minHeight: '32px',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span
-            style={{
-              fontWeight: 600,
-              fontSize: '12.5px',
-              letterSpacing: '-0.02em',
-              color: 'var(--vscode-foreground, #ffffff)',
-            }}
-          >
-            JAGGU
-          </span>
-
-          <span
-            data-testid="provider-badge"
-            style={{
-              fontSize: '9px',
-              padding: '1px 5px',
-              borderRadius: '4px',
-              backgroundColor: 'rgba(255, 255, 255, 0.06)',
-              color: 'var(--vscode-descriptionForeground, #a1a1aa)',
-              fontWeight: 500,
-              textTransform: 'uppercase',
-              letterSpacing: '0.04em',
-            }}
-          >
-            {activeConfig.provider}
-          </span>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <StatusPill state={status} />
-          {messages.length > 0 && (
-            <button
-              data-testid="clear-btn"
-              onClick={handleClear}
-              title="Clear conversation"
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: 'var(--vscode-descriptionForeground, #858585)',
-                cursor: 'pointer',
-                fontSize: '11px',
-                padding: '2px 6px',
-                borderRadius: '4px',
-                opacity: 0.7,
-                transition: 'opacity 0.15s ease',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.opacity = '1';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.opacity = '0.7';
-              }}
-            >
-              <span>Clear</span>
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Trust & Safe Execution Guarantee Bar (Visually hidden for minimal aesthetic) */}
-      <TrustBadgeBar state={status} />
-
-      {/* 2. Conversation Area */}
-      <div
-        data-testid="conversation-area"
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        style={{
-          flex: 1,
-          overflowY: 'auto',
-          padding: '16px 14px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '14px',
-          position: 'relative',
+          height: '100vh',
+          boxSizing: 'border-box',
+          backgroundColor: 'var(--vscode-sideBar-background, #18181b)',
+          color: 'var(--vscode-sideBar-foreground, var(--vscode-foreground, #cccccc))',
+          fontFamily:
+            'var(--vscode-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif)',
+          fontSize: 'var(--vscode-font-size, 13px)',
+          overflow: 'hidden',
         }}
       >
-        {/* Minimalist Drag-and-Drop Overlay */}
-        {isDraggingOver && (
-          <div
-            data-testid="drag-drop-overlay"
-            style={{
-              position: 'absolute',
-              inset: 8,
-              backgroundColor: 'rgba(9, 9, 11, 0.85)',
-              backdropFilter: 'blur(6px)',
-              border: '2px dashed rgba(96, 165, 250, 0.7)',
-              borderRadius: '10px',
-              zIndex: 100,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              color: '#93c5fd',
-              pointerEvents: 'none',
-            }}
-          >
-            <span style={{ fontSize: '26px' }}>📄</span>
-            <span style={{ fontSize: '13px', fontWeight: 600 }}>Drop files to attach as context</span>
-            <span style={{ fontSize: '11px', opacity: 0.6 }}>Files will be grounded in prompt execution</span>
-          </div>
-        )}
-
-        {messages.length === 0 ? (
-          <div
-            data-testid="empty-state"
-            style={{
-              margin: 'auto 0',
-              textAlign: 'center',
-              padding: '20px 8px',
-              color: 'var(--vscode-descriptionForeground, #858585)',
-            }}
-          >
-            {/* Minimalist Glowing Hero Icon */}
-            <div
+        {/* 1. Header with branding, model selector & status */}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '8px 14px',
+            borderBottom:
+              '1px solid var(--vscode-sideBarSectionHeader-border, rgba(255, 255, 255, 0.06))',
+            backgroundColor: 'var(--vscode-sideBarSectionHeader-background, rgba(0, 0, 0, 0.1))',
+            backdropFilter: 'blur(8px)',
+            minHeight: '32px',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span
               style={{
-                width: '44px',
-                height: '44px',
-                borderRadius: '12px',
-                background: 'rgba(255, 255, 255, 0.05)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
+                fontWeight: 600,
+                fontSize: '12.5px',
+                letterSpacing: '-0.02em',
+                color: 'var(--vscode-foreground, #ffffff)',
+              }}
+            >
+              JAGGU
+            </span>
+
+            <span
+              data-testid="provider-badge"
+              style={{
+                fontSize: '9px',
+                padding: '1px 5px',
+                borderRadius: '4px',
+                backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                color: 'var(--vscode-descriptionForeground, #a1a1aa)',
+                fontWeight: 500,
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+              }}
+            >
+              {activeConfig.provider}
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <StatusPill state={status} />
+            {messages.length > 0 && (
+              <button
+                data-testid="clear-btn"
+                onClick={handleClear}
+                title="Clear conversation"
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--vscode-descriptionForeground, #858585)',
+                  cursor: 'pointer',
+                  fontSize: '11px',
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                  opacity: 0.7,
+                  transition: 'opacity 0.15s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.opacity = '1';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.opacity = '0.7';
+                }}
+              >
+                <span>Clear</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Trust & Safe Execution Guarantee Bar (Visually hidden for minimal aesthetic) */}
+        <TrustBadgeBar state={status} />
+
+        {/* 2. Conversation Area */}
+        <div
+          data-testid="conversation-area"
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          style={{
+            flex: 1,
+            overflowY: 'auto',
+            padding: '16px 14px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '14px',
+            position: 'relative',
+          }}
+        >
+          {/* Minimalist Drag-and-Drop Overlay */}
+          {isDraggingOver && (
+            <div
+              data-testid="drag-drop-overlay"
+              style={{
+                position: 'absolute',
+                inset: 8,
+                backgroundColor: 'rgba(9, 9, 11, 0.85)',
+                backdropFilter: 'blur(6px)',
+                border: '2px dashed rgba(96, 165, 250, 0.7)',
+                borderRadius: '10px',
+                zIndex: 100,
                 display: 'flex',
+                flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                margin: '0 auto 14px',
-                color: 'var(--vscode-foreground, #ffffff)',
-              }}
-            >
-              <svg
-                viewBox="0 0 24 24"
-                width="22"
-                height="22"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <rect x="2" y="6" width="8.5" height="9.5" rx="3" />
-                <rect x="13.5" y="6" width="8.5" height="9.5" rx="3" />
-                <path d="M10.5 9.5a2 2 0 0 1 3 0" />
-                <path d="M2 9.5H1" />
-                <path d="M23 9.5h-1" />
-                <path d="M7.5 9L5.5 10.75L7.5 12.5" />
-                <path d="M16.5 9L18.5 10.75L16.5 12.5" />
-              </svg>
-            </div>
-
-            <div
-              style={{
-                fontSize: '15px',
-                fontWeight: 600,
-                color: 'var(--vscode-foreground, #ffffff)',
-                marginBottom: '16px',
-                letterSpacing: '-0.01em',
-              }}
-            >
-              What would you like me to build?
-            </div>
-
-            {/* Quick Prompt Cards - Minimal Blackbox/Antigravity style */}
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '6px',
-                maxWidth: '300px',
-                margin: '0 auto',
-              }}
-            >
-              {[
-                { title: 'Explain this project' },
-                { title: 'Plan a new feature' },
-                { title: 'Diagnose compiler & test errors' },
-                { title: 'Run tests & verify workspace' },
-              ].map((item) => (
-                <button
-                  key={item.title}
-                  type="button"
-                  onClick={() => {
-                    setInput(item.title);
-                    textareaRef.current?.focus();
-                  }}
-                  style={{
-                    padding: '8px 12px',
-                    textAlign: 'left',
-                    fontSize: '12px',
-                    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                    color: 'var(--vscode-foreground, #e4e4e7)',
-                    border: '1px solid rgba(255, 255, 255, 0.07)',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    transition: 'all 0.15s ease',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.07)';
-                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.03)';
-                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.07)';
-                  }}
-                >
-                  <span style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.4)' }}>⚡</span>
-                  <span style={{ fontWeight: 400 }}>{item.title}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : (
-          messages.map((msg) => (
-            <div
-              key={msg.id}
-              data-testid={`message-${msg.role}`}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                width: '100%',
-              }}
-            >
-              <div
-                style={{
-                  fontSize: '10px',
-                  color: 'var(--vscode-descriptionForeground, #858585)',
-                  marginBottom: '4px',
-                  paddingLeft: msg.role === 'user' ? 0 : '4px',
-                  paddingRight: msg.role === 'user' ? '4px' : 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                }}
-              >
-                {msg.role === 'user' ? (
-                  <>
-                    <span>You</span>
-                    <span>•</span>
-                    <span>
-                      {new Date(msg.timestamp).toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <span style={{ color: '#60a5fa', fontWeight: 600 }}>JAGGU</span>
-                    <span>•</span>
-                    <span>
-                      {new Date(msg.timestamp).toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => navigator.clipboard.writeText(msg.text)}
-                      title="Copy response"
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: 'var(--vscode-descriptionForeground, #858585)',
-                        cursor: 'pointer',
-                        fontSize: '10px',
-                        padding: '1px 5px',
-                        borderRadius: '3px',
-                        opacity: 0.7,
-                        transition: 'opacity 0.15s ease',
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
-                      onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.7')}
-                    >
-                      Copy
-                    </button>
-                  </>
-                )}
-              </div>
-              <div
-                style={{
-                  maxWidth: '92%',
-                  padding: '10px 14px',
-                  borderRadius: msg.role === 'user' ? '12px 12px 3px 12px' : '12px 12px 12px 3px',
-                  fontSize: '12px',
-                  lineHeight: 1.55,
-                  wordBreak: 'break-word',
-                  backgroundColor:
-                    msg.role === 'user'
-                      ? 'var(--vscode-button-background, #0078d4)'
-                      : 'rgba(255, 255, 255, 0.05)',
-                  color:
-                    msg.role === 'user'
-                      ? 'var(--vscode-button-foreground, #ffffff)'
-                      : 'var(--vscode-foreground, #e4e4e7)',
-                  border: msg.role === 'user' ? 'none' : '1px solid rgba(255, 255, 255, 0.08)',
-                  boxShadow:
-                    msg.role === 'user'
-                      ? '0 2px 8px rgba(0, 120, 212, 0.3)'
-                      : '0 2px 8px rgba(0, 0, 0, 0.15)',
-                }}
-              >
-                {msg.role === 'assistant' ? (
-                  <MarkdownMessage content={msg.text} />
-                ) : (
-                  <div style={{ whiteSpace: 'pre-wrap' }}>{msg.text}</div>
-                )}
-              </div>
-              {msg.role === 'assistant' && msg.provenance && msg.provenance.length > 0 && (
-                <div style={{ marginTop: '4px', paddingLeft: '2px' }}>
-                  <ContextPill provenance={msg.provenance} />
-                </div>
-              )}
-            </div>
-          ))
-        )}
-
-        {/* Active Plan requiring user review */}
-        {activePlan && (
-          <div data-testid="plan-container">
-            <PlanCard
-              planId={activePlan.planId}
-              goal={activePlan.goal}
-              steps={activePlan.steps}
-              risks={activePlan.risks}
-              verification={activePlan.verification}
-              onApprove={handleApprovePlan}
-              onReject={handleRejectPlan}
-            />
-          </div>
-        )}
-
-        {/* Scope change notification requiring user review */}
-        {scopeChange && (
-          <div
-            data-testid="scope-change-banner"
-            style={{
-              padding: '12px 14px',
-              borderRadius: '8px',
-              fontSize: '12px',
-              backgroundColor: 'rgba(204, 167, 0, 0.12)',
-              border: '1px solid rgba(204, 167, 0, 0.4)',
-              color: 'var(--vscode-foreground, #ffffff)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '8px',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                fontWeight: 600,
-                color: '#facc15',
-              }}
-            >
-              <span>⚠️</span>
-              <span>Scope Change Requested</span>
-            </div>
-            <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.8)' }}>
-              {scopeChange.reason}
-            </div>
-            <div style={{ fontSize: '11px' }}>
-              <strong>Unplanned files:</strong>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
-                {scopeChange.unplannedFiles.map((f) => (
-                  <span
-                    key={f}
-                    style={{
-                      fontFamily: 'monospace',
-                      padding: '2px 6px',
-                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                      borderRadius: '4px',
-                    }}
-                  >
-                    {f}
-                  </span>
-                ))}
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
-              <button
-                type="button"
-                onClick={handleApproveScope}
-                style={{
-                  padding: '5px 12px',
-                  backgroundColor: 'var(--vscode-button-background, #0078d4)',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontSize: '11px',
-                  fontWeight: 600,
-                }}
-              >
-                Approve Scope
-              </button>
-              <button
-                type="button"
-                onClick={handleRejectScope}
-                style={{
-                  padding: '5px 12px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                  color: '#cccccc',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontSize: '11px',
-                }}
-              >
-                Reject Scope
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Pending / recent proposed edits requiring user review */}
-        {proposals.length > 0 && (
-          <div
-            data-testid="proposals-container"
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '10px',
-              margin: '6px 0',
-            }}
-          >
-            {proposals.map((prop) => (
-              <ApprovalCard
-                key={prop.proposalId}
-                proposalId={prop.proposalId}
-                filePath={prop.filePath}
-                files={prop.files}
-                diffSummary={prop.diffSummary}
-                status={prop.status}
-                onReviewDiff={handleReviewDiff}
-                onApprove={handleApproveProposal}
-                onReject={handleRejectProposal}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* Status detail when processing */}
-        {status === 'PROCESSING' && (
-          <div
-            data-testid="processing-indicator"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              padding: '10px 14px',
-              borderRadius: '8px',
-              fontSize: '12px',
-              backgroundColor: 'rgba(0, 120, 212, 0.12)',
-              color: '#60a5fa',
-              border: '1px solid rgba(0, 120, 212, 0.25)',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
-            }}
-          >
-            <span style={{ display: 'inline-block', animation: 'spin 1s linear infinite' }}>
-              ⏳
-            </span>
-            <span style={{ fontWeight: 500 }}>
-              {statusDetail || 'JAGGU is processing your request...'}
-            </span>
-          </div>
-        )}
-
-        {/* Error notification */}
-        {errorMessage && (
-          <div
-            data-testid="error-banner"
-            style={{
-              padding: '10px 14px',
-              borderRadius: '8px',
-              fontSize: '12px',
-              backgroundColor: 'rgba(239, 68, 68, 0.15)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              color: '#fca5a5',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: '8px',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span>⚠️</span>
-              <span>{errorMessage}</span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setErrorMessage(null)}
-              title="Dismiss error"
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: '#fca5a5',
-                cursor: 'pointer',
-                fontSize: '14px',
-                padding: '0 4px',
-                lineHeight: 1,
-                opacity: 0.8,
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
-              onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.8')}
-            >
-              ✕
-            </button>
-          </div>
-        )}
-
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* 3. Floating Prompt Input Area (Antigravity & Claude Style) */}
-      <div
-        style={{
-          padding: '12px 14px 14px',
-          borderTop:
-            '1px solid var(--vscode-sideBarSectionHeader-border, rgba(255, 255, 255, 0.08))',
-          backgroundColor: 'var(--vscode-sideBar-background, #18181b)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '6px',
-        }}
-      >
-        {/* Attached Workspace Files Chips */}
-        <AttachedFilesBar
-          files={attachedFiles}
-          onRemove={handleRemoveAttachedFile}
-          onClearAll={handleClearAttachedFiles}
-        />
-
-        <form onSubmit={handleSubmit}>
-          <div
-            style={{
-              position: 'relative',
-              backgroundColor: 'var(--vscode-input-background, #222226)',
-              border: '1px solid var(--vscode-input-border, rgba(255, 255, 255, 0.12))',
-              borderRadius: '10px',
-              padding: '10px 12px 8px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '8px',
-              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)',
-            }}
-          >
-            {/* @file Mention Autocomplete Dropdown */}
-            {mentionQuery !== null && (
-              <FileMentionDropdown
-                files={workspaceFiles}
-                query={mentionQuery}
-                selectedIndex={mentionIndex}
-                onSelect={handleSelectMention}
-                onClose={() => setMentionQuery(null)}
-              />
-            )}
-
-            <textarea
-              ref={textareaRef}
-              data-testid="prompt-input"
-              value={input}
-              onChange={handleInputChange}
-              onKeyDown={handleKeyDown}
-              placeholder="Type a task... Type @ to reference files (Enter ↵ to send, Shift+Enter for newline)"
-              rows={2}
-              disabled={status === 'PROCESSING'}
-              style={{
-                width: '100%',
-                boxSizing: 'border-box',
-                border: 'none',
-                backgroundColor: 'transparent',
-                color: 'var(--vscode-input-foreground, #ffffff)',
-                fontSize: '12.5px',
-                fontFamily: 'inherit',
-                lineHeight: 1.5,
-                resize: 'none',
-                outline: 'none',
-                minHeight: '44px',
-                maxHeight: '160px',
-                overflowY: 'auto',
-              }}
-            />
-
-            {/* Inner Controls Bar */}
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                paddingTop: '4px',
                 gap: '8px',
-                flexWrap: 'wrap',
+                color: '#93c5fd',
+                pointerEvents: 'none',
               }}
             >
+              <span style={{ fontSize: '26px' }}>📄</span>
+              <span style={{ fontSize: '13px', fontWeight: 600 }}>
+                Drop files to attach as context
+              </span>
+              <span style={{ fontSize: '11px', opacity: 0.6 }}>
+                Files will be grounded in prompt execution
+              </span>
+            </div>
+          )}
+
+          {messages.length === 0 ? (
+            <div
+              data-testid="empty-state"
+              style={{
+                margin: 'auto 0',
+                textAlign: 'center',
+                padding: '20px 8px',
+                color: 'var(--vscode-descriptionForeground, #858585)',
+              }}
+            >
+              {/* Minimalist Glowing Hero Icon */}
+              <div
+                style={{
+                  width: '44px',
+                  height: '44px',
+                  borderRadius: '12px',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 14px',
+                  color: 'var(--vscode-foreground, #ffffff)',
+                }}
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width="22"
+                  height="22"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <rect x="2" y="6" width="8.5" height="9.5" rx="3" />
+                  <rect x="13.5" y="6" width="8.5" height="9.5" rx="3" />
+                  <path d="M10.5 9.5a2 2 0 0 1 3 0" />
+                  <path d="M2 9.5H1" />
+                  <path d="M23 9.5h-1" />
+                  <path d="M7.5 9L5.5 10.75L7.5 12.5" />
+                  <path d="M16.5 9L18.5 10.75L16.5 12.5" />
+                </svg>
+              </div>
+
+              <div
+                style={{
+                  fontSize: '15px',
+                  fontWeight: 600,
+                  color: 'var(--vscode-foreground, #ffffff)',
+                  marginBottom: '16px',
+                  letterSpacing: '-0.01em',
+                }}
+              >
+                What would you like me to build?
+              </div>
+
+              {/* Quick Prompt Cards - Minimal Blackbox/Antigravity style */}
               <div
                 style={{
                   display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  fontSize: '11px',
-                  flexWrap: 'wrap',
+                  flexDirection: 'column',
+                  gap: '6px',
+                  maxWidth: '300px',
+                  margin: '0 auto',
                 }}
               >
-                <span
-                  style={{
-                    padding: '2px 6px',
-                    borderRadius: '4px',
-                    backgroundColor: 'rgba(255, 255, 255, 0.06)',
-                    fontSize: '10px',
-                    fontFamily: 'monospace',
-                    color: '#93c5fd',
-                  }}
-                >
-                  @workspace
-                </span>
-
-                {/* Collapsible Execution Terminal Toggle Button */}
-                <button
-                  type="button"
-                  data-testid="terminal-toggle-btn"
-                  onClick={() => setIsTerminalOpen((prev) => !prev)}
-                  title="Toggle execution terminal drawer"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    padding: '2px 7px',
-                    borderRadius: '4px',
-                    backgroundColor: isTerminalOpen
-                      ? 'rgba(59, 130, 246, 0.15)'
-                      : 'rgba(255, 255, 255, 0.05)',
-                    border: isTerminalOpen
-                      ? '1px solid rgba(59, 130, 246, 0.35)'
-                      : '1px solid rgba(255, 255, 255, 0.08)',
-                    color: isTerminalOpen ? '#93c5fd' : 'rgba(255, 255, 255, 0.65)',
-                    cursor: 'pointer',
-                    fontSize: '10px',
-                    fontFamily: 'monospace',
-                    transition: 'all 0.15s ease',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = isTerminalOpen
-                      ? 'rgba(59, 130, 246, 0.15)'
-                      : 'rgba(255, 255, 255, 0.05)';
-                  }}
-                >
-                  <span>&gt;_</span>
-                  <span>Terminal</span>
-                  {terminalLogs.length > 0 && (
-                    <span style={{ opacity: 0.65, fontSize: '9px' }}>({terminalLogs.length})</span>
-                  )}
-                </button>
-
-                {availableModels.length > 0 && (
-                  <ModelSelector
-                    models={availableModels}
-                    activeModelId={activeModelId}
-                    onSelectModel={handleModelSelect}
-                    onRefreshHealth={handleRefreshHealth}
-                  />
-                )}
-              </div>
-
-              <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                <VoiceTypingButton
-                  onTranscript={handleVoiceTranscript}
-                  disabled={status === 'PROCESSING'}
-                />
-                {status === 'PROCESSING' ? (
+                {[
+                  { title: 'Explain this project' },
+                  { title: 'Plan a new feature' },
+                  { title: 'Diagnose compiler & test errors' },
+                  { title: 'Run tests & verify workspace' },
+                ].map((item) => (
                   <button
-                    data-testid="cancel-btn"
+                    key={item.title}
                     type="button"
-                    onClick={handleCancel}
+                    onClick={() => {
+                      setInput(item.title);
+                      textareaRef.current?.focus();
+                    }}
                     style={{
-                      padding: '5px 12px',
-                      backgroundColor: 'rgba(239, 68, 68, 0.2)',
-                      color: '#f87171',
-                      border: '1px solid rgba(239, 68, 68, 0.35)',
-                      borderRadius: '6px',
-                      fontSize: '11px',
-                      fontWeight: 600,
+                      padding: '8px 12px',
+                      textAlign: 'left',
+                      fontSize: '12px',
+                      backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                      color: 'var(--vscode-foreground, #e4e4e7)',
+                      border: '1px solid rgba(255, 255, 255, 0.07)',
+                      borderRadius: '8px',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '4px',
+                      gap: '8px',
+                      transition: 'all 0.15s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.07)';
+                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.03)';
+                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.07)';
                     }}
                   >
-                    <span>■</span>
-                    <span>Cancel</span>
+                    <span style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.4)' }}>⚡</span>
+                    <span style={{ fontWeight: 400 }}>{item.title}</span>
                   </button>
-                ) : (
-                  <button
-                    data-testid="submit-btn"
-                    type="submit"
-                    disabled={!input.trim() && attachedFiles.length === 0}
+                ))}
+              </div>
+            </div>
+          ) : (
+            messages.map((msg) => (
+              <div
+                key={msg.id}
+                data-testid={`message-${msg.role}`}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                  width: '100%',
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: '10px',
+                    color: 'var(--vscode-descriptionForeground, #858585)',
+                    marginBottom: '4px',
+                    paddingLeft: msg.role === 'user' ? 0 : '4px',
+                    paddingRight: msg.role === 'user' ? '4px' : 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
+                >
+                  {msg.role === 'user' ? (
+                    <>
+                      <span>You</span>
+                      <span>•</span>
+                      <span>
+                        {new Date(msg.timestamp).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <span style={{ color: '#60a5fa', fontWeight: 600 }}>JAGGU</span>
+                      <span>•</span>
+                      <span>
+                        {new Date(msg.timestamp).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => navigator.clipboard.writeText(msg.text)}
+                        title="Copy response"
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: 'var(--vscode-descriptionForeground, #858585)',
+                          cursor: 'pointer',
+                          fontSize: '10px',
+                          padding: '1px 5px',
+                          borderRadius: '3px',
+                          opacity: 0.7,
+                          transition: 'opacity 0.15s ease',
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
+                        onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.7')}
+                      >
+                        Copy
+                      </button>
+                    </>
+                  )}
+                </div>
+                <div
+                  style={{
+                    maxWidth: '92%',
+                    padding: '10px 14px',
+                    borderRadius: msg.role === 'user' ? '12px 12px 3px 12px' : '12px 12px 12px 3px',
+                    fontSize: '12px',
+                    lineHeight: 1.55,
+                    wordBreak: 'break-word',
+                    backgroundColor:
+                      msg.role === 'user'
+                        ? 'var(--vscode-button-background, #0078d4)'
+                        : 'rgba(255, 255, 255, 0.05)',
+                    color:
+                      msg.role === 'user'
+                        ? 'var(--vscode-button-foreground, #ffffff)'
+                        : 'var(--vscode-foreground, #e4e4e7)',
+                    border: msg.role === 'user' ? 'none' : '1px solid rgba(255, 255, 255, 0.08)',
+                    boxShadow:
+                      msg.role === 'user'
+                        ? '0 2px 8px rgba(0, 120, 212, 0.3)'
+                        : '0 2px 8px rgba(0, 0, 0, 0.15)',
+                  }}
+                >
+                  {msg.role === 'assistant' ? (
+                    <MarkdownMessage content={msg.text} />
+                  ) : (
+                    <div style={{ whiteSpace: 'pre-wrap' }}>{msg.text}</div>
+                  )}
+                </div>
+                {msg.role === 'assistant' && msg.provenance && msg.provenance.length > 0 && (
+                  <div style={{ marginTop: '4px', paddingLeft: '2px' }}>
+                    <ContextPill provenance={msg.provenance} />
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+
+          {/* Active Plan requiring user review */}
+          {activePlan && (
+            <div data-testid="plan-container">
+              <PlanCard
+                planId={activePlan.planId}
+                goal={activePlan.goal}
+                steps={activePlan.steps}
+                risks={activePlan.risks}
+                verification={activePlan.verification}
+                onApprove={handleApprovePlan}
+                onReject={handleRejectPlan}
+              />
+            </div>
+          )}
+
+          {/* Scope change notification requiring user review */}
+          {scopeChange && (
+            <div
+              data-testid="scope-change-banner"
+              style={{
+                padding: '12px 14px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                backgroundColor: 'rgba(204, 167, 0, 0.12)',
+                border: '1px solid rgba(204, 167, 0, 0.4)',
+                color: 'var(--vscode-foreground, #ffffff)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontWeight: 600,
+                  color: '#facc15',
+                }}
+              >
+                <span>⚠️</span>
+                <span>Scope Change Requested</span>
+              </div>
+              <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.8)' }}>
+                {scopeChange.reason}
+              </div>
+              <div style={{ fontSize: '11px' }}>
+                <strong>Unplanned files:</strong>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
+                  {scopeChange.unplannedFiles.map((f) => (
+                    <span
+                      key={f}
+                      style={{
+                        fontFamily: 'monospace',
+                        padding: '2px 6px',
+                        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                        borderRadius: '4px',
+                      }}
+                    >
+                      {f}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
+                <button
+                  type="button"
+                  onClick={handleApproveScope}
+                  style={{
+                    padding: '5px 12px',
+                    backgroundColor: 'var(--vscode-button-background, #0078d4)',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                  }}
+                >
+                  Approve Scope
+                </button>
+                <button
+                  type="button"
+                  onClick={handleRejectScope}
+                  style={{
+                    padding: '5px 12px',
+                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                    color: '#cccccc',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '11px',
+                  }}
+                >
+                  Reject Scope
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Pending / recent proposed edits requiring user review */}
+          {proposals.length > 0 && (
+            <div
+              data-testid="proposals-container"
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px',
+                margin: '6px 0',
+              }}
+            >
+              {proposals.map((prop) => (
+                <ApprovalCard
+                  key={prop.proposalId}
+                  proposalId={prop.proposalId}
+                  filePath={prop.filePath}
+                  files={prop.files}
+                  diffSummary={prop.diffSummary}
+                  status={prop.status}
+                  onReviewDiff={handleReviewDiff}
+                  onApprove={handleApproveProposal}
+                  onReject={handleRejectProposal}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Status detail when processing */}
+          {status === 'PROCESSING' && (
+            <div
+              data-testid="processing-indicator"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                padding: '10px 14px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                backgroundColor: 'rgba(0, 120, 212, 0.12)',
+                color: '#60a5fa',
+                border: '1px solid rgba(0, 120, 212, 0.25)',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+              }}
+            >
+              <span style={{ display: 'inline-block', animation: 'spin 1s linear infinite' }}>
+                ⏳
+              </span>
+              <span style={{ fontWeight: 500 }}>
+                {statusDetail || 'JAGGU is processing your request...'}
+              </span>
+            </div>
+          )}
+
+          {/* Error notification */}
+          {errorMessage && (
+            <div
+              data-testid="error-banner"
+              style={{
+                padding: '10px 14px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                color: '#fca5a5',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '8px',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>⚠️</span>
+                <span>{errorMessage}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setErrorMessage(null)}
+                title="Dismiss error"
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#fca5a5',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  padding: '0 4px',
+                  lineHeight: 1,
+                  opacity: 0.8,
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
+                onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.8')}
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* 3. Floating Prompt Input Area (Antigravity & Claude Style) */}
+        <div
+          style={{
+            padding: '12px 14px 14px',
+            borderTop:
+              '1px solid var(--vscode-sideBarSectionHeader-border, rgba(255, 255, 255, 0.08))',
+            backgroundColor: 'var(--vscode-sideBar-background, #18181b)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px',
+          }}
+        >
+          {/* Attached Workspace Files Chips */}
+          <AttachedFilesBar
+            files={attachedFiles}
+            onRemove={handleRemoveAttachedFile}
+            onClearAll={handleClearAttachedFiles}
+          />
+
+          <form onSubmit={handleSubmit}>
+            <div
+              style={{
+                position: 'relative',
+                backgroundColor: 'var(--vscode-input-background, #222226)',
+                border: '1px solid var(--vscode-input-border, rgba(255, 255, 255, 0.12))',
+                borderRadius: '10px',
+                padding: '10px 12px 8px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)',
+              }}
+            >
+              {/* @file Mention Autocomplete Dropdown */}
+              {mentionQuery !== null && (
+                <FileMentionDropdown
+                  files={workspaceFiles}
+                  query={mentionQuery}
+                  selectedIndex={mentionIndex}
+                  onSelect={handleSelectMention}
+                  onClose={() => setMentionQuery(null)}
+                />
+              )}
+
+              <textarea
+                ref={textareaRef}
+                data-testid="prompt-input"
+                value={input}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
+                placeholder="Type a task... Type @ to reference files (Enter ↵ to send, Shift+Enter for newline)"
+                rows={2}
+                disabled={status === 'PROCESSING'}
+                style={{
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  border: 'none',
+                  backgroundColor: 'transparent',
+                  color: 'var(--vscode-input-foreground, #ffffff)',
+                  fontSize: '12.5px',
+                  fontFamily: 'inherit',
+                  lineHeight: 1.5,
+                  resize: 'none',
+                  outline: 'none',
+                  minHeight: '44px',
+                  maxHeight: '160px',
+                  overflowY: 'auto',
+                }}
+              />
+
+              {/* Inner Controls Bar */}
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  paddingTop: '4px',
+                  gap: '8px',
+                  flexWrap: 'wrap',
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    fontSize: '11px',
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  <span
                     style={{
-                      padding: '5px 14px',
-                      backgroundColor:
-                        input.trim() || attachedFiles.length > 0
-                          ? 'var(--vscode-button-background, #0078d4)'
-                          : 'rgba(255, 255, 255, 0.08)',
-                      color:
-                        input.trim() || attachedFiles.length > 0
-                          ? 'var(--vscode-button-foreground, #ffffff)'
-                          : 'var(--vscode-disabledForeground, #71717a)',
-                      border: 'none',
-                      borderRadius: '6px',
-                      fontSize: '11px',
-                      fontWeight: 600,
-                      cursor:
-                        input.trim() || attachedFiles.length > 0 ? 'pointer' : 'not-allowed',
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                      fontSize: '10px',
+                      fontFamily: 'monospace',
+                      color: '#93c5fd',
+                    }}
+                  >
+                    @workspace
+                  </span>
+
+                  {/* Collapsible Execution Terminal Toggle Button */}
+                  <button
+                    type="button"
+                    data-testid="terminal-toggle-btn"
+                    onClick={() => setIsTerminalOpen((prev) => !prev)}
+                    title="Toggle execution terminal drawer"
+                    style={{
                       display: 'flex',
                       alignItems: 'center',
                       gap: '4px',
+                      padding: '2px 7px',
+                      borderRadius: '4px',
+                      backgroundColor: isTerminalOpen
+                        ? 'rgba(59, 130, 246, 0.15)'
+                        : 'rgba(255, 255, 255, 0.05)',
+                      border: isTerminalOpen
+                        ? '1px solid rgba(59, 130, 246, 0.35)'
+                        : '1px solid rgba(255, 255, 255, 0.08)',
+                      color: isTerminalOpen ? '#93c5fd' : 'rgba(255, 255, 255, 0.65)',
+                      cursor: 'pointer',
+                      fontSize: '10px',
+                      fontFamily: 'monospace',
                       transition: 'all 0.15s ease',
-                      boxShadow:
-                        input.trim() || attachedFiles.length > 0
-                          ? '0 2px 8px rgba(0, 120, 212, 0.35)'
-                          : 'none',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = isTerminalOpen
+                        ? 'rgba(59, 130, 246, 0.15)'
+                        : 'rgba(255, 255, 255, 0.05)';
                     }}
                   >
-                    <span>Send</span>
-                    <span>↑</span>
+                    <span>&gt;_</span>
+                    <span>Terminal</span>
+                    {terminalLogs.length > 0 && (
+                      <span style={{ opacity: 0.65, fontSize: '9px' }}>
+                        ({terminalLogs.length})
+                      </span>
+                    )}
                   </button>
-                )}
+
+                  {availableModels.length > 0 && (
+                    <ModelSelector
+                      models={availableModels}
+                      activeModelId={activeModelId}
+                      onSelectModel={handleModelSelect}
+                      onRefreshHealth={handleRefreshHealth}
+                    />
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                  <VoiceTypingButton
+                    onTranscript={handleVoiceTranscript}
+                    disabled={status === 'PROCESSING'}
+                  />
+                  {status === 'PROCESSING' ? (
+                    <button
+                      data-testid="cancel-btn"
+                      type="button"
+                      onClick={handleCancel}
+                      style={{
+                        padding: '5px 12px',
+                        backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                        color: '#f87171',
+                        border: '1px solid rgba(239, 68, 68, 0.35)',
+                        borderRadius: '6px',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                      }}
+                    >
+                      <span>■</span>
+                      <span>Cancel</span>
+                    </button>
+                  ) : (
+                    <button
+                      data-testid="submit-btn"
+                      type="submit"
+                      disabled={!input.trim() && attachedFiles.length === 0}
+                      style={{
+                        padding: '5px 14px',
+                        backgroundColor:
+                          input.trim() || attachedFiles.length > 0
+                            ? 'var(--vscode-button-background, #0078d4)'
+                            : 'rgba(255, 255, 255, 0.08)',
+                        color:
+                          input.trim() || attachedFiles.length > 0
+                            ? 'var(--vscode-button-foreground, #ffffff)'
+                            : 'var(--vscode-disabledForeground, #71717a)',
+                        border: 'none',
+                        borderRadius: '6px',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        cursor:
+                          input.trim() || attachedFiles.length > 0 ? 'pointer' : 'not-allowed',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        transition: 'all 0.15s ease',
+                        boxShadow:
+                          input.trim() || attachedFiles.length > 0
+                            ? '0 2px 8px rgba(0, 120, 212, 0.35)'
+                            : 'none',
+                      }}
+                    >
+                      <span>Send</span>
+                      <span>↑</span>
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        </form>
+          </form>
 
-        {/* Collapsible Terminal & Execution Output Drawer */}
-        <ExecutionDrawer
-          isOpen={isTerminalOpen}
-          logs={terminalLogs}
-          onToggle={() => setIsTerminalOpen((prev) => !prev)}
-          onClear={() => setTerminalLogs([])}
-        />
+          {/* Collapsible Terminal & Execution Output Drawer */}
+          <ExecutionDrawer
+            isOpen={isTerminalOpen}
+            logs={terminalLogs}
+            onToggle={() => setIsTerminalOpen((prev) => !prev)}
+            onClear={() => setTerminalLogs([])}
+          />
+        </div>
       </div>
-    </div>
+    </ErrorBoundary>
   );
 };

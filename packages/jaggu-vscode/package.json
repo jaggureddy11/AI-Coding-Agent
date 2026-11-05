@@ -99,6 +99,16 @@
         "category": "JAGGU"
       },
       {
+        "command": "jaggu.configureBedrock",
+        "title": "JAGGU: Configure AWS Bedrock Region",
+        "category": "JAGGU"
+      },
+      {
+        "command": "jaggu.testBedrockConnection",
+        "title": "JAGGU: Test AWS Bedrock Connection",
+        "category": "JAGGU"
+      },
+      {
         "command": "jaggu.setHuggingFaceToken",
         "title": "JAGGU: Set Hugging Face Token",
         "category": "JAGGU"
@@ -196,13 +206,18 @@
         },
         "jaggu.provider": {
           "type": "string",
-          "default": "auto",
-          "description": "Active AI provider for JAGGU ('auto', 'huggingface', 'ollama', 'openai-compatible', 'openai', 'anthropic', 'gemini', 'mock')"
+          "default": "bedrock",
+          "description": "Active AI provider for JAGGU ('bedrock', 'auto', 'huggingface', 'openai', 'anthropic', 'gemini', 'mock')"
         },
         "jaggu.model": {
           "type": "string",
-          "default": "auto",
-          "description": "Active AI model ID ('auto' for intelligent routing, or specific model identifier)"
+          "default": "anthropic.claude-3-5-sonnet-20241022-v2:0",
+          "description": "Active AI model ID (e.g., 'anthropic.claude-3-5-sonnet-20241022-v2:0', 'us.anthropic.claude-3-5-sonnet-20241022-v2:0', 'anthropic.claude-3-5-haiku-20241022-v1:0')"
+        },
+        "jaggu.bedrock.region": {
+          "type": "string",
+          "default": "us-east-1",
+          "description": "AWS Region for Amazon Bedrock (e.g. us-east-1, us-west-2, ap-southeast-2)"
         },
         "jaggu.huggingface.endpoint": {
           "type": "string",

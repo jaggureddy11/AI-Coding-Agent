@@ -48,6 +48,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
   const isAuto = activeModelId === 'auto' || !activeModelId;
   const activeModel = models.find((m) => m.id === activeModelId);
 
+  const bedrockModels = models.filter((m) => m.providerId === 'bedrock');
   const freeModels = models.filter(
     (m) => m.access === 'free' && m.id !== 'mock-fast' && m.id !== 'mock-reasoning',
   );
@@ -58,7 +59,9 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
       m.id !== 'mock-reasoning',
   );
   const paidModels = models.filter(
-    (m) => m.access === 'paid' || (m.runtimeType === 'cloud' && m.access !== 'free'),
+    (m) =>
+      m.providerId !== 'bedrock' &&
+      (m.access === 'paid' || (m.runtimeType === 'cloud' && m.access !== 'free')),
   );
   const mockModels = models.filter((m) => m.providerId === 'mock');
 
@@ -75,7 +78,11 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
   let badgeBg = 'var(--vscode-badge-background, rgba(0, 122, 204, 0.2))';
 
   if (!isAuto && activeModel) {
-    if (activeModel.access === 'free') {
+    if (activeModel.providerId === 'bedrock') {
+      badgeText = 'BEDROCK';
+      badgeColor = '#ff9900';
+      badgeBg = 'rgba(255, 153, 0, 0.15)';
+    } else if (activeModel.access === 'free') {
       badgeText = 'FREE';
       badgeColor = '#4caf50';
       badgeBg = 'rgba(76, 175, 80, 0.15)';
@@ -141,8 +148,18 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
           }}
         >
           <optgroup label="AUTO (RECOMMENDED)">
-            <option value="auto">Auto (Best Available Free/Local)</option>
+            <option value="auto">Auto (AWS Bedrock Claude 3.5)</option>
           </optgroup>
+
+          {bedrockModels.length > 0 && (
+            <optgroup label="AWS BEDROCK (ENTERPRISE AI)">
+              {bedrockModels.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.displayName}
+                </option>
+              ))}
+            </optgroup>
+          )}
 
           {freeModels.length > 0 && (
             <optgroup label="FREE / OPEN (HUGGING FACE)">

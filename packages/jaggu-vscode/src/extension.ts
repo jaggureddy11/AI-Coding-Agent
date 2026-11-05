@@ -166,10 +166,26 @@ export function activate(context: vscode.ExtensionContext): {
   context.subscriptions.push(
     vscode.commands.registerCommand('jaggu.setApiKey', async () => {
       const provider = await vscode.window.showQuickPick(
-        ['openai', 'anthropic', 'gemini', 'huggingface'],
-        { placeHolder: 'Select model provider to configure API Key' },
+        ['bedrock', 'openai', 'anthropic', 'gemini', 'huggingface'],
+        { placeHolder: 'Select model provider to configure API Key / Credentials' },
       );
       if (!provider) return;
+
+      if (provider === 'bedrock') {
+        const key = await vscode.window.showInputBox({
+          prompt:
+            'Enter AWS credentials as ACCESS_KEY_ID:SECRET_ACCESS_KEY (leave empty to use standard AWS CLI credentials)',
+          password: true,
+          ignoreFocusOut: true,
+        });
+        if (key !== undefined) {
+          await credentialManager.setApiKey('bedrock', key);
+          vscode.window.showInformationMessage(
+            'JAGGU: AWS Bedrock credentials updated in SecretStorage.',
+          );
+        }
+        return;
+      }
 
       const apiKey = await vscode.window.showInputBox({
         prompt: `Enter API Key for ${provider.toUpperCase()} (leave empty to remove)`,
@@ -183,6 +199,67 @@ export function activate(context: vscode.ExtensionContext): {
           `JAGGU: API Key for [${provider}] updated in SecretStorage.`,
         );
       }
+    }),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('jaggu.configureBedrock', async () => {
+      const currentRegion = credentialManager.getBedrockRegion();
+      const region = await vscode.window.showInputBox({
+        prompt: 'Enter AWS Region for Bedrock (e.g., us-east-1, us-west-2, ap-southeast-2)',
+        value: currentRegion,
+        ignoreFocusOut: true,
+      });
+
+      if (region !== undefined && region.trim()) {
+        await credentialManager.setBedrockRegion(region.trim());
+        vscode.window.showInformationMessage(
+          `JAGGU: AWS Bedrock region set to [${region.trim()}].`,
+        );
+      }
+    }),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('jaggu.testBedrockConnection', async () => {
+      await vscode.window.withProgress(
+        {
+          location: vscode.ProgressLocation.Notification,
+          title: 'JAGGU: Testing AWS Bedrock Connection...',
+          cancellable: false,
+        },
+        async () => {
+          try {
+            const bedrockProvider = modelGateway.getProvider('bedrock');
+            const apiKey = await credentialManager.getApiKey('bedrock');
+            const stream = bedrockProvider.streamChat([{ role: 'user', content: 'Ping' }], {
+              model: 'anthropic.claude-3-5-sonnet-20241022-v2:0',
+              maxTokens: 4,
+              apiKey,
+            });
+            for await (const _ of stream) {
+              break;
+            }
+            vscode.window.showInformationMessage(
+              '✓ Connected — AWS Bedrock Claude 3.5 Sonnet is operational.',
+            );
+          } catch (err: unknown) {
+            const error = err as { code?: string; message?: string } | undefined;
+            const code = error?.code || '';
+            if (code === 'INVALID_API_KEY' || code === 'AUTH_FAILURE') {
+              vscode.window.showErrorMessage(
+                `✗ Authentication failed — ${error?.message || 'Check AWS CLI login status or credentials.'}`,
+              );
+            } else if (code === 'RATE_LIMIT') {
+              vscode.window.showWarningMessage('✗ Throttled — AWS Bedrock rate limit exceeded.');
+            } else {
+              vscode.window.showErrorMessage(
+                `✗ AWS Bedrock connection test failed: ${error?.message || String(err)}`,
+              );
+            }
+          }
+        },
+      );
     }),
   );
 
@@ -240,14 +317,15 @@ export function activate(context: vscode.ExtensionContext): {
               model: 'Qwen/Qwen3-Coder-30B-A3B-Instruct',
             });
             // Read at least 1 chunk to verify credentials and endpoint
-            for await (const _chunk of stream) {
+            for await (const _ of stream) {
               break;
             }
             vscode.window.showInformationMessage(
               '✓ Connected — Model available (Qwen 3 Coder 30B via Hugging Face)',
             );
-          } catch (err: any) {
-            const code = err?.code || '';
+          } catch (err: unknown) {
+            const error = err as { code?: string; message?: string } | undefined;
+            const code = error?.code || '';
             if (code === 'AUTH_FAILURE') {
               vscode.window.showErrorMessage(
                 '✗ Authentication failed — Invalid or expired Hugging Face token.',
@@ -262,7 +340,7 @@ export function activate(context: vscode.ExtensionContext): {
               );
             } else {
               vscode.window.showErrorMessage(
-                `✗ Hugging Face connection test failed: ${err?.message || String(err)}`,
+                `✗ Hugging Face connection test failed: ${error?.message || String(err)}`,
               );
             }
           }

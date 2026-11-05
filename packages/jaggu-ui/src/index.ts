@@ -10,4 +10,5 @@ export * from './components/MarkdownMessage.js';
 export * from './components/FileMentionDropdown.js';
 export * from './components/AttachedFilesBar.js';
 export * from './components/ExecutionDrawer.js';
+export * from './components/ErrorBoundary.js';
 export * from './App.js';

@@ -30,7 +30,10 @@ export const ExecutionDrawer: React.FC<ExecutionDrawerProps> = ({
 
   const handleCopyLogs = () => {
     const raw = logs
-      .map((l) => `[${new Date(l.timestamp).toLocaleTimeString()}] [${l.type.toUpperCase()}] ${l.line}`)
+      .map(
+        (l) =>
+          `[${new Date(l.timestamp).toLocaleTimeString()}] [${l.type.toUpperCase()}] ${l.line}`,
+      )
       .join('\n');
     navigator.clipboard.writeText(raw);
   };
@@ -62,7 +65,14 @@ export const ExecutionDrawer: React.FC<ExecutionDrawerProps> = ({
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{ fontSize: '11px', fontFamily: 'monospace', color: '#60a5fa' }}>&gt;_</span>
-          <span style={{ fontSize: '11px', fontWeight: 600, color: 'rgba(255, 255, 255, 0.85)', letterSpacing: '0.02em' }}>
+          <span
+            style={{
+              fontSize: '11px',
+              fontWeight: 600,
+              color: 'rgba(255, 255, 255, 0.85)',
+              letterSpacing: '0.02em',
+            }}
+          >
             Terminal / Execution
           </span>
           <span
@@ -70,7 +80,8 @@ export const ExecutionDrawer: React.FC<ExecutionDrawerProps> = ({
               fontSize: '10px',
               padding: '1px 5px',
               borderRadius: '10px',
-              backgroundColor: logs.length > 0 ? 'rgba(59, 130, 246, 0.15)' : 'rgba(255, 255, 255, 0.06)',
+              backgroundColor:
+                logs.length > 0 ? 'rgba(59, 130, 246, 0.15)' : 'rgba(255, 255, 255, 0.06)',
               color: logs.length > 0 ? '#93c5fd' : 'rgba(255, 255, 255, 0.4)',
               fontFamily: 'monospace',
             }}
@@ -171,7 +182,8 @@ export const ExecutionDrawer: React.FC<ExecutionDrawerProps> = ({
                 textAlign: 'center',
               }}
             >
-              No active execution output. Tool calls, test outputs, and diagnostic traces stream here.
+              No active execution output. Tool calls, test outputs, and diagnostic traces stream
+              here.
             </div>
           ) : (
             logs.map((log) => {
@@ -191,8 +203,14 @@ export const ExecutionDrawer: React.FC<ExecutionDrawerProps> = ({
 
               return (
                 <div key={log.id} style={{ display: 'flex', gap: '8px', wordBreak: 'break-all' }}>
-                  <span style={{ color: 'rgba(255, 255, 255, 0.3)', flexShrink: 0, fontSize: '10px' }}>
-                    {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                  <span
+                    style={{ color: 'rgba(255, 255, 255, 0.3)', flexShrink: 0, fontSize: '10px' }}
+                  >
+                    {new Date(log.timestamp).toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      second: '2-digit',
+                    })}
                   </span>
                   <span
                     style={{

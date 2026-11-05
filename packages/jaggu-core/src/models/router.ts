@@ -4,7 +4,7 @@ import { ModelDescriptor } from '../types/modelRegistry.js';
 import { ModelError } from '../types/models.js';
 
 export type ModelRoutingPolicy =
-  'free-first' | 'free-and-local-only' | 'local-only' | 'configured-providers';
+  'bedrock-first' | 'free-first' | 'free-and-local-only' | 'local-only' | 'configured-providers';
 
 export type TaskCategory =
   | 'CODE_MUTATION'
@@ -309,10 +309,14 @@ export class ModelRouter {
       return true;
     });
 
-    // 3. Free-First Preference Partitioning:
-    // If policy is 'free-first', paid models are filtered out if any free/local candidates exist.
+    // 3. Routing Policy Partitioning
     let pool = eligibleModels;
-    if (policy === 'free-first') {
+    if (policy === 'bedrock-first') {
+      const bedrockModels = eligibleModels.filter((m) => m.providerId === 'bedrock');
+      if (bedrockModels.length > 0) {
+        pool = bedrockModels;
+      }
+    } else if (policy === 'free-first') {
       const freeOrLocal = eligibleModels.filter((m) => m.access === 'free' || m.access === 'local');
       if (freeOrLocal.length > 0) {
         pool = freeOrLocal;
@@ -331,7 +335,7 @@ export class ModelRouter {
     if (pool.length === 0) {
       throw new ModelError(
         `No AI model is currently available that satisfies your task requirements and routing policy (${policy}). ` +
-          `Install a local Ollama model or configure a supported provider in JAGGU Settings.`,
+          `Configure AWS Bedrock credentials or a supported provider in JAGGU Settings.`,
         'MODEL_NOT_FOUND',
         'router',
       );
@@ -343,19 +347,24 @@ export class ModelRouter {
       return { model, score };
     });
 
-    // Sort descending by score. Tie-break: prefer Qwen3-Coder family, then other Qwen, then local.
+    // Sort descending by score. Tie-break: prefer Bedrock / Claude 3.5 family, then Qwen3-Coder.
     scoredCandidates.sort((a, b) => {
       if (Math.abs(b.score - a.score) > 0.001) {
         return b.score - a.score;
+      }
+      const aIsClaude =
+        a.model.modelFamily === 'claude-3.5' || a.model.providerId === 'bedrock' ? 1 : 0;
+      const bIsClaude =
+        b.model.modelFamily === 'claude-3.5' || b.model.providerId === 'bedrock' ? 1 : 0;
+      if (bIsClaude !== aIsClaude) {
+        return bIsClaude - aIsClaude;
       }
       const aIsQwen3 = a.model.modelFamily === 'qwen3-coder' ? 1 : 0;
       const bIsQwen3 = b.model.modelFamily === 'qwen3-coder' ? 1 : 0;
       if (bIsQwen3 !== aIsQwen3) {
         return bIsQwen3 - aIsQwen3;
       }
-      const aIsLocal = a.model.runtimeType === 'local' ? 1 : 0;
-      const bIsLocal = b.model.runtimeType === 'local' ? 1 : 0;
-      return bIsLocal - aIsLocal;
+      return 0;
     });
 
     const selected = scoredCandidates[0];
@@ -446,14 +455,16 @@ export class ModelRouter {
     const contextRatio = task.estimatedContextTokens / model.contextWindow;
     const contextFit = contextRatio > 0.8 ? 0.6 : 1.0;
 
-    // Access tier bonus (favor free open models, then local models)
+    // Access tier bonus (favor Bedrock, then free open models)
     let accessBonus = 0;
-    if (model.access === 'free') {
+    if (model.providerId === 'bedrock') {
+      accessBonus = 0.4;
+    } else if (model.access === 'free') {
       accessBonus = 0.35;
     } else if (model.access === 'local') {
       accessBonus = 0.3;
     } else if (model.access === 'paid') {
-      accessBonus = 0.0;
+      accessBonus = 0.1;
     }
 
     // Health factor

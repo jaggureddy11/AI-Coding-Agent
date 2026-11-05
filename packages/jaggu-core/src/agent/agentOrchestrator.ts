@@ -103,6 +103,7 @@ export class AgentOrchestrator {
     options: {
       providerId?: string;
       model?: string;
+      apiKey?: string;
       abortSignal?: AbortSignal;
     } = {},
   ): Promise<AgentTaskResult> {
@@ -258,6 +259,7 @@ export class AgentOrchestrator {
         providerId,
         options.model,
         abortSignal,
+        options.apiKey,
       );
 
       // --- 4.1 READ-ONLY TASK FAST-PATH ---
@@ -432,6 +434,7 @@ export class AgentOrchestrator {
               providerId,
               options.model,
               abortSignal,
+              options.apiKey,
             );
 
             if (diagnosticRepairEdits.length > 0) {
@@ -517,6 +520,7 @@ export class AgentOrchestrator {
           providerId,
           options.model,
           abortSignal,
+          options.apiKey,
         );
 
         if (repairEdits.length === 0) {
@@ -674,6 +678,7 @@ export class AgentOrchestrator {
     providerId: string,
     model?: string,
     abortSignal?: AbortSignal,
+    apiKey?: string,
   ): Promise<CreateEditFileInput[]> {
     const prompt = `You are implementing the approved engineering plan.
 Goal: ${plan.goal}
@@ -704,6 +709,7 @@ Output a JSON array of files to write:
       messages,
       {
         model: model || this.modelGateway.getProvider(providerId).defaultModel,
+        apiKey,
         temperature: 0.1,
         abortSignal,
       },
@@ -735,6 +741,7 @@ Output a JSON array of files to write:
     providerId: string,
     model?: string,
     abortSignal?: AbortSignal,
+    apiKey?: string,
   ): Promise<CreateEditFileInput[]> {
     const prompt = `Verification failed for plan "${plan.goal}".
 Test Output:
@@ -768,6 +775,7 @@ Output a JSON array of file edits:
       messages,
       {
         model: model || this.modelGateway.getProvider(providerId).defaultModel,
+        apiKey,
         temperature: 0.1,
         abortSignal,
       },
@@ -799,6 +807,7 @@ Output a JSON array of file edits:
     providerId: string,
     model?: string,
     abortSignal?: AbortSignal,
+    apiKey?: string,
   ): Promise<CreateEditFileInput[]> {
     const errorList = diagnostics.diagnostics
       .filter((d) => d.severity === 'error')
@@ -833,6 +842,7 @@ Output a JSON array of file edits:
       messages,
       {
         model: model || this.modelGateway.getProvider(providerId).defaultModel,
+        apiKey,
         temperature: 0.1,
         abortSignal,
       },
