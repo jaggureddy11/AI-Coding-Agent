@@ -237,7 +237,8 @@ export function activate(context: vscode.ExtensionContext): {
               maxTokens: 4,
               apiKey,
             });
-            for await (const _ of stream) {
+            for await (const chunk of stream) {
+              void chunk;
               break;
             }
             vscode.window.showInformationMessage(
@@ -317,7 +318,8 @@ export function activate(context: vscode.ExtensionContext): {
               model: 'Qwen/Qwen3-Coder-30B-A3B-Instruct',
             });
             // Read at least 1 chunk to verify credentials and endpoint
-            for await (const _ of stream) {
+            for await (const chunk of stream) {
+              void chunk;
               break;
             }
             vscode.window.showInformationMessage(
