@@ -568,10 +568,18 @@ export const App: React.FC<AppProps> = ({
         text: finalPrompt,
         timestamp: userMsg.timestamp,
         attachedFiles: attachedFiles.length > 0 ? attachedFiles : undefined,
+        sessionId: currentSessionId,
       },
     });
 
     setAttachedFiles([]);
+  };
+
+  const handleInsertCode = (code: string) => {
+    vscode?.postMessage({
+      type: 'editor.insert_code',
+      payload: { code },
+    });
   };
 
   const handleCancel = () => {
@@ -643,6 +651,10 @@ export const App: React.FC<AppProps> = ({
 
   const handleDeleteSession = (e: React.MouseEvent, sessionId: string) => {
     e.stopPropagation();
+    vscode?.postMessage({
+      type: 'session.delete',
+      payload: { sessionId },
+    });
     setSessions((prev) => {
       const updated = prev.filter((s) => s.id !== sessionId);
       try {
@@ -1287,7 +1299,7 @@ export const App: React.FC<AppProps> = ({
                   }}
                 >
                   {msg.role === 'assistant' ? (
-                    <MarkdownMessage content={msg.text} />
+                    <MarkdownMessage content={msg.text} onInsertCode={handleInsertCode} />
                   ) : (
                     <div style={{ whiteSpace: 'pre-wrap' }}>{msg.text}</div>
                   )}
@@ -1451,7 +1463,11 @@ export const App: React.FC<AppProps> = ({
                 }}
               />
               <span style={{ fontWeight: 400 }}>
-                {statusDetail && !statusDetail.includes('score') && !statusDetail.includes('Auto selected')
+                {statusDetail &&
+                !statusDetail.toLowerCase().includes('score') &&
+                !statusDetail.toLowerCase().includes('auto selected') &&
+                !statusDetail.toLowerCase().includes('bedrock') &&
+                !statusDetail.toLowerCase().includes('rating')
                   ? statusDetail
                   : 'JAGGU is processing your request...'}
               </span>

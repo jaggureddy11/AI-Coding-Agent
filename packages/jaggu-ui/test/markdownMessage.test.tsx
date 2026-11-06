@@ -49,4 +49,13 @@ All done!`;
     expect(html).toContain('npm run dev');
     expect(html).toContain('All done!');
   });
+
+  it('should render Insert button when onInsertCode is provided', () => {
+    const codeSample = '```typescript\nconst y = 100;\n```';
+    const html = renderToString(
+      <MarkdownMessage content={codeSample} onInsertCode={() => {}} />,
+    );
+    expect(html).toContain('Insert');
+    expect(html).toContain('Copy');
+  });
 });

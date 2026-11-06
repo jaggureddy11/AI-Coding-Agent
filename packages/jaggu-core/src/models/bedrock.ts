@@ -81,7 +81,7 @@ export const BEDROCK_SUPPORTED_MODELS: ModelMetadata[] = [
   },
   {
     id: 'anthropic.claude-3-5-sonnet-20241022-v2:0',
-    displayName: 'Claude 3.5 Sonnet v2 (AWS Bedrock)',
+    displayName: 'Claude 3.5 Sonnet v2',
     providerId: 'bedrock',
     capabilities: {
       streaming: true,
@@ -94,7 +94,7 @@ export const BEDROCK_SUPPORTED_MODELS: ModelMetadata[] = [
   },
   {
     id: 'us.anthropic.claude-3-5-sonnet-20241022-v2:0',
-    displayName: 'Claude 3.5 Sonnet v2 [US Cross-Region] (AWS Bedrock)',
+    displayName: 'Claude 3.5 Sonnet v2 [US Cross-Region]',
     providerId: 'bedrock',
     capabilities: {
       streaming: true,
@@ -107,7 +107,7 @@ export const BEDROCK_SUPPORTED_MODELS: ModelMetadata[] = [
   },
   {
     id: 'apac.anthropic.claude-3-5-sonnet-20241022-v2:0',
-    displayName: 'Claude 3.5 Sonnet v2 [APAC Cross-Region] (AWS Bedrock)',
+    displayName: 'Claude 3.5 Sonnet v2 [APAC Cross-Region]',
     providerId: 'bedrock',
     capabilities: {
       streaming: true,
@@ -120,7 +120,7 @@ export const BEDROCK_SUPPORTED_MODELS: ModelMetadata[] = [
   },
   {
     id: 'eu.anthropic.claude-3-5-sonnet-20241022-v2:0',
-    displayName: 'Claude 3.5 Sonnet v2 [EU Cross-Region] (AWS Bedrock)',
+    displayName: 'Claude 3.5 Sonnet v2 [EU Cross-Region]',
     providerId: 'bedrock',
     capabilities: {
       streaming: true,
@@ -133,7 +133,7 @@ export const BEDROCK_SUPPORTED_MODELS: ModelMetadata[] = [
   },
   {
     id: 'anthropic.claude-3-5-haiku-20241022-v1:0',
-    displayName: 'Claude 3.5 Haiku (AWS Bedrock)',
+    displayName: 'Claude 3.5 Haiku',
     providerId: 'bedrock',
     capabilities: {
       streaming: true,
@@ -146,7 +146,7 @@ export const BEDROCK_SUPPORTED_MODELS: ModelMetadata[] = [
   },
   {
     id: 'us.anthropic.claude-3-5-haiku-20241022-v1:0',
-    displayName: 'Claude 3.5 Haiku [US Cross-Region] (AWS Bedrock)',
+    displayName: 'Claude 3.5 Haiku [US Cross-Region]',
     providerId: 'bedrock',
     capabilities: {
       streaming: true,
@@ -159,7 +159,7 @@ export const BEDROCK_SUPPORTED_MODELS: ModelMetadata[] = [
   },
   {
     id: 'apac.amazon.nova-pro-v1:0',
-    displayName: 'Amazon Nova Pro [APAC] (AWS Bedrock)',
+    displayName: 'Amazon Nova Pro [APAC]',
     providerId: 'bedrock',
     capabilities: {
       streaming: true,
@@ -172,7 +172,7 @@ export const BEDROCK_SUPPORTED_MODELS: ModelMetadata[] = [
   },
   {
     id: 'au.anthropic.claude-sonnet-4-5-20250929-v1:0',
-    displayName: 'Claude Sonnet 4.5 [AU / APAC] (AWS Bedrock)',
+    displayName: 'Claude Sonnet 4.5 [AU / APAC]',
     providerId: 'bedrock',
     capabilities: {
       streaming: true,
@@ -185,7 +185,7 @@ export const BEDROCK_SUPPORTED_MODELS: ModelMetadata[] = [
   },
   {
     id: 'au.anthropic.claude-haiku-4-5-20251001-v1:0',
-    displayName: 'Claude Haiku 4.5 [AU / APAC] (AWS Bedrock)',
+    displayName: 'Claude Haiku 4.5 [AU / APAC]',
     providerId: 'bedrock',
     capabilities: {
       streaming: true,
@@ -198,7 +198,7 @@ export const BEDROCK_SUPPORTED_MODELS: ModelMetadata[] = [
   },
   {
     id: 'amazon.nova-pro-v1:0',
-    displayName: 'Amazon Nova Pro (AWS Bedrock)',
+    displayName: 'Amazon Nova Pro',
     providerId: 'bedrock',
     capabilities: {
       streaming: true,
@@ -211,7 +211,7 @@ export const BEDROCK_SUPPORTED_MODELS: ModelMetadata[] = [
   },
   {
     id: 'amazon.nova-lite-v1:0',
-    displayName: 'Amazon Nova Lite (AWS Bedrock)',
+    displayName: 'Amazon Nova Lite',
     providerId: 'bedrock',
     capabilities: {
       streaming: true,
@@ -507,7 +507,7 @@ export class BedrockProvider implements IModelProvider {
 
       if (errorName === 'AccessDeniedException' || errorName === 'UnauthorizedException') {
         throw new ModelError(
-          `AWS Bedrock Access Denied: ${message}. Check IAM permissions or Bedrock Model Access.`,
+          `AI Model Access Denied: ${message}. Check provider permissions or model access.`,
           'AUTH_FAILURE',
           this.id,
           403,
@@ -516,7 +516,7 @@ export class BedrockProvider implements IModelProvider {
       }
       if (errorName === 'UnrecognizedClientException' || errorName === 'ExpiredTokenException') {
         throw new ModelError(
-          `AWS Bedrock Session Expired or Invalid Credentials: ${message}. Please re-authenticate via 'aws login'.`,
+          `AI Service Session Expired or Invalid Credentials: ${message}. Please re-authenticate your provider credentials.`,
           'INVALID_API_KEY',
           this.id,
           401,
@@ -525,7 +525,7 @@ export class BedrockProvider implements IModelProvider {
       }
       if (errorName === 'ThrottlingException') {
         throw new ModelError(
-          `AWS Bedrock Rate Limit / Throttled: ${message}`,
+          `AI Model Rate Limit / Throttled: ${message}`,
           'RATE_LIMIT',
           this.id,
           429,
@@ -534,7 +534,7 @@ export class BedrockProvider implements IModelProvider {
       }
       if (errorName === 'ResourceNotFoundException') {
         throw new ModelError(
-          `AWS Bedrock Model Not Found or not enabled in region: ${message}`,
+          `AI Model Not Found or not enabled in region: ${message}`,
           'MODEL_NOT_FOUND',
           this.id,
           404,
@@ -543,7 +543,7 @@ export class BedrockProvider implements IModelProvider {
       }
       if (errorName === 'ValidationException') {
         throw new ModelError(
-          `AWS Bedrock Validation Error: ${message}`,
+          `AI Model Validation Error: ${message}`,
           'MALFORMED_RESPONSE',
           this.id,
           400,
@@ -552,7 +552,7 @@ export class BedrockProvider implements IModelProvider {
       }
 
       throw new ModelError(
-        `AWS Bedrock Error [${errorName || 'Unknown'}]: ${message}`,
+        `AI Service Error [${errorName || 'Unknown'}]: ${message}`,
         'SERVER_ERROR',
         this.id,
         500,

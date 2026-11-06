@@ -269,7 +269,7 @@ describe('JAGGU ModelRouter & TaskClassifier (Milestone: Multi-Model Gateway)', 
       const result = bedrockRouter.route('Refactor authentication service and add tests');
       expect(result.selectedModel.providerId).toBe('bedrock');
       expect(result.selectedModel.id).toBe('au.anthropic.claude-sonnet-4-5-20250929-v1:0');
-      expect(result.selectedModel.displayName).toContain('AWS Bedrock');
+      expect(result.selectedModel.displayName).toContain('Claude Sonnet');
     });
   });
 });

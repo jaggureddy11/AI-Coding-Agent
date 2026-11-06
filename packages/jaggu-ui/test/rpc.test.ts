@@ -61,6 +61,23 @@ describe('RPC Message Validation', () => {
       expect(isValidWebviewMessage({ type: 'user.submit', payload: { text: 'hello' } })).toBe(false);
       expect(isValidWebviewMessage({ type: 'user.submit', payload: 'not-an-object' })).toBe(false);
     });
+
+    it('should accept valid editor.insert_code and session.delete messages', () => {
+      expect(
+        isValidWebviewMessage({
+          type: 'editor.insert_code',
+          payload: { code: 'const x = 42;' },
+        }),
+      ).toBe(true);
+      expect(
+        isValidWebviewMessage({
+          type: 'session.delete',
+          payload: { sessionId: 'sess_123' },
+        }),
+      ).toBe(true);
+      expect(isValidWebviewMessage({ type: 'editor.insert_code', payload: {} })).toBe(false);
+      expect(isValidWebviewMessage({ type: 'session.delete', payload: {} })).toBe(false);
+    });
   });
 
   describe('ExtensionToWebviewMessage Validator', () => {

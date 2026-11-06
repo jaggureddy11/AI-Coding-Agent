@@ -90,7 +90,7 @@ export const DEFAULT_BUILTIN_MODELS: ModelDescriptor[] = [
   },
   {
     id: 'anthropic.claude-3-5-sonnet-20241022-v2:0',
-    displayName: 'Claude 3.5 Sonnet v2 (AWS Bedrock)',
+    displayName: 'Claude 3.5 Sonnet v2',
     providerId: 'bedrock',
     runtimeType: 'cloud',
     modelFamily: 'claude-3.5',
@@ -110,7 +110,7 @@ export const DEFAULT_BUILTIN_MODELS: ModelDescriptor[] = [
   },
   {
     id: 'us.anthropic.claude-3-5-sonnet-20241022-v2:0',
-    displayName: 'Claude 3.5 Sonnet v2 [US Cross-Region] (AWS Bedrock)',
+    displayName: 'Claude 3.5 Sonnet v2 [US Cross-Region]',
     providerId: 'bedrock',
     runtimeType: 'cloud',
     modelFamily: 'claude-3.5',
@@ -130,7 +130,7 @@ export const DEFAULT_BUILTIN_MODELS: ModelDescriptor[] = [
   },
   {
     id: 'apac.anthropic.claude-3-5-sonnet-20241022-v2:0',
-    displayName: 'Claude 3.5 Sonnet v2 [APAC Cross-Region] (AWS Bedrock)',
+    displayName: 'Claude 3.5 Sonnet v2 [APAC Cross-Region]',
     providerId: 'bedrock',
     runtimeType: 'cloud',
     modelFamily: 'claude-3.5',
@@ -150,7 +150,7 @@ export const DEFAULT_BUILTIN_MODELS: ModelDescriptor[] = [
   },
   {
     id: 'eu.anthropic.claude-3-5-sonnet-20241022-v2:0',
-    displayName: 'Claude 3.5 Sonnet v2 [EU Cross-Region] (AWS Bedrock)',
+    displayName: 'Claude 3.5 Sonnet v2 [EU Cross-Region]',
     providerId: 'bedrock',
     runtimeType: 'cloud',
     modelFamily: 'claude-3.5',
@@ -170,7 +170,7 @@ export const DEFAULT_BUILTIN_MODELS: ModelDescriptor[] = [
   },
   {
     id: 'anthropic.claude-3-5-haiku-20241022-v1:0',
-    displayName: 'Claude 3.5 Haiku (AWS Bedrock)',
+    displayName: 'Claude 3.5 Haiku',
     providerId: 'bedrock',
     runtimeType: 'cloud',
     modelFamily: 'claude-3.5',
@@ -190,7 +190,7 @@ export const DEFAULT_BUILTIN_MODELS: ModelDescriptor[] = [
   },
   {
     id: 'us.anthropic.claude-3-5-haiku-20241022-v1:0',
-    displayName: 'Claude 3.5 Haiku [US Cross-Region] (AWS Bedrock)',
+    displayName: 'Claude 3.5 Haiku [US Cross-Region]',
     providerId: 'bedrock',
     runtimeType: 'cloud',
     modelFamily: 'claude-3.5',
@@ -210,7 +210,7 @@ export const DEFAULT_BUILTIN_MODELS: ModelDescriptor[] = [
   },
   {
     id: 'apac.amazon.nova-pro-v1:0',
-    displayName: 'Amazon Nova Pro [APAC] (AWS Bedrock)',
+    displayName: 'Amazon Nova Pro [APAC]',
     providerId: 'bedrock',
     runtimeType: 'cloud',
     modelFamily: 'nova-pro',
@@ -230,7 +230,7 @@ export const DEFAULT_BUILTIN_MODELS: ModelDescriptor[] = [
   },
   {
     id: 'au.anthropic.claude-sonnet-4-5-20250929-v1:0',
-    displayName: 'Claude Sonnet 4.5 [AU / APAC] (AWS Bedrock)',
+    displayName: 'Claude Sonnet 4.5 [AU / APAC]',
     providerId: 'bedrock',
     runtimeType: 'cloud',
     modelFamily: 'claude-sonnet',
@@ -250,7 +250,7 @@ export const DEFAULT_BUILTIN_MODELS: ModelDescriptor[] = [
   },
   {
     id: 'au.anthropic.claude-haiku-4-5-20251001-v1:0',
-    displayName: 'Claude Haiku 4.5 [AU / APAC] (AWS Bedrock)',
+    displayName: 'Claude Haiku 4.5 [AU / APAC]',
     providerId: 'bedrock',
     runtimeType: 'cloud',
     modelFamily: 'claude-haiku',
@@ -270,7 +270,7 @@ export const DEFAULT_BUILTIN_MODELS: ModelDescriptor[] = [
   },
   {
     id: 'amazon.nova-pro-v1:0',
-    displayName: 'Amazon Nova Pro (AWS Bedrock)',
+    displayName: 'Amazon Nova Pro',
     providerId: 'bedrock',
     runtimeType: 'cloud',
     modelFamily: 'nova-pro',
@@ -290,7 +290,7 @@ export const DEFAULT_BUILTIN_MODELS: ModelDescriptor[] = [
   },
   {
     id: 'amazon.nova-lite-v1:0',
-    displayName: 'Amazon Nova Lite (AWS Bedrock)',
+    displayName: 'Amazon Nova Lite',
     providerId: 'bedrock',
     runtimeType: 'cloud',
     modelFamily: 'nova-lite',

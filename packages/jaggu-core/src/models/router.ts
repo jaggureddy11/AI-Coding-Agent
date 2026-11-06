@@ -335,7 +335,7 @@ export class ModelRouter {
     if (pool.length === 0) {
       throw new ModelError(
         `No AI model is currently available that satisfies your task requirements and routing policy (${policy}). ` +
-          `Configure AWS Bedrock credentials or a supported provider in JAGGU Settings.`,
+          `Configure credentials or a supported provider in JAGGU Settings.`,
         'MODEL_NOT_FOUND',
         'router',
       );

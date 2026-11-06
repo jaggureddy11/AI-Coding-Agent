@@ -65,7 +65,7 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
     (decision: boolean | EditApprovalDecision) => void
   >();
   private readonly _pendingScopeApprovals = new Map<string, (approved: boolean) => void>();
-  private _conversationHistory: ModelMessage[] = [];
+  private _sessionHistories = new Map<string, ModelMessage[]>();
   private _lastHealthCheckTime = 0;
   private static readonly HEALTH_CHECK_TTL_MS = 20000; // 20s cache to avoid excessive probing
 
@@ -106,8 +106,24 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
     this._toolExecutor.registerTool(new RunTestsTool());
   }
 
-  public startNewSession(): void {
-    this._conversationHistory = [];
+  public getConversationHistory(sessionId: string = 'default'): ModelMessage[] {
+    return this._sessionHistories.get(sessionId) || [];
+  }
+
+  public clearSessionHistory(sessionId?: string): void {
+    if (sessionId) {
+      this._sessionHistories.delete(sessionId);
+    } else {
+      this._sessionHistories.clear();
+    }
+  }
+
+  public startNewSession(sessionId?: string): void {
+    if (sessionId) {
+      this._sessionHistories.delete(sessionId);
+    } else {
+      this._sessionHistories.clear();
+    }
     for (const resolver of this._pendingApprovals.values()) {
       resolver(false);
     }
@@ -435,7 +451,7 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
         });
         this.postMessageToWebview({
           type: 'agent.status',
-          payload: { state: this._currentStatus, detail: 'Ready — AWS Bedrock' },
+          payload: { state: this._currentStatus, detail: 'Ready' },
         });
         // Check health of local runtimes in background without blocking
         this.checkRuntimesHealth().catch(() => {});
@@ -506,8 +522,34 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
       }
 
       case 'user.submit': {
-        const { id, text, timestamp } = message.payload;
-        await this.processUserPrompt(id, text, timestamp);
+        const { id, text, timestamp, sessionId } = message.payload;
+        await this.processUserPrompt(id, text, timestamp, sessionId);
+        break;
+      }
+
+      case 'editor.insert_code': {
+        const { code } = message.payload;
+        const activeEditor = vscode.window.activeTextEditor;
+        if (activeEditor) {
+          await activeEditor.edit((editBuilder) => {
+            if (!activeEditor.selection.isEmpty) {
+              editBuilder.replace(activeEditor.selection, code);
+            } else {
+              editBuilder.insert(activeEditor.selection.active, code);
+            }
+          });
+        } else {
+          const doc = await vscode.workspace.openTextDocument({ content: code });
+          await vscode.window.showTextDocument(doc);
+        }
+        break;
+      }
+
+      case 'session.delete': {
+        const { sessionId } = message.payload;
+        if (sessionId) {
+          this.clearSessionHistory(sessionId);
+        }
         break;
       }
 
@@ -664,7 +706,12 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
     }
   }
 
-  private async processUserPrompt(id: string, text: string, timestamp: number): Promise<void> {
+  private async processUserPrompt(
+    id: string,
+    text: string,
+    timestamp: number,
+    sessionId: string = 'default',
+  ): Promise<void> {
     // 1. Abort previous in-flight task if any
     if (this._activeAbortController) {
       this._activeAbortController.abort();
@@ -854,7 +901,7 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
           type: 'agent.error',
           payload: {
             code: 'MISSING_API_KEY',
-            message: `API credentials are required for [${providerId}]. Please select AWS Bedrock in the model selector or configure credentials in Settings.`,
+            message: `API credentials are required for [${providerId}]. Please configure credentials in Settings or select an available model.`,
           },
         });
         this._setStatus('ERROR', 'API key missing');
@@ -877,8 +924,9 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
     }
     const systemPrompt = systemPromptParts.join('\n\n');
 
-    // Retain up to 16 recent messages for continuous conversational context
-    const historyWithoutSystem = this._conversationHistory
+    // Retain up to 16 recent messages for continuous conversational context in this session
+    const currentSessionHistory = this._sessionHistories.get(sessionId) || [];
+    const historyWithoutSystem = currentSessionHistory
       .filter((m) => m.role !== 'system')
       .slice(-16);
 
@@ -950,18 +998,13 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
           id,
         );
 
+        const turnChunks: string[] = [];
         for await (const chunk of stream) {
           if (abortSignal.aborted) break;
 
           if (chunk.type === 'token') {
             turnTokens += chunk.text;
-            this.postMessageToWebview({
-              type: 'token.delta',
-              payload: {
-                text: chunk.text,
-                messageId,
-              },
-            });
+            turnChunks.push(chunk.text);
           } else if (chunk.type === 'tool_call_complete') {
             turnToolCalls.push({
               id: chunk.id,
@@ -973,17 +1016,27 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
 
         if (abortSignal.aborted) break;
 
-        // If turn has tool calls, discard intermediate filler tokens from user view
+        // If turn has tool calls, discard intermediate filler tokens from user view completely
         if (turnToolCalls.length > 0) {
-          if (turnTokens.trim().length > 0) {
+          // Internal tool invocation: do not stream reasoning tokens to the user chat bubble
+        } else {
+          // Final text response reached! Stream tokens to the user
+          let cleanedText = turnTokens;
+          cleanedText = cleanedText.replace(
+            /^(?:(?:I will|I'll|Let me|Now let me|I have|Here is|Here's) (?:analyze|explore|examine|look at|review|investigate|check|provide)[^\n]*\n+)+/i,
+            '',
+          );
+
+          for (const token of turnChunks) {
             this.postMessageToWebview({
-              type: 'token.reset',
-              payload: { messageId },
+              type: 'token.delta',
+              payload: {
+                text: token,
+                messageId,
+              },
             });
           }
-        } else {
-          // Final text response reached
-          fullResponseText = turnTokens;
+          fullResponseText = cleanedText;
           loopFinished = true;
           break;
         }
@@ -1175,11 +1228,13 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
         });
 
         // Persist session history for contextual multi-turn conversation
-        this._conversationHistory.push({ role: 'user', content: text });
-        this._conversationHistory.push({ role: 'assistant', content: fullResponseText });
-        if (this._conversationHistory.length > 20) {
-          this._conversationHistory = this._conversationHistory.slice(-20);
-        }
+        const prevHist = this._sessionHistories.get(sessionId) || [];
+        const nextHist: ModelMessage[] = [
+          ...prevHist.slice(-18),
+          { role: 'user', content: text },
+          { role: 'assistant', content: fullResponseText },
+        ];
+        this._sessionHistories.set(sessionId, nextHist);
 
         this._setStatus('SUCCESS', 'Task completed');
 

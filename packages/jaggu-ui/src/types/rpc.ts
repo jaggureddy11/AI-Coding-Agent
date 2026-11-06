@@ -20,8 +20,16 @@ export interface ChatMessage {
 export type WebviewToExtensionMessage =
   | {
       type: 'user.submit';
-      payload: { id: string; text: string; timestamp: number; attachedFiles?: string[] };
+      payload: {
+        id: string;
+        text: string;
+        timestamp: number;
+        attachedFiles?: string[];
+        sessionId?: string;
+      };
     }
+  | { type: 'editor.insert_code'; payload: { code: string } }
+  | { type: 'session.delete'; payload: { sessionId: string } }
   | { type: 'agent.cancel'; payload?: { taskId?: string } }
   | { type: 'ui.ready'; payload?: { timestamp: number } }
   | { type: 'ui.clear'; payload?: Record<string, never> }
@@ -164,14 +172,28 @@ export function isValidWebviewMessage(msg: unknown): msg is WebviewToExtensionMe
 
   switch (candidate.type) {
     case 'user.submit': {
-      const p = candidate.payload as { id?: unknown; text?: unknown; timestamp?: unknown };
+      const p = candidate.payload as {
+        id?: unknown;
+        text?: unknown;
+        timestamp?: unknown;
+        sessionId?: unknown;
+      };
       return (
         typeof p === 'object' &&
         p !== null &&
         typeof p.id === 'string' &&
         typeof p.text === 'string' &&
-        typeof p.timestamp === 'number'
+        typeof p.timestamp === 'number' &&
+        (p.sessionId === undefined || typeof p.sessionId === 'string')
       );
+    }
+    case 'editor.insert_code': {
+      const p = candidate.payload as { code?: unknown };
+      return typeof p === 'object' && p !== null && typeof p.code === 'string';
+    }
+    case 'session.delete': {
+      const p = candidate.payload as { sessionId?: unknown };
+      return typeof p === 'object' && p !== null && typeof p.sessionId === 'string';
     }
     case 'agent.cancel':
     case 'ui.ready':

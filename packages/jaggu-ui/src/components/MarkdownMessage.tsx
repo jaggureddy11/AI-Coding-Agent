@@ -3,16 +3,26 @@ import React, { useState } from 'react';
 interface CodeBlockProps {
   language: string;
   code: string;
+  onInsertCode?: (code: string) => void;
 }
 
-const CodeBlock: React.FC<CodeBlockProps> = ({ language, code }) => {
+const CodeBlock: React.FC<CodeBlockProps> = ({ language, code, onInsertCode }) => {
   const [copied, setCopied] = useState(false);
+  const [inserted, setInserted] = useState(false);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(code).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
+  };
+
+  const handleInsert = () => {
+    if (onInsertCode) {
+      onInsertCode(code);
+      setInserted(true);
+      setTimeout(() => setInserted(false), 2000);
+    }
   };
 
   return (
@@ -41,46 +51,89 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ language, code }) => {
         <span style={{ fontFamily: 'monospace', textTransform: 'lowercase' }}>
           {language || 'code'}
         </span>
-        <button
-          type="button"
-          onClick={handleCopy}
-          title="Copy code to clipboard"
-          style={{
-            background: 'transparent',
-            border: 'none',
-            color: copied ? '#4ec9b0' : 'var(--vscode-descriptionForeground, #858585)',
-            cursor: 'pointer',
-            fontSize: '10.5px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            padding: '2px 6px',
-            borderRadius: '3px',
-            transition: 'color 0.15s ease',
-          }}
-        >
-          {copied ? (
-            <>
-              <span>✓</span>
-              <span>Copied</span>
-            </>
-          ) : (
-            <>
-              <svg
-                viewBox="0 0 24 24"
-                width="12"
-                height="12"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-              </svg>
-              <span>Copy</span>
-            </>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          {onInsertCode && (
+            <button
+              type="button"
+              onClick={handleInsert}
+              title="Insert code at cursor in active editor"
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: inserted ? '#4ec9b0' : 'var(--vscode-descriptionForeground, #858585)',
+                cursor: 'pointer',
+                fontSize: '10.5px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '2px 6px',
+                borderRadius: '3px',
+                transition: 'color 0.15s ease',
+              }}
+            >
+              {inserted ? (
+                <>
+                  <span>✓</span>
+                  <span>Inserted</span>
+                </>
+              ) : (
+                <>
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="12"
+                    height="12"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M12 5v14M19 12l-7 7-7-7" />
+                  </svg>
+                  <span>Insert</span>
+                </>
+              )}
+            </button>
           )}
-        </button>
+          <button
+            type="button"
+            onClick={handleCopy}
+            title="Copy code to clipboard"
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: copied ? '#4ec9b0' : 'var(--vscode-descriptionForeground, #858585)',
+              cursor: 'pointer',
+              fontSize: '10.5px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: '2px 6px',
+              borderRadius: '3px',
+              transition: 'color 0.15s ease',
+            }}
+          >
+            {copied ? (
+              <>
+                <span>✓</span>
+                <span>Copied</span>
+              </>
+            ) : (
+              <>
+                <svg
+                  viewBox="0 0 24 24"
+                  width="12"
+                  height="12"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                </svg>
+                <span>Copy</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
       <pre
         style={{
@@ -102,9 +155,10 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ language, code }) => {
 
 export interface MarkdownMessageProps {
   content: string;
+  onInsertCode?: (code: string) => void;
 }
 
-export const MarkdownMessage: React.FC<MarkdownMessageProps> = ({ content }) => {
+export const MarkdownMessage: React.FC<MarkdownMessageProps> = ({ content, onInsertCode }) => {
   // Parse triple-backtick code blocks
   const parts: React.ReactNode[] = [];
   const codeBlockRegex = /```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g;
@@ -118,7 +172,14 @@ export const MarkdownMessage: React.FC<MarkdownMessageProps> = ({ content }) => 
     }
     const lang = match[1]?.trim() || '';
     const code = match[2]?.replace(/\n$/, '') || '';
-    parts.push(<CodeBlock key={`code-${match.index}`} language={lang} code={code} />);
+    parts.push(
+      <CodeBlock
+        key={`code-${match.index}`}
+        language={lang}
+        code={code}
+        onInsertCode={onInsertCode}
+      />,
+    );
     lastIndex = match.index + match[0].length;
   }
 
