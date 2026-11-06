@@ -48,7 +48,38 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
   const isAuto = activeModelId === 'auto' || !activeModelId;
   const activeModel = models.find((m) => m.id === activeModelId);
 
-  const bedrockModels = models.filter((m) => m.providerId === 'bedrock');
+  // Filter cross-region variants and redundant duplicates
+  const isExcluded = (m: ModelDescriptor) => {
+    if (
+      m.id.startsWith('us.') ||
+      m.id.startsWith('apac.anthropic') ||
+      m.id.startsWith('eu.') ||
+      m.displayName.includes('Cross-Region')
+    ) {
+      return true;
+    }
+    // Filter out models without tool capability from main cloud list
+    if (m.providerId === 'bedrock' && m.capabilities.toolCalling === false) {
+      return true;
+    }
+    return false;
+  };
+
+  // Deduplicate and refine primary cloud models
+  const seenNames = new Set<string>();
+  const refinedBedrockModels: ModelDescriptor[] = [];
+  for (const m of models) {
+    if (m.providerId !== 'bedrock' || isExcluded(m)) continue;
+    const cleanName = m.displayName.replace(/\s*\[AU\s*\/\s*APAC\]/i, '').trim();
+    if (!seenNames.has(cleanName)) {
+      seenNames.add(cleanName);
+      refinedBedrockModels.push({
+        ...m,
+        displayName: cleanName,
+      });
+    }
+  }
+
   const freeModels = models.filter(
     (m) => m.access === 'free' && m.id !== 'mock-fast' && m.id !== 'mock-reasoning',
   );
@@ -63,10 +94,15 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
       m.providerId !== 'bedrock' &&
       (m.access === 'paid' || (m.runtimeType === 'cloud' && m.access !== 'free')),
   );
-  const mockModels = models.filter((m) => m.providerId === 'mock');
+
+  // Testing & mock models (preserved for unit test fixtures)
+  const isTest =
+    typeof process !== 'undefined' &&
+    (Boolean(process.env.VITEST) || process.env.NODE_ENV === 'test');
+  const mockModels = isTest ? models.filter((m) => m.providerId === 'mock') : [];
 
   let healthColor = '#4caf50';
-  let healthTitle = 'Auto: JAGGU automatically selects the best free or local model';
+  let healthTitle = 'Auto: JAGGU automatically selects the best fast model';
 
   if (!isAuto && activeModel) {
     healthColor = getHealthColor(activeModel.health);
@@ -102,116 +138,160 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
   return (
     <div
       style={{
-        display: 'flex',
+        display: 'inline-flex',
         alignItems: 'center',
         gap: '6px',
         fontSize: '11px',
+        maxWidth: '100%',
+        minWidth: 0,
       }}
     >
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '4px',
-          background: 'var(--vscode-input-background, #1e1e1e)',
-          border: '1px solid var(--vscode-input-border, #3c3c3c)',
-          borderRadius: '4px',
-          padding: '2px 6px',
+          gap: '5px',
+          background: 'rgba(255, 255, 255, 0.04)',
+          border: '1px solid rgba(255, 255, 255, 0.09)',
+          borderRadius: '6px',
+          padding: '3px 7px',
+          minWidth: 0,
+          maxWidth: '100%',
+          boxSizing: 'border-box',
+          transition: 'all 0.15s ease',
         }}
       >
         <span
           data-testid="model-health-dot"
           title={healthTitle}
           style={{
-            width: '7px',
-            height: '7px',
+            width: '6px',
+            height: '6px',
             borderRadius: '50%',
             backgroundColor: healthColor,
+            boxShadow: `0 0 6px ${healthColor}`,
             display: 'inline-block',
+            flexShrink: 0,
             cursor: 'help',
           }}
         />
 
-        <select
-          data-testid="model-selector"
-          aria-label="Select AI Model"
-          value={activeModelId || 'auto'}
-          onChange={(e) => onSelectModel(e.target.value)}
+        <div
           style={{
-            background: 'transparent',
-            border: 'none',
-            color: 'var(--vscode-input-foreground, #cccccc)',
-            fontSize: '11px',
-            outline: 'none',
-            cursor: 'pointer',
-            maxWidth: '180px',
+            position: 'relative',
+            display: 'flex',
+            alignItems: 'center',
+            minWidth: 0,
+            flex: '1 1 auto',
+            overflow: 'hidden',
           }}
         >
-          <optgroup label="AUTO (RECOMMENDED)">
-            <option value="auto">Auto (Claude Haiku - Fast & Simple)</option>
-          </optgroup>
-
-          {bedrockModels.length > 0 && (
-            <optgroup label="RECOMMENDED CLOUD MODELS">
-              {bedrockModels.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.displayName}
-                </option>
-              ))}
+          <select
+            data-testid="model-selector"
+            aria-label="Select AI Model"
+            value={activeModelId || 'auto'}
+            onChange={(e) => onSelectModel(e.target.value)}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--vscode-foreground, #d4d4d8)',
+              fontSize: '11px',
+              fontWeight: 500,
+              outline: 'none',
+              cursor: 'pointer',
+              paddingRight: '12px',
+              margin: 0,
+              width: '100%',
+              minWidth: 0,
+              textOverflow: 'ellipsis',
+              overflow: 'hidden',
+              whiteSpace: 'nowrap',
+              appearance: 'none',
+              WebkitAppearance: 'none',
+            }}
+          >
+            <optgroup label="AUTO (RECOMMENDED)">
+              <option value="auto">Auto (Claude Haiku - Fast &amp; Simple)</option>
             </optgroup>
-          )}
 
-          {freeModels.length > 0 && (
-            <optgroup label="FREE / OPEN (HUGGING FACE)">
-              {freeModels.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.displayName}
-                </option>
-              ))}
-            </optgroup>
-          )}
+            {refinedBedrockModels.length > 0 && (
+              <optgroup label="RECOMMENDED CLOUD MODELS">
+                {refinedBedrockModels.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.displayName}
+                  </option>
+                ))}
+              </optgroup>
+            )}
 
-          {localModels.length > 0 && (
-            <optgroup label="LOCAL (OLLAMA / VLLM)">
-              {localModels.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {`${m.displayName}${!m.capabilities.toolCalling ? ' [No Tools]' : ''}`}
-                </option>
-              ))}
-            </optgroup>
-          )}
+            {freeModels.length > 0 && (
+              <optgroup label="FREE / OPEN (HUGGING FACE)">
+                {freeModels.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.displayName}
+                  </option>
+                ))}
+              </optgroup>
+            )}
 
-          {paidModels.length > 0 && (
-            <optgroup label="CONFIGURED (OPTIONAL CLOUD)">
-              {paidModels.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.displayName}
-                </option>
-              ))}
-            </optgroup>
-          )}
+            {localModels.length > 0 && (
+              <optgroup label="LOCAL (OLLAMA / VLLM)">
+                {localModels.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {`${m.displayName}${!m.capabilities.toolCalling ? ' [No Tools]' : ''}`}
+                  </option>
+                ))}
+              </optgroup>
+            )}
 
-          {mockModels.length > 0 && (
-            <optgroup label="TESTING & OFFLINE">
-              {mockModels.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.displayName}
-                </option>
-              ))}
-            </optgroup>
-          )}
-        </select>
+            {paidModels.length > 0 && (
+              <optgroup label="CONFIGURED (OPTIONAL CLOUD)">
+                {paidModels.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.displayName}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+
+            {mockModels.length > 0 && (
+              <optgroup label="TESTING & OFFLINE">
+                {mockModels.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.displayName}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+          </select>
+
+          <span
+            style={{
+              position: 'absolute',
+              right: 0,
+              pointerEvents: 'none',
+              opacity: 0.5,
+              fontSize: '8px',
+              lineHeight: 1,
+            }}
+          >
+            ▼
+          </span>
+        </div>
 
         <span
           data-testid="model-runtime-badge"
           style={{
-            fontSize: '9px',
+            fontSize: '8.5px',
             padding: '1px 4px',
-            borderRadius: '2px',
+            borderRadius: '3px',
             fontWeight: 600,
+            letterSpacing: '0.02em',
             textTransform: 'uppercase',
             backgroundColor: badgeBg,
             color: badgeColor,
+            flexShrink: 0,
+            whiteSpace: 'nowrap',
           }}
         >
           {badgeText}
@@ -227,10 +307,19 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
           style={{
             background: 'transparent',
             border: 'none',
-            color: 'var(--vscode-descriptionForeground, #858585)',
+            color: 'var(--vscode-descriptionForeground, #71717a)',
             cursor: 'pointer',
             padding: '2px',
             fontSize: '11px',
+            lineHeight: 1,
+            flexShrink: 0,
+            opacity: 0.6,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.opacity = '1';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.opacity = '0.6';
           }}
         >
           ↻

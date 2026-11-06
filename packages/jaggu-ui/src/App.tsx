@@ -142,6 +142,7 @@ export const App: React.FC<AppProps> = ({
   const activeProvenanceRef = useRef<ContextSnippetSummary[] | undefined>();
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const baseVoiceInputRef = useRef<string>('');
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -740,14 +741,21 @@ export const App: React.FC<AppProps> = ({
     });
   };
 
-  const handleVoiceTranscript = (text: string) => {
-    setInput((prev) => {
-      const trimmed = prev.trim();
-      if (!trimmed) {
-        return text;
-      }
-      return `${trimmed} ${text}`;
-    });
+  const handleVoiceListeningChange = (isListening: boolean) => {
+    if (isListening) {
+      baseVoiceInputRef.current = input;
+    } else {
+      baseVoiceInputRef.current = '';
+    }
+  };
+
+  const handleVoiceTranscript = (speechText: string) => {
+    const base = baseVoiceInputRef.current?.trim() || '';
+    if (!base) {
+      setInput(speechText);
+    } else {
+      setInput(`${base} ${speechText}`);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -847,6 +855,38 @@ export const App: React.FC<AppProps> = ({
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            {/* Terminal execution drawer toggle */}
+            <button
+              type="button"
+              data-testid="terminal-toggle-btn"
+              onClick={() => setIsTerminalOpen((prev) => !prev)}
+              title="Toggle execution terminal drawer"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '3px',
+                background: isTerminalOpen
+                  ? 'rgba(59, 130, 246, 0.2)'
+                  : 'rgba(255, 255, 255, 0.05)',
+                border: isTerminalOpen
+                  ? '1px solid rgba(59, 130, 246, 0.4)'
+                  : '1px solid rgba(255, 255, 255, 0.08)',
+                color: isTerminalOpen ? '#93c5fd' : 'var(--vscode-descriptionForeground, #a1a1aa)',
+                cursor: 'pointer',
+                fontSize: '11px',
+                fontFamily: 'monospace',
+                padding: '3px 7px',
+                borderRadius: '5px',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <span>&gt;_</span>
+              <span>Terminal</span>
+              {terminalLogs.length > 0 && (
+                <span style={{ fontSize: '9px', opacity: 0.7 }}>({terminalLogs.length})</span>
+              )}
+            </button>
+
             {sessions.length > 0 && (
               <button
                 type="button"
@@ -1590,81 +1630,20 @@ export const App: React.FC<AppProps> = ({
                 }}
               />
 
-              {/* Inner Controls Bar */}
+              {/* Inner Controls Bar (Antigravity-style single responsive row) */}
               <div
                 style={{
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  paddingTop: '4px',
+                  paddingTop: '6px',
                   gap: '8px',
-                  flexWrap: 'wrap',
+                  width: '100%',
+                  minWidth: 0,
                 }}
               >
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    fontSize: '11px',
-                    flexWrap: 'wrap',
-                  }}
-                >
-                  <span
-                    style={{
-                      padding: '2px 6px',
-                      borderRadius: '4px',
-                      backgroundColor: 'rgba(255, 255, 255, 0.06)',
-                      fontSize: '10px',
-                      fontFamily: 'monospace',
-                      color: '#93c5fd',
-                    }}
-                  >
-                    @workspace
-                  </span>
-
-                  {/* Collapsible Execution Terminal Toggle Button */}
-                  <button
-                    type="button"
-                    data-testid="terminal-toggle-btn"
-                    onClick={() => setIsTerminalOpen((prev) => !prev)}
-                    title="Toggle execution terminal drawer"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      padding: '2px 7px',
-                      borderRadius: '4px',
-                      backgroundColor: isTerminalOpen
-                        ? 'rgba(59, 130, 246, 0.15)'
-                        : 'rgba(255, 255, 255, 0.05)',
-                      border: isTerminalOpen
-                        ? '1px solid rgba(59, 130, 246, 0.35)'
-                        : '1px solid rgba(255, 255, 255, 0.08)',
-                      color: isTerminalOpen ? '#93c5fd' : 'rgba(255, 255, 255, 0.65)',
-                      cursor: 'pointer',
-                      fontSize: '10px',
-                      fontFamily: 'monospace',
-                      transition: 'all 0.15s ease',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = isTerminalOpen
-                        ? 'rgba(59, 130, 246, 0.15)'
-                        : 'rgba(255, 255, 255, 0.05)';
-                    }}
-                  >
-                    <span>&gt;_</span>
-                    <span>Terminal</span>
-                    {terminalLogs.length > 0 && (
-                      <span style={{ opacity: 0.65, fontSize: '9px' }}>
-                        ({terminalLogs.length})
-                      </span>
-                    )}
-                  </button>
-
+                {/* Left: Model Selector (shrinks smoothly with ellipsis on sidebar drag) */}
+                <div style={{ flex: '1 1 auto', minWidth: 0, overflow: 'hidden' }}>
                   {availableModels.length > 0 && (
                     <ModelSelector
                       models={availableModels}
@@ -1675,9 +1654,11 @@ export const App: React.FC<AppProps> = ({
                   )}
                 </div>
 
-                <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                {/* Right: Voice Typing & Action Buttons */}
+                <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
                   <VoiceTypingButton
                     onTranscript={handleVoiceTranscript}
+                    onListeningStateChange={handleVoiceListeningChange}
                     disabled={status === 'PROCESSING'}
                   />
                   {status === 'PROCESSING' ? (
