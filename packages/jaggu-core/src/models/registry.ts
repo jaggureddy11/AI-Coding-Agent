@@ -7,10 +7,30 @@ import {
 import { ModelError } from '../types/models.js';
 
 export const DEFAULT_BUILTIN_MODELS: ModelDescriptor[] = [
-  // --- AWS Bedrock (Primary Enterprise AI Models) ---
+  // --- AWS Bedrock (Fast, Simple & Powerful AI Models) ---
+  {
+    id: 'au.anthropic.claude-haiku-4-5-20251001-v1:0',
+    displayName: 'Claude Haiku 4.5 [Fast & Simple] (AWS Bedrock)',
+    providerId: 'bedrock',
+    runtimeType: 'cloud',
+    modelFamily: 'claude-haiku',
+    contextWindow: 200000,
+    maxOutputTokens: 8192,
+    capabilities: {
+      streaming: true,
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      coding: 95,
+      reasoning: 92,
+    },
+    access: 'paid',
+    availability: 'available',
+    health: 'available',
+  },
   {
     id: 'au.anthropic.claude-sonnet-4-5-20250929-v1:0',
-    displayName: 'Claude Sonnet 4.5 [AU / APAC] (AWS Bedrock)',
+    displayName: 'Claude Sonnet 4.5 [Deep Reasoning] (AWS Bedrock)',
     providerId: 'bedrock',
     runtimeType: 'cloud',
     modelFamily: 'claude-sonnet',
@@ -30,7 +50,7 @@ export const DEFAULT_BUILTIN_MODELS: ModelDescriptor[] = [
   },
   {
     id: 'apac.amazon.nova-pro-v1:0',
-    displayName: 'Amazon Nova Pro [APAC] (AWS Bedrock)',
+    displayName: 'Amazon Nova Pro [Fast] (AWS Bedrock)',
     providerId: 'bedrock',
     runtimeType: 'cloud',
     modelFamily: 'nova-pro',
@@ -43,6 +63,26 @@ export const DEFAULT_BUILTIN_MODELS: ModelDescriptor[] = [
       vision: true,
       coding: 92,
       reasoning: 90,
+    },
+    access: 'paid',
+    availability: 'available',
+    health: 'available',
+  },
+  {
+    id: 'apac.amazon.nova-lite-v1:0',
+    displayName: 'Amazon Nova Lite [Ultra Fast] (AWS Bedrock)',
+    providerId: 'bedrock',
+    runtimeType: 'cloud',
+    modelFamily: 'nova-lite',
+    contextWindow: 300000,
+    maxOutputTokens: 5000,
+    capabilities: {
+      streaming: true,
+      toolCalling: false,
+      structuredOutput: true,
+      vision: true,
+      coding: 88,
+      reasoning: 85,
     },
     access: 'paid',
     availability: 'available',

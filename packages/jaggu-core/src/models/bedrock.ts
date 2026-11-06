@@ -24,12 +24,25 @@ import {
 type BedrockDocument =
   null | boolean | number | string | BedrockDocument[] | { [key: string]: BedrockDocument };
 
-export const BEDROCK_DEFAULT_MODEL = 'au.anthropic.claude-sonnet-4-5-20250929-v1:0';
+export const BEDROCK_DEFAULT_MODEL = 'au.anthropic.claude-haiku-4-5-20251001-v1:0';
 
 export const BEDROCK_SUPPORTED_MODELS: ModelMetadata[] = [
   {
+    id: 'au.anthropic.claude-haiku-4-5-20251001-v1:0',
+    displayName: 'Claude Haiku 4.5 [Fast & Simple] (AWS Bedrock)',
+    providerId: 'bedrock',
+    capabilities: {
+      streaming: true,
+      toolCalling: true,
+      vision: true,
+      structuredOutput: true,
+      maxContextTokens: 200000,
+      maxOutputTokens: 8192,
+    },
+  },
+  {
     id: 'au.anthropic.claude-sonnet-4-5-20250929-v1:0',
-    displayName: 'Claude Sonnet 4.5 [AU / APAC] (AWS Bedrock)',
+    displayName: 'Claude Sonnet 4.5 [Deep Reasoning] (AWS Bedrock)',
     providerId: 'bedrock',
     capabilities: {
       streaming: true,
@@ -42,11 +55,24 @@ export const BEDROCK_SUPPORTED_MODELS: ModelMetadata[] = [
   },
   {
     id: 'apac.amazon.nova-pro-v1:0',
-    displayName: 'Amazon Nova Pro [APAC] (AWS Bedrock)',
+    displayName: 'Amazon Nova Pro [Fast] (AWS Bedrock)',
     providerId: 'bedrock',
     capabilities: {
       streaming: true,
       toolCalling: true,
+      vision: true,
+      structuredOutput: true,
+      maxContextTokens: 300000,
+      maxOutputTokens: 5000,
+    },
+  },
+  {
+    id: 'apac.amazon.nova-lite-v1:0',
+    displayName: 'Amazon Nova Lite [Ultra Fast] (AWS Bedrock)',
+    providerId: 'bedrock',
+    capabilities: {
+      streaming: true,
+      toolCalling: false,
       vision: true,
       structuredOutput: true,
       maxContextTokens: 300000,

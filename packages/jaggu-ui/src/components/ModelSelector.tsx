@@ -148,11 +148,11 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
           }}
         >
           <optgroup label="AUTO (RECOMMENDED)">
-            <option value="auto">Auto (AWS Bedrock Claude 3.5)</option>
+            <option value="auto">Auto (Bedrock Haiku - Fast & Simple)</option>
           </optgroup>
 
           {bedrockModels.length > 0 && (
-            <optgroup label="AWS BEDROCK (ENTERPRISE AI)">
+            <optgroup label="AWS BEDROCK (ACTIVE MODELS)">
               {bedrockModels.map((m) => (
                 <option key={m.id} value={m.id}>
                   {m.displayName}

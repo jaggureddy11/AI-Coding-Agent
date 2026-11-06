@@ -13,7 +13,7 @@ describe('BedrockProvider Unit Tests', () => {
   it('should expose correct provider metadata and capabilities', () => {
     expect(provider.id).toBe('bedrock');
     expect(provider.name).toBe('AWS Bedrock');
-    expect(provider.defaultModel).toBe('au.anthropic.claude-sonnet-4-5-20250929-v1:0');
+    expect(provider.defaultModel).toBe('au.anthropic.claude-haiku-4-5-20251001-v1:0');
 
     const sonnetCap = provider.getCapabilities('anthropic.claude-3-5-sonnet-20241022-v2:0');
     expect(sonnetCap.streaming).toBe(true);

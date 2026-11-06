@@ -1,6 +1,6 @@
 {
   "jaggu.provider": "bedrock",
-  "jaggu.model": "au.anthropic.claude-sonnet-4-5-20250929-v1:0",
+  "jaggu.model": "au.anthropic.claude-haiku-4-5-20251001-v1:0",
   "jaggu.bedrock.region": "ap-southeast-2"
 }
 
