@@ -28,3 +28,4 @@ packages/jaggu-eval/results/raw/
 .env.*
 !.env.example
 
+*.txt
