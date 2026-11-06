@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import type { UiAgentStatus, ContextSnippetSummary, ModelDescriptor } from '@jaggu/core';
 import { StatusPill } from './components/StatusPill.js';
-import { ContextPill } from './components/ContextPill.js';
 import { ApprovalCard, ApprovalFileItem } from './components/ApprovalCard.js';
 import { PlanCard, PlanStepItem } from './components/PlanCard.js';
 import { ModelSelector } from './components/ModelSelector.js';
@@ -141,16 +140,19 @@ export const App: React.FC<AppProps> = ({
           break;
         case 'context.assembled':
           activeProvenanceRef.current = msg.payload.provenance;
-          setStatusDetail(`Grounded in ${msg.payload.filesCount} workspace files`);
+          // Context assembled in backend; no verbose UI status spam
           break;
         case 'model.routed':
-          setStatusDetail(`Auto selected: ${msg.payload.selectedModel} (${msg.payload.reason})`);
+          // Model routed in backend; keep UI clean like Cursor/Copilot
           break;
         case 'model.fallback':
-          setStatusDetail(
-            `Fallback from ${msg.payload.fromModel} to ${msg.payload.toModel}: ${msg.payload.reason}`,
-          );
+          // Handled silently in backend
           break;
+        case 'token.reset': {
+          const { messageId } = msg.payload;
+          setMessages((prev) => prev.filter((m) => m.id !== messageId));
+          break;
+        }
         case 'token.delta': {
           const { messageId, text } = msg.payload;
           setMessages((prev) => {
@@ -933,25 +935,26 @@ export const App: React.FC<AppProps> = ({
                 </div>
                 <div
                   style={{
-                    maxWidth: '92%',
-                    padding: '10px 14px',
-                    borderRadius: msg.role === 'user' ? '12px 12px 3px 12px' : '12px 12px 12px 3px',
-                    fontSize: '12px',
-                    lineHeight: 1.55,
+                    maxWidth: msg.role === 'user' ? '88%' : '100%',
+                    width: msg.role === 'user' ? 'auto' : '100%',
+                    padding: msg.role === 'user' ? '8px 14px' : '4px 0',
+                    borderRadius: msg.role === 'user' ? '14px 14px 3px 14px' : '0',
+                    fontSize: '12.5px',
+                    lineHeight: 1.6,
                     wordBreak: 'break-word',
                     backgroundColor:
                       msg.role === 'user'
                         ? 'var(--vscode-button-background, #0078d4)'
-                        : 'rgba(255, 255, 255, 0.05)',
+                        : 'transparent',
                     color:
                       msg.role === 'user'
                         ? 'var(--vscode-button-foreground, #ffffff)'
                         : 'var(--vscode-foreground, #e4e4e7)',
-                    border: msg.role === 'user' ? 'none' : '1px solid rgba(255, 255, 255, 0.08)',
+                    border: 'none',
                     boxShadow:
                       msg.role === 'user'
                         ? '0 2px 8px rgba(0, 120, 212, 0.3)'
-                        : '0 2px 8px rgba(0, 0, 0, 0.15)',
+                        : 'none',
                   }}
                 >
                   {msg.role === 'assistant' ? (
@@ -960,11 +963,6 @@ export const App: React.FC<AppProps> = ({
                     <div style={{ whiteSpace: 'pre-wrap' }}>{msg.text}</div>
                   )}
                 </div>
-                {msg.role === 'assistant' && msg.provenance && msg.provenance.length > 0 && (
-                  <div style={{ marginTop: '4px', paddingLeft: '2px' }}>
-                    <ContextPill provenance={msg.provenance} />
-                  </div>
-                )}
               </div>
             ))
           )}
@@ -1101,23 +1099,32 @@ export const App: React.FC<AppProps> = ({
             <div
               data-testid="processing-indicator"
               style={{
-                display: 'flex',
+                display: 'inline-flex',
                 alignItems: 'center',
-                gap: '10px',
-                padding: '10px 14px',
-                borderRadius: '8px',
-                fontSize: '12px',
-                backgroundColor: 'rgba(0, 120, 212, 0.12)',
-                color: '#60a5fa',
-                border: '1px solid rgba(0, 120, 212, 0.25)',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+                gap: '8px',
+                padding: '6px 12px',
+                borderRadius: '16px',
+                fontSize: '11px',
+                backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                color: 'var(--vscode-descriptionForeground, #9ca3af)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                width: 'fit-content',
               }}
             >
-              <span style={{ display: 'inline-block', animation: 'spin 1s linear infinite' }}>
-                ⏳
-              </span>
-              <span style={{ fontWeight: 500 }}>
-                {statusDetail || 'JAGGU is processing your request...'}
+              <span
+                style={{
+                  display: 'inline-block',
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  backgroundColor: '#3b82f6',
+                  boxShadow: '0 0 8px #3b82f6',
+                }}
+              />
+              <span style={{ fontWeight: 400 }}>
+                {statusDetail && !statusDetail.includes('score') && !statusDetail.includes('Auto selected')
+                  ? statusDetail
+                  : 'JAGGU is processing your request...'}
               </span>
             </div>
           )}
@@ -1355,8 +1362,9 @@ export const App: React.FC<AppProps> = ({
                       data-testid="submit-btn"
                       type="submit"
                       disabled={!input.trim() && attachedFiles.length === 0}
+                      title="Send message (Enter ↵)"
                       style={{
-                        padding: '5px 14px',
+                        padding: '6px 16px',
                         backgroundColor:
                           input.trim() || attachedFiles.length > 0
                             ? 'var(--vscode-button-background, #0078d4)'
@@ -1373,16 +1381,16 @@ export const App: React.FC<AppProps> = ({
                           input.trim() || attachedFiles.length > 0 ? 'pointer' : 'not-allowed',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '4px',
+                        gap: '6px',
                         transition: 'all 0.15s ease',
                         boxShadow:
                           input.trim() || attachedFiles.length > 0
-                            ? '0 2px 8px rgba(0, 120, 212, 0.35)'
+                            ? '0 2px 8px rgba(0, 120, 212, 0.4)'
                             : 'none',
                       }}
                     >
                       <span>Send</span>
-                      <span>↑</span>
+                      <span style={{ fontSize: '13px', fontWeight: 700 }}>↑</span>
                     </button>
                   )}
                 </div>

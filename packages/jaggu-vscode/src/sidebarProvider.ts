@@ -663,7 +663,7 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
     const abortSignal = this._activeAbortController.signal;
 
     // 2. Transition to PROCESSING state
-    this._setStatus('PROCESSING', 'Analyzing workspace context...');
+    this._setStatus('PROCESSING', 'Thinking...');
     this._eventBus.emit('agent.started', {
       taskId: id,
       conversationId: 'conv_main',
@@ -721,10 +721,7 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
             provenance: contextPackage.provenance,
           },
         });
-        this._setStatus(
-          'PROCESSING',
-          `Grounded with ${contextPackage.filesCount} workspace file(s)...`,
-        );
+        this._setStatus('PROCESSING', 'Thinking...');
       }
     } catch (ctxErr: unknown) {
       if (abortSignal.aborted) return;
@@ -850,8 +847,14 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
     }
 
     const systemPromptParts = [
-      'You are JAGGU, an autonomous AI coding agent designed to assist with software engineering tasks in this workspace.',
-      'Always refer to the actual repository structure and provided files to answer questions accurately and concisely.',
+      'You are JAGGU, an expert autonomous AI coding assistant integrated directly into the developer IDE, designed with the polish and directness of Cursor and GitHub Copilot.',
+      'Be direct, technical, concise, and helpful.',
+      '',
+      'CRITICAL OUTPUT RULES (ZERO AI SLOP):',
+      '1. NEVER output conversational filler, preambles, or transition chatter before calling tools (e.g. NEVER say "I will analyze this project...", "Now let me explore...", "Let me read the key files...", "Now let me look at...").',
+      '2. SILENT TOOL INVOCATION: When you need workspace information, trigger tool calls (list_directory, read_file, search_code) silently without speaking beforehand.',
+      '3. DIRECT ANSWERS: When delivering your answer, begin immediately with the structured explanation or code in clean GitHub-flavored Markdown. Do not say "Perfect! Now I understand...".',
+      '4. FORMATTING: Use clean markdown headings (##, ###), bullet points, and code blocks with explicit language tags.',
     ];
     if (contextPackage && contextPackage.promptContextText) {
       systemPromptParts.push(contextPackage.promptContextText);
@@ -930,7 +933,6 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
 
           if (chunk.type === 'token') {
             turnTokens += chunk.text;
-            fullResponseText += chunk.text;
             this.postMessageToWebview({
               type: 'token.delta',
               payload: {
@@ -949,8 +951,17 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
 
         if (abortSignal.aborted) break;
 
-        // If turn has no tool calls, the model has delivered its final textual response
-        if (turnToolCalls.length === 0) {
+        // If turn has tool calls, discard intermediate filler tokens from user view
+        if (turnToolCalls.length > 0) {
+          if (turnTokens.trim().length > 0) {
+            this.postMessageToWebview({
+              type: 'token.reset',
+              payload: { messageId },
+            });
+          }
+        } else {
+          // Final text response reached
+          fullResponseText = turnTokens;
           loopFinished = true;
           break;
         }
@@ -977,14 +988,14 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
 
           const toolName = currentToolCall.name;
           const toolArgs = currentToolCall.arguments;
-          let activityMsg = `Executing ${toolName}...`;
+          let activityMsg = 'Working...';
 
           if (toolName === 'search_code') {
             activityMsg = `Searching repository for "${toolArgs.query || ''}"...`;
           } else if (toolName === 'read_file') {
             activityMsg = `Reading ${toolArgs.filePath || ''}...`;
           } else if (toolName === 'list_directory') {
-            activityMsg = `Listing directory ${toolArgs.directoryPath || '.'}...`;
+            activityMsg = `Inspecting workspace...`;
           } else if (toolName === 'propose_edit') {
             activityMsg = `Preparing changes for ${toolArgs.filePath || ''}...`;
           } else if (toolName === 'apply_edit') {
