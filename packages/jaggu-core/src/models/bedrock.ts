@@ -24,9 +24,35 @@ import {
 type BedrockDocument =
   null | boolean | number | string | BedrockDocument[] | { [key: string]: BedrockDocument };
 
-export const BEDROCK_DEFAULT_MODEL = 'anthropic.claude-3-5-sonnet-20241022-v2:0';
+export const BEDROCK_DEFAULT_MODEL = 'au.anthropic.claude-sonnet-4-5-20250929-v1:0';
 
 export const BEDROCK_SUPPORTED_MODELS: ModelMetadata[] = [
+  {
+    id: 'au.anthropic.claude-sonnet-4-5-20250929-v1:0',
+    displayName: 'Claude Sonnet 4.5 [AU / APAC] (AWS Bedrock)',
+    providerId: 'bedrock',
+    capabilities: {
+      streaming: true,
+      toolCalling: true,
+      vision: true,
+      structuredOutput: true,
+      maxContextTokens: 200000,
+      maxOutputTokens: 8192,
+    },
+  },
+  {
+    id: 'apac.amazon.nova-pro-v1:0',
+    displayName: 'Amazon Nova Pro [APAC] (AWS Bedrock)',
+    providerId: 'bedrock',
+    capabilities: {
+      streaming: true,
+      toolCalling: true,
+      vision: true,
+      structuredOutput: true,
+      maxContextTokens: 300000,
+      maxOutputTokens: 5000,
+    },
+  },
   {
     id: 'anthropic.claude-3-5-sonnet-20241022-v2:0',
     displayName: 'Claude 3.5 Sonnet v2 (AWS Bedrock)',

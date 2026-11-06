@@ -37,7 +37,7 @@ export class CredentialManager {
 
   public getActiveModel(): string {
     const config = vscode.workspace.getConfiguration('jaggu');
-    return config.get<string>('model', 'anthropic.claude-3-5-sonnet-20241022-v2:0');
+    return config.get<string>('model', 'au.anthropic.claude-sonnet-4-5-20250929-v1:0');
   }
 
   public async setActiveModel(modelId: string): Promise<void> {

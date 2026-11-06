@@ -238,8 +238,10 @@ export function activate(context: vscode.ExtensionContext): {
           try {
             const bedrockProvider = modelGateway.getProvider('bedrock');
             const apiKey = await credentialManager.getApiKey('bedrock');
+            const testModel =
+              credentialManager.getActiveModel() || 'au.anthropic.claude-sonnet-4-5-20250929-v1:0';
             const stream = bedrockProvider.streamChat([{ role: 'user', content: 'Ping' }], {
-              model: 'anthropic.claude-3-5-sonnet-20241022-v2:0',
+              model: testModel,
               maxTokens: 4,
               apiKey,
             });
@@ -248,7 +250,7 @@ export function activate(context: vscode.ExtensionContext): {
               break;
             }
             vscode.window.showInformationMessage(
-              '✓ Connected — AWS Bedrock Claude 3.5 Sonnet is operational.',
+              `✓ Connected — AWS Bedrock [${testModel}] is operational.`,
             );
           } catch (err: unknown) {
             const error = err as { code?: string; message?: string } | undefined;

@@ -211,8 +211,8 @@
         },
         "jaggu.model": {
           "type": "string",
-          "default": "anthropic.claude-3-5-sonnet-20241022-v2:0",
-          "description": "Active AI model ID (e.g., 'anthropic.claude-3-5-sonnet-20241022-v2:0', 'us.anthropic.claude-3-5-sonnet-20241022-v2:0', 'anthropic.claude-3-5-haiku-20241022-v1:0')"
+          "default": "au.anthropic.claude-sonnet-4-5-20250929-v1:0",
+          "description": "Active AI model ID (e.g., 'au.anthropic.claude-sonnet-4-5-20250929-v1:0', 'apac.amazon.nova-pro-v1:0')"
         },
         "jaggu.bedrock.region": {
           "type": "string",
