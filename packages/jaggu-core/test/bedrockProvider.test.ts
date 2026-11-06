@@ -171,6 +171,51 @@ describe('BedrockProvider Unit Tests', () => {
     });
   });
 
+  it('should group multiple consecutive tool results into a single user message for Bedrock', async () => {
+    let capturedInput: any;
+    const mockClient = {
+      send: vi.fn().mockImplementation((command) => {
+        capturedInput = command.input;
+        return Promise.resolve({
+          stream: (async function* () {
+            yield { messageStart: { role: 'assistant' } };
+            yield { contentBlockDelta: { delta: { text: 'Done' } } };
+            yield { messageStop: { stopReason: 'end_turn' } };
+          })(),
+        });
+      }),
+    };
+    vi.spyOn(provider, 'getClient').mockReturnValue(mockClient as any);
+
+    const stream = provider.streamChat(
+      [
+        { role: 'user', content: 'Explore repo' },
+        {
+          role: 'assistant',
+          content: '',
+          toolCalls: [
+            { id: 'tool_1', name: 'list_dir', arguments: '{}' },
+            { id: 'tool_2', name: 'read_file', arguments: '{}' },
+          ],
+        },
+        { role: 'tool', toolCallId: 'tool_1', content: 'file1.ts' },
+        { role: 'tool', toolCallId: 'tool_2', content: 'contents' },
+      ],
+      { model: 'au.anthropic.claude-sonnet-4-5-20250929-v1:0' },
+    );
+
+    for await (const _ of stream) {
+      // consume
+    }
+
+    expect(capturedInput).toBeDefined();
+    expect(capturedInput.messages).toHaveLength(3); // [user, assistant, user-with-2-tool-results]
+    expect(capturedInput.messages[2].role).toBe('user');
+    expect(capturedInput.messages[2].content).toHaveLength(2);
+    expect(capturedInput.messages[2].content[0].toolResult.toolUseId).toBe('tool_1');
+    expect(capturedInput.messages[2].content[1].toolResult.toolUseId).toBe('tool_2');
+  });
+
   it('should map AccessDeniedException to AUTH_FAILURE', async () => {
     const error = new Error('User is not authorized');
     error.name = 'AccessDeniedException';

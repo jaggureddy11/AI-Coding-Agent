@@ -282,18 +282,25 @@ export class BedrockProvider implements IModelProvider {
       }
 
       if (msg.role === 'tool') {
-        conversationMessages.push({
-          role: 'user',
-          content: [
-            {
-              toolResult: {
-                toolUseId: msg.toolCallId || 'call_default',
-                content: [{ text: msg.content }],
-                status: 'success',
-              },
-            },
-          ],
-        });
+        const toolResultBlock: ContentBlock = {
+          toolResult: {
+            toolUseId: msg.toolCallId || 'call_default',
+            content: [{ text: msg.content }],
+            status: 'success',
+          },
+        };
+
+        // In Bedrock Converse API, all tool results answering an assistant turn's tool calls
+        // MUST be combined into a single user message's content array.
+        const lastMsg = conversationMessages[conversationMessages.length - 1];
+        if (lastMsg && lastMsg.role === 'user' && Array.isArray(lastMsg.content)) {
+          lastMsg.content.push(toolResultBlock);
+        } else {
+          conversationMessages.push({
+            role: 'user',
+            content: [toolResultBlock],
+          });
+        }
         continue;
       }
 
