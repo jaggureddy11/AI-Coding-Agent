@@ -152,7 +152,7 @@ export function activate(context: vscode.ExtensionContext): {
   context.subscriptions.push(
     vscode.commands.registerCommand('jaggu.startSession', async () => {
       await vscode.commands.executeCommand('jaggu.sidebarView.focus');
-      await sidebarProvider.handleIncomingMessage({ type: 'ui.clear', payload: {} });
+      sidebarProvider.startNewSession();
       vscode.window.showInformationMessage('JAGGU: Fresh session started.');
     }),
   );

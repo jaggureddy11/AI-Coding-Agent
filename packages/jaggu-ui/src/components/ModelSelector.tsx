@@ -79,9 +79,9 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
 
   if (!isAuto && activeModel) {
     if (activeModel.providerId === 'bedrock') {
-      badgeText = 'BEDROCK';
-      badgeColor = '#ff9900';
-      badgeBg = 'rgba(255, 153, 0, 0.15)';
+      badgeText = 'CLOUD';
+      badgeColor = '#60a5fa';
+      badgeBg = 'rgba(96, 165, 250, 0.15)';
     } else if (activeModel.access === 'free') {
       badgeText = 'FREE';
       badgeColor = '#4caf50';
@@ -148,11 +148,11 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
           }}
         >
           <optgroup label="AUTO (RECOMMENDED)">
-            <option value="auto">Auto (Bedrock Haiku - Fast & Simple)</option>
+            <option value="auto">Auto (Claude Haiku - Fast & Simple)</option>
           </optgroup>
 
           {bedrockModels.length > 0 && (
-            <optgroup label="AWS BEDROCK (ACTIVE MODELS)">
+            <optgroup label="RECOMMENDED CLOUD MODELS">
               {bedrockModels.map((m) => (
                 <option key={m.id} value={m.id}>
                   {m.displayName}

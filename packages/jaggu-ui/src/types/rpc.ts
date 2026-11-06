@@ -84,6 +84,7 @@ export type ExtensionToWebviewMessage =
     }
   | { type: 'token.delta'; payload: { text: string; messageId: string } }
   | { type: 'token.reset'; payload: { messageId: string } }
+  | { type: 'session.new'; payload?: Record<string, unknown> }
   | {
       type: 'token.complete';
       payload: {
@@ -269,6 +270,7 @@ export function isValidExtensionMessage(msg: unknown): msg is ExtensionToWebview
     'model.fallback',
     'token.delta',
     'token.reset',
+    'session.new',
     'token.complete',
     'context.assembled',
     'agent.approval_requested',

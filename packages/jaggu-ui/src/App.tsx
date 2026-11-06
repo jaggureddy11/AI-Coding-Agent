@@ -47,6 +47,13 @@ export interface ScopeChangeState {
   reason: string;
 }
 
+export interface ChatSession {
+  id: string;
+  title: string;
+  messages: ChatMessage[];
+  updatedAt: number;
+}
+
 export const App: React.FC<AppProps> = ({
   vscode,
   initialStatus = 'IDLE',
@@ -54,13 +61,54 @@ export const App: React.FC<AppProps> = ({
 }) => {
   const [status, setStatus] = useState<UiAgentStatus>(initialStatus);
   const [statusDetail, setStatusDetail] = useState<string | undefined>();
-  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
+
+  // Robust session storage across IDE reloads and webview lifecycle
+  const [sessions, setSessions] = useState<ChatSession[]>(() => {
+    try {
+      const saved = vscode?.getState() as { sessions?: ChatSession[] } | undefined;
+      if (saved?.sessions && Array.isArray(saved.sessions) && saved.sessions.length > 0) {
+        return saved.sessions;
+      }
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const local = window.localStorage.getItem('jaggu_sessions');
+        if (local) {
+          const parsed = JSON.parse(local);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      }
+    } catch {}
+    return [];
+  });
+
+  const [currentSessionId, setCurrentSessionId] = useState<string>(() => {
+    try {
+      const saved = vscode?.getState() as { activeSessionId?: string } | undefined;
+      if (saved?.activeSessionId) return saved.activeSessionId;
+    } catch {}
+    return `sess_${Date.now()}`;
+  });
+
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+
+  const [messages, setMessages] = useState<ChatMessage[]>(() => {
+    if (initialMessages && initialMessages.length > 0) return initialMessages;
+    try {
+      const saved = vscode?.getState() as
+        | { sessions?: ChatSession[]; activeSessionId?: string }
+        | undefined;
+      if (saved?.sessions && saved.activeSessionId) {
+        const found = saved.sessions.find((s) => s.id === saved.activeSessionId);
+        if (found && found.messages) return found.messages;
+      }
+    } catch {}
+    return [];
+  });
   const [proposals, setProposals] = useState<ProposalItem[]>([]);
   const [activePlan, setActivePlan] = useState<ActivePlanState | null>(null);
   const [scopeChange, setScopeChange] = useState<ScopeChangeState | null>(null);
   const [input, setInput] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [activeConfig, setActiveConfig] = useState<{ provider: string; model: string }>({
+  const [_activeConfig, setActiveConfig] = useState<{ provider: string; model: string }>({
     provider: 'mock',
     model: 'mock-fast',
   });
@@ -102,6 +150,42 @@ export const App: React.FC<AppProps> = ({
   useEffect(() => {
     scrollToBottom();
   }, [messages, status]);
+
+  // Sync active messages to session storage and VS Code webview state
+  useEffect(() => {
+    if (messages.length === 0) return;
+    setSessions((prev) => {
+      const existingIdx = prev.findIndex((s) => s.id === currentSessionId);
+      const firstUser = messages.find((m) => m.role === 'user');
+      const rawTitle = firstUser?.text.trim() || 'New Chat';
+      const cleanTitle = rawTitle.slice(0, 32);
+      const title = cleanTitle.length > 30 ? `${cleanTitle}...` : cleanTitle;
+
+      const updatedSession: ChatSession = {
+        id: currentSessionId,
+        title,
+        messages,
+        updatedAt: Date.now(),
+      };
+
+      let newSessions: ChatSession[];
+      if (existingIdx >= 0) {
+        newSessions = [...prev];
+        newSessions[existingIdx] = updatedSession;
+      } else {
+        newSessions = [updatedSession, ...prev];
+      }
+
+      try {
+        vscode?.setState({ sessions: newSessions, activeSessionId: currentSessionId });
+        if (typeof window !== 'undefined' && window.localStorage) {
+          window.localStorage.setItem('jaggu_sessions', JSON.stringify(newSessions));
+        }
+      } catch {}
+
+      return newSessions;
+    });
+  }, [messages, currentSessionId, vscode]);
 
   // Auto-resize prompt textarea dynamically as user types
   useEffect(() => {
@@ -148,6 +232,18 @@ export const App: React.FC<AppProps> = ({
         case 'model.fallback':
           // Handled silently in backend
           break;
+        case 'session.new': {
+          const newId = `sess_${Date.now()}`;
+          setCurrentSessionId(newId);
+          setMessages([]);
+          setProposals([]);
+          setErrorMessage(null);
+          setStatus('IDLE');
+          setStatusDetail(undefined);
+          setAttachedFiles([]);
+          setIsHistoryOpen(false);
+          break;
+        }
         case 'token.reset': {
           const { messageId } = msg.payload;
           setMessages((prev) => prev.filter((m) => m.id !== messageId));
@@ -485,6 +581,27 @@ export const App: React.FC<AppProps> = ({
     });
   };
 
+  const handleNewChat = () => {
+    const newId = `sess_${Date.now()}`;
+    setCurrentSessionId(newId);
+    setMessages([]);
+    setProposals([]);
+    setErrorMessage(null);
+    setStatus('IDLE');
+    setStatusDetail(undefined);
+    setAttachedFiles([]);
+    setIsHistoryOpen(false);
+
+    vscode?.postMessage({
+      type: 'ui.clear',
+      payload: {},
+    });
+
+    try {
+      vscode?.setState({ sessions, activeSessionId: newId });
+    } catch {}
+  };
+
   const handleClear = () => {
     setMessages([]);
     setProposals([]);
@@ -496,6 +613,49 @@ export const App: React.FC<AppProps> = ({
       type: 'ui.clear',
       payload: {},
     });
+
+    setSessions((prev) => {
+      const updated = prev.filter((s) => s.id !== currentSessionId);
+      try {
+        vscode?.setState({ sessions: updated, activeSessionId: currentSessionId });
+        if (typeof window !== 'undefined' && window.localStorage) {
+          window.localStorage.setItem('jaggu_sessions', JSON.stringify(updated));
+        }
+      } catch {}
+      return updated;
+    });
+  };
+
+  const handleSelectSession = (sess: ChatSession) => {
+    setCurrentSessionId(sess.id);
+    setMessages(sess.messages || []);
+    setProposals([]);
+    setErrorMessage(null);
+    setStatus('IDLE');
+    setStatusDetail(undefined);
+    setAttachedFiles([]);
+    setIsHistoryOpen(false);
+
+    try {
+      vscode?.setState({ sessions, activeSessionId: sess.id });
+    } catch {}
+  };
+
+  const handleDeleteSession = (e: React.MouseEvent, sessionId: string) => {
+    e.stopPropagation();
+    setSessions((prev) => {
+      const updated = prev.filter((s) => s.id !== sessionId);
+      try {
+        vscode?.setState({ sessions: updated, activeSessionId: currentSessionId });
+        if (typeof window !== 'undefined' && window.localStorage) {
+          window.localStorage.setItem('jaggu_sessions', JSON.stringify(updated));
+        }
+      } catch {}
+      return updated;
+    });
+    if (sessionId === currentSessionId) {
+      handleNewChat();
+    }
   };
 
   const handleReviewDiff = (filePath: string) => {
@@ -632,7 +792,7 @@ export const App: React.FC<AppProps> = ({
           overflow: 'hidden',
         }}
       >
-        {/* 1. Header with branding, model selector & status */}
+        {/* 1. Header with branding, new chat & session controls */}
         <div
           style={{
             display: 'flex',
@@ -641,23 +801,22 @@ export const App: React.FC<AppProps> = ({
             padding: '8px 14px',
             borderBottom:
               '1px solid var(--vscode-sideBarSectionHeader-border, rgba(255, 255, 255, 0.06))',
-            backgroundColor: 'var(--vscode-sideBarSectionHeader-background, rgba(0, 0, 0, 0.1))',
+            backgroundColor: 'var(--vscode-sideBarSectionHeader-background, rgba(0, 0, 0, 0.15))',
             backdropFilter: 'blur(8px)',
-            minHeight: '32px',
+            minHeight: '34px',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span
               style={{
-                fontWeight: 600,
-                fontSize: '12.5px',
+                fontWeight: 700,
+                fontSize: '13px',
                 letterSpacing: '-0.02em',
                 color: 'var(--vscode-foreground, #ffffff)',
               }}
             >
               JAGGU
             </span>
-
             <span
               data-testid="provider-badge"
               style={{
@@ -666,17 +825,76 @@ export const App: React.FC<AppProps> = ({
                 borderRadius: '4px',
                 backgroundColor: 'rgba(255, 255, 255, 0.06)',
                 color: 'var(--vscode-descriptionForeground, #a1a1aa)',
-                fontWeight: 500,
-                textTransform: 'uppercase',
+                fontWeight: 600,
                 letterSpacing: '0.04em',
               }}
             >
-              {activeConfig.provider}
+              AI
             </span>
+            <StatusPill state={status} />
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <StatusPill state={status} />
+            {sessions.length > 0 && (
+              <button
+                type="button"
+                data-testid="history-toggle-btn"
+                onClick={() => setIsHistoryOpen((prev) => !prev)}
+                title="View previous chats"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  background: isHistoryOpen
+                    ? 'rgba(59, 130, 246, 0.2)'
+                    : 'rgba(255, 255, 255, 0.05)',
+                  border: isHistoryOpen
+                    ? '1px solid rgba(59, 130, 246, 0.4)'
+                    : '1px solid rgba(255, 255, 255, 0.08)',
+                  color: isHistoryOpen ? '#93c5fd' : 'var(--vscode-descriptionForeground, #a1a1aa)',
+                  cursor: 'pointer',
+                  fontSize: '11px',
+                  padding: '3px 8px',
+                  borderRadius: '5px',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <span>🕒</span>
+                <span>History</span>
+                <span style={{ fontSize: '10px', opacity: 0.7 }}>({sessions.length})</span>
+              </button>
+            )}
+
+            <button
+              type="button"
+              data-testid="new-chat-btn"
+              onClick={handleNewChat}
+              title="Start a new chat session"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                background: 'rgba(255, 255, 255, 0.08)',
+                border: '1px solid rgba(255, 255, 255, 0.14)',
+                color: 'var(--vscode-foreground, #ffffff)',
+                cursor: 'pointer',
+                fontSize: '11px',
+                fontWeight: 500,
+                padding: '3px 8px',
+                borderRadius: '5px',
+                transition: 'all 0.15s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.15)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
+              }}
+            >
+              <span style={{ fontSize: '12px', fontWeight: 600 }}>+</span>
+              <span>New</span>
+            </button>
+
             {messages.length > 0 && (
               <button
                 data-testid="clear-btn"
@@ -688,7 +906,7 @@ export const App: React.FC<AppProps> = ({
                   color: 'var(--vscode-descriptionForeground, #858585)',
                   cursor: 'pointer',
                   fontSize: '11px',
-                  padding: '2px 6px',
+                  padding: '2px 5px',
                   borderRadius: '4px',
                   opacity: 0.7,
                   transition: 'opacity 0.15s ease',
@@ -705,6 +923,117 @@ export const App: React.FC<AppProps> = ({
             )}
           </div>
         </div>
+
+        {/* Previous Chat Sessions History Drawer */}
+        {isHistoryOpen && (
+          <div
+            data-testid="history-drawer"
+            style={{
+              padding: '8px 12px',
+              backgroundColor: 'rgba(15, 15, 18, 0.98)',
+              borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '6px',
+              maxHeight: '180px',
+              overflowY: 'auto',
+            }}
+          >
+            <div
+              style={{
+                fontSize: '10px',
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+                color: 'var(--vscode-descriptionForeground, #858585)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                paddingBottom: '2px',
+              }}
+            >
+              <span>Previous Chats</span>
+              <button
+                type="button"
+                onClick={() => setIsHistoryOpen(false)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'inherit',
+                  cursor: 'pointer',
+                  fontSize: '11px',
+                }}
+              >
+                ✕
+              </button>
+            </div>
+            {sessions.map((sess) => (
+              <div
+                key={sess.id}
+                onClick={() => handleSelectSession(sess)}
+                style={{
+                  padding: '6px 10px',
+                  borderRadius: '6px',
+                  backgroundColor:
+                    sess.id === currentSessionId
+                      ? 'rgba(59, 130, 246, 0.15)'
+                      : 'rgba(255, 255, 255, 0.03)',
+                  border:
+                    sess.id === currentSessionId
+                      ? '1px solid rgba(59, 130, 246, 0.35)'
+                      : '1px solid rgba(255, 255, 255, 0.05)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  fontSize: '11px',
+                  color:
+                    sess.id === currentSessionId
+                      ? '#93c5fd'
+                      : 'var(--vscode-foreground, #cccccc)',
+                }}
+              >
+                <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                  <span
+                    style={{
+                      fontWeight: 500,
+                      textOverflow: 'ellipsis',
+                      overflow: 'hidden',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {sess.title || 'Conversation'}
+                  </span>
+                  <span style={{ fontSize: '9px', opacity: 0.6 }}>
+                    {new Date(sess.updatedAt).toLocaleDateString([], {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={(e) => handleDeleteSession(e, sess.id)}
+                  title="Delete chat"
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'rgba(255, 255, 255, 0.4)',
+                    cursor: 'pointer',
+                    fontSize: '11px',
+                    padding: '2px 4px',
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = '#f87171')}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(255, 255, 255, 0.4)')}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Trust & Safe Execution Guarantee Bar (Visually hidden for minimal aesthetic) */}
         <TrustBadgeBar state={status} />

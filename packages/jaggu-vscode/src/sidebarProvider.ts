@@ -65,6 +65,7 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
     (decision: boolean | EditApprovalDecision) => void
   >();
   private readonly _pendingScopeApprovals = new Map<string, (approved: boolean) => void>();
+  private _conversationHistory: ModelMessage[] = [];
   private _lastHealthCheckTime = 0;
   private static readonly HEALTH_CHECK_TTL_MS = 20000; // 20s cache to avoid excessive probing
 
@@ -103,6 +104,33 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
     this._toolExecutor.registerTool(this._proposeEditTool);
     this._toolExecutor.registerTool(this._applyEditTool);
     this._toolExecutor.registerTool(new RunTestsTool());
+  }
+
+  public startNewSession(): void {
+    this._conversationHistory = [];
+    for (const resolver of this._pendingApprovals.values()) {
+      resolver(false);
+    }
+    this._pendingApprovals.clear();
+    for (const resolver of this._pendingPlanApprovals.values()) {
+      resolver(false);
+    }
+    this._pendingPlanApprovals.clear();
+    for (const resolver of this._pendingEditSetApprovals.values()) {
+      resolver(false);
+    }
+    this._pendingEditSetApprovals.clear();
+    if (this._activeAbortController) {
+      this._activeAbortController.abort();
+      this._activeAbortController = undefined;
+    }
+    if (this._statusResetTimer) {
+      clearTimeout(this._statusResetTimer);
+      this._statusResetTimer = undefined;
+    }
+    this._activeTaskId = undefined;
+    this.postMessageToWebview({ type: 'session.new', payload: {} });
+    this._setStatus('IDLE', 'Ready');
   }
 
   public getToolExecutor(): ToolExecutor {
@@ -630,19 +658,7 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
       }
 
       case 'ui.clear': {
-        for (const resolver of this._pendingApprovals.values()) {
-          resolver(false);
-        }
-        this._pendingApprovals.clear();
-        if (this._activeAbortController) {
-          this._activeAbortController.abort();
-          this._activeAbortController = undefined;
-        }
-        if (this._statusResetTimer) {
-          clearTimeout(this._statusResetTimer);
-          this._statusResetTimer = undefined;
-        }
-        this._setStatus('IDLE');
+        this.startNewSession();
         break;
       }
     }
@@ -861,11 +877,17 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
     }
     const systemPrompt = systemPromptParts.join('\n\n');
 
+    // Retain up to 16 recent messages for continuous conversational context
+    const historyWithoutSystem = this._conversationHistory
+      .filter((m) => m.role !== 'system')
+      .slice(-16);
+
     const messages: ModelMessage[] = [
       {
         role: 'system',
         content: systemPrompt,
       },
+      ...historyWithoutSystem,
       { role: 'user', content: text },
     ];
 
@@ -1151,6 +1173,13 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
             provenance: contextPackage?.provenance,
           },
         });
+
+        // Persist session history for contextual multi-turn conversation
+        this._conversationHistory.push({ role: 'user', content: text });
+        this._conversationHistory.push({ role: 'assistant', content: fullResponseText });
+        if (this._conversationHistory.length > 20) {
+          this._conversationHistory = this._conversationHistory.slice(-20);
+        }
 
         this._setStatus('SUCCESS', 'Task completed');
 

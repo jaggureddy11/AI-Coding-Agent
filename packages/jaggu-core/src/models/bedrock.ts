@@ -29,7 +29,7 @@ export const BEDROCK_DEFAULT_MODEL = 'au.anthropic.claude-haiku-4-5-20251001-v1:
 export const BEDROCK_SUPPORTED_MODELS: ModelMetadata[] = [
   {
     id: 'au.anthropic.claude-haiku-4-5-20251001-v1:0',
-    displayName: 'Claude Haiku 4.5 [Fast & Simple] (AWS Bedrock)',
+    displayName: 'Claude Haiku 4.5 (Fast & Simple)',
     providerId: 'bedrock',
     capabilities: {
       streaming: true,
@@ -42,7 +42,7 @@ export const BEDROCK_SUPPORTED_MODELS: ModelMetadata[] = [
   },
   {
     id: 'au.anthropic.claude-sonnet-4-5-20250929-v1:0',
-    displayName: 'Claude Sonnet 4.5 [Deep Reasoning] (AWS Bedrock)',
+    displayName: 'Claude Sonnet 4.5 (Deep Reasoning)',
     providerId: 'bedrock',
     capabilities: {
       streaming: true,
@@ -55,7 +55,7 @@ export const BEDROCK_SUPPORTED_MODELS: ModelMetadata[] = [
   },
   {
     id: 'apac.amazon.nova-pro-v1:0',
-    displayName: 'Amazon Nova Pro [Fast] (AWS Bedrock)',
+    displayName: 'Amazon Nova Pro (Fast)',
     providerId: 'bedrock',
     capabilities: {
       streaming: true,
@@ -68,7 +68,7 @@ export const BEDROCK_SUPPORTED_MODELS: ModelMetadata[] = [
   },
   {
     id: 'apac.amazon.nova-lite-v1:0',
-    displayName: 'Amazon Nova Lite [Ultra Fast] (AWS Bedrock)',
+    displayName: 'Amazon Nova Lite (Ultra Fast)',
     providerId: 'bedrock',
     capabilities: {
       streaming: true,

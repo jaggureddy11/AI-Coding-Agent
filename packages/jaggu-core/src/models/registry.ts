@@ -7,10 +7,10 @@ import {
 import { ModelError } from '../types/models.js';
 
 export const DEFAULT_BUILTIN_MODELS: ModelDescriptor[] = [
-  // --- AWS Bedrock (Fast, Simple & Powerful AI Models) ---
+  // --- Core Cloud AI Models ---
   {
     id: 'au.anthropic.claude-haiku-4-5-20251001-v1:0',
-    displayName: 'Claude Haiku 4.5 [Fast & Simple] (AWS Bedrock)',
+    displayName: 'Claude Haiku 4.5 (Fast & Simple)',
     providerId: 'bedrock',
     runtimeType: 'cloud',
     modelFamily: 'claude-haiku',
@@ -30,7 +30,7 @@ export const DEFAULT_BUILTIN_MODELS: ModelDescriptor[] = [
   },
   {
     id: 'au.anthropic.claude-sonnet-4-5-20250929-v1:0',
-    displayName: 'Claude Sonnet 4.5 [Deep Reasoning] (AWS Bedrock)',
+    displayName: 'Claude Sonnet 4.5 (Deep Reasoning)',
     providerId: 'bedrock',
     runtimeType: 'cloud',
     modelFamily: 'claude-sonnet',
@@ -50,7 +50,7 @@ export const DEFAULT_BUILTIN_MODELS: ModelDescriptor[] = [
   },
   {
     id: 'apac.amazon.nova-pro-v1:0',
-    displayName: 'Amazon Nova Pro [Fast] (AWS Bedrock)',
+    displayName: 'Amazon Nova Pro (Fast)',
     providerId: 'bedrock',
     runtimeType: 'cloud',
     modelFamily: 'nova-pro',
@@ -70,7 +70,7 @@ export const DEFAULT_BUILTIN_MODELS: ModelDescriptor[] = [
   },
   {
     id: 'apac.amazon.nova-lite-v1:0',
-    displayName: 'Amazon Nova Lite [Ultra Fast] (AWS Bedrock)',
+    displayName: 'Amazon Nova Lite (Ultra Fast)',
     providerId: 'bedrock',
     runtimeType: 'cloud',
     modelFamily: 'nova-lite',
