@@ -1,0 +1,6 @@
+{
+  "jaggu.provider": "bedrock",
+  "jaggu.model": "apac.amazon.nova-pro-v1:0",
+  "jaggu.bedrock.region": "ap-southeast-2"
+}
+

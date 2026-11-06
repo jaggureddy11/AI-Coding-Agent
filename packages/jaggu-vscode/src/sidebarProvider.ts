@@ -397,8 +397,9 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
     switch (message.type) {
       case 'ui.ready': {
         const providerId =
-          this._activeProviderId || this._credentialManager?.getActiveProvider() || 'auto';
-        const modelId = this._activeModelId || this._credentialManager?.getActiveModel() || 'auto';
+          this._activeProviderId || this._credentialManager?.getActiveProvider() || 'bedrock';
+        const modelId =
+          this._activeModelId || this._credentialManager?.getActiveModel() || 'apac.amazon.nova-pro-v1:0';
         const models = this._modelGateway.getModelRegistry().listModels();
         this.postMessageToWebview({
           type: 'agent.config',
@@ -406,7 +407,7 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
         });
         this.postMessageToWebview({
           type: 'agent.status',
-          payload: { state: this._currentStatus, detail: 'Ready — Auto (Free / Local priority)' },
+          payload: { state: this._currentStatus, detail: 'Ready — AWS Bedrock' },
         });
         // Check health of local runtimes in background without blocking
         this.checkRuntimesHealth().catch(() => {});
@@ -746,7 +747,10 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
         ? ['mock']
         : registeredProviders;
 
-    let routingPolicy: import('@jaggu/core').ModelRoutingPolicy = 'free-first';
+    const activeProvider =
+      this._activeProviderId || this._credentialManager?.getActiveProvider() || 'bedrock';
+    let routingPolicy: import('@jaggu/core').ModelRoutingPolicy =
+      activeProvider === 'bedrock' ? 'bedrock-first' : 'free-first';
     if (localOnly) {
       routingPolicy = 'local-only';
     } else {
@@ -759,7 +763,7 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
     }
 
     this._modelRouter.setPolicy(routingPolicy);
-    this._modelRouter.setAllowPaidFallback(allowPaid);
+    this._modelRouter.setAllowPaidFallback(activeProvider === 'bedrock' ? true : allowPaid);
     this._modelRouter.setConfiguredProviders(configuredProviderIds);
 
     const explicitModel =
@@ -817,7 +821,7 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
     ) {
       // If a cloud model without credentials is selected, fallback to available providers
       const fallback = this._modelRouter.routeFallback(routeResult, 'Missing authentication token');
-      if (fallback) {
+      if (fallback && fallback.providerId !== 'mock') {
         routeResult = fallback;
         providerId = fallback.providerId;
         activeModel = fallback.selectedModel.id;
@@ -837,7 +841,7 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
           type: 'agent.error',
           payload: {
             code: 'MISSING_API_KEY',
-            message: `API token is required for [${providerId}]. Please configure credentials in Settings or AWS CLI.`,
+            message: `API credentials are required for [${providerId}]. Please select AWS Bedrock in the model selector or configure credentials in Settings.`,
           },
         });
         this._setStatus('ERROR', 'API key missing');
@@ -1151,11 +1155,21 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
       }
 
       const errMsg = error instanceof Error ? error.message : String(error);
+      let cleanErrMsg = sanitizeSecretStrings(errMsg);
+      if (
+        cleanErrMsg.toLowerCase().includes('session has expired') ||
+        cleanErrMsg.toLowerCase().includes('reauthenticate') ||
+        cleanErrMsg.toLowerCase().includes('credentialsprovidererror')
+      ) {
+        cleanErrMsg =
+          '⚠️ AWS session expired. Please run "aws login" in your terminal to re-authenticate, then resend your message.';
+      }
+
       this.postMessageToWebview({
         type: 'agent.error',
         payload: {
           code: error instanceof ModelError ? error.code : 'MODEL_ERROR',
-          message: sanitizeSecretStrings(errMsg),
+          message: cleanErrMsg,
         },
       });
       this._setStatus('ERROR', 'Error occurred');

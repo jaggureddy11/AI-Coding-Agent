@@ -111,7 +111,8 @@ export class CredentialManager {
 
   public async getConfiguredCloudProviders(): Promise<string[]> {
     const providers = ['openai', 'anthropic', 'gemini', 'huggingface'];
-    const configured: string[] = ['bedrock', 'mock'];
+    const isTest = Boolean(process.env.VITEST || process.env.NODE_ENV === 'test');
+    const configured: string[] = isTest ? ['bedrock', 'mock'] : ['bedrock'];
     for (const p of providers) {
       const key = await this.getApiKey(p);
       if (key && key.trim().length > 0) {
