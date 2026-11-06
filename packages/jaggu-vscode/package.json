@@ -175,7 +175,12 @@
         },
         "jaggu.modelMode": {
           "type": "string",
-          "enum": ["auto", "free-and-local", "local-only", "manual"],
+          "enum": [
+            "auto",
+            "free-and-local",
+            "local-only",
+            "manual"
+          ],
           "default": "auto",
           "description": "JAGGU Model Mode. 'auto' selects best free/open model (Qwen3-Coder) -> local Ollama -> fallback."
         },
