@@ -58,4 +58,32 @@ All done!`;
     expect(html).toContain('Insert');
     expect(html).toContain('Copy');
   });
+
+  it('should render markdown headings (#, ##, ###) with proper semantic tags', () => {
+    const doc = '# Main Title\n\n## Subheading\n\n### Section Item';
+    const html = renderToString(<MarkdownMessage content={doc} />);
+    expect(html).toContain('<h2');
+    expect(html).toContain('Main Title</h2>');
+    expect(html).toContain('<h3');
+    expect(html).toContain('Subheading</h3>');
+    expect(html).toContain('<h4');
+    expect(html).toContain('Section Item</h4>');
+  });
+
+  it('should render bullet lists with semantic ul and li tags', () => {
+    const doc = '- First item\n- Second item\n- Third item';
+    const html = renderToString(<MarkdownMessage content={doc} />);
+    expect(html).toContain('<ul');
+    expect(html).toContain('<li');
+    expect(html).toContain('First item</li>');
+    expect(html).toContain('Second item</li>');
+  });
+
+  it('should format streaming unclosed code blocks at tail gracefully', () => {
+    const streamDoc = 'Here is the function in progress:\n```python\ndef calculate_metrics():\n    return 42';
+    const html = renderToString(<MarkdownMessage content={streamDoc} />);
+    expect(html).toContain('python');
+    expect(html).toContain('def calculate_metrics():');
+    expect(html).toContain('Copy');
+  });
 });

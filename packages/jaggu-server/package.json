@@ -1,6 +1,6 @@
 {
   "name": "@jaggu/server",
-  "version": "0.1.0",
+  "version": "2.0.0",
   "description": "Secure backend proxy server and LLM key manager for JAGGU",
   "license": "MIT",
   "main": "./dist/index.js",
@@ -14,7 +14,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@jaggu/core": "^0.1.0",
+    "@jaggu/core": "^2.0.0",
     "dotenv": "^16.4.7",
     "zod": "^3.24.1"
   },

@@ -173,7 +173,7 @@ export class JagguProxyServer {
     res.end(
       JSON.stringify({
         status: 'ok',
-        version: '0.1.0',
+        version: '2.0.0',
         uptimeSeconds: Math.floor((Date.now() - this.startTime) / 1000),
         defaultProvider: this.config.defaultProvider,
         memoryUsageMb: {

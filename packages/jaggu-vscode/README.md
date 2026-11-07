@@ -90,14 +90,14 @@ JAGGU uses a decoupled, event-driven multi-layer architecture:
 Run the following command in your terminal to install the packaged extension directly into your local VS Code instance:
 
 ```bash
-code --install-extension jaggu-vscode-0.1.0.vsix
+code --install-extension jaggu-vscode-2.0.0.vsix
 ```
 
 ### Install via VS Code UI
 1. Open VS Code.
 2. Open the Command Palette (`Cmd+Shift+P` on macOS / `Ctrl+Shift+P` on Windows/Linux).
 3. Type **`Extensions: Install from VSIX...`** and press Enter.
-4. Select `jaggu-vscode-0.1.0.vsix`.
+4. Select `jaggu-vscode-2.0.0.vsix`.
 
 ---
 

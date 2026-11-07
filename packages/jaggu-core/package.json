@@ -1,6 +1,6 @@
 {
   "name": "@jaggu/core",
-  "version": "0.1.0",
+  "version": "2.0.0",
   "description": "Pure TypeScript core agent engine, FSM, and contracts for JAGGU",
   "license": "MIT",
   "repository": {

@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.0] - 2026-11-07
+
+### Added
+- **Antigravity-Inspired Modern UI**: Redesigned floating input bar with glassmorphic aesthetics, fluid auto-resizing textarea, and responsive drag handles.
+- **Isolated Multi-Session Histories & New Chat**: Added multi-session support with separate conversation histories, instant switching, session deletion, and cross-reload state persistence.
+- **Zero-Slop Streaming**: Real-time token streaming with automatic preamble removal (eliminating AI conversational filler and robotic chatter) for instant, direct technical delivery.
+- **Insert at Cursor Action**: Added one-click "Insert" button on generated code blocks to immediately inject or replace code at the cursor in the active VS Code editor, with fallback to new documents if active editor is read-only.
+- **Live Voice Typing**: Integrated hands-free voice transcription powered by the Web Speech API with permission recovery, audio stream cleanup, and visual microphone state indicators.
+- **Clean Model Selector & Health Diagnostics**: Streamlined model selection dropdown featuring live health probes (Available, API Key Required, Endpoint Unreachable), cross-region deduplication, and non-blocking background runtime verification.
+- **Enhanced Markdown Typography**: Added semantic styling for Markdown headings (`#`, `##`, `###`), structured bullet lists, and in-progress live streaming code blocks.
+- **Hardened Error Handling & Re-authentication**: Added explicit guidance for expired AWS credentials and network drops with automatic token scrubbing.
+
+---
+
 ## [0.1.0] - 2026-09-15
 
 ### Added

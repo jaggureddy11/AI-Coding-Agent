@@ -2,7 +2,7 @@
   "name": "jaggu-vscode",
   "displayName": "JAGGU — Autonomous AI Coding Agent",
   "description": "Developer-controlled autonomous AI coding agent for VS Code. Understands repositories, formulates plans, executes verified multi-file edits, and self-heals errors.",
-  "version": "0.1.0",
+  "version": "2.0.0",
   "publisher": "jaggu",
   "engines": {
     "vscode": "^1.90.0"

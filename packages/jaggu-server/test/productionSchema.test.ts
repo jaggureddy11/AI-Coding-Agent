@@ -148,7 +148,7 @@ describe('Production Schema & Security Validations', () => {
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.status).toBe('ok');
-    expect(data.version).toBe('0.1.0');
+    expect(data.version).toBe('2.0.0');
     expect(typeof data.uptimeSeconds).toBe('number');
     expect(typeof data.memoryUsageMb.heapUsed).toBe('number');
     expect(data.providers.huggingface).toBe(true);

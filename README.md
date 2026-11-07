@@ -94,7 +94,7 @@ Built directly on the native VS Code extension runtime, JAGGU indexes your codeb
 Install the pre-built, self-contained `.vsix` package:
 
 ```bash
-code --install-extension packages/jaggu-vscode/jaggu-vscode-0.1.0.vsix
+code --install-extension packages/jaggu-vscode/jaggu-vscode-2.0.0.vsix
 ```
 
 _(Or install via VS Code UI: `Cmd+Shift+P` / `Ctrl+Shift+P` ➔ **`Extensions: Install from VSIX...`** ➔ select the file)._
@@ -246,7 +246,7 @@ When Model is set to **`Auto`**, JAGGU dynamically prioritizes zero-cost and loc
 ### Option A: Command Line Install
 
 ```bash
-code --install-extension packages/jaggu-vscode/jaggu-vscode-0.1.0.vsix
+code --install-extension packages/jaggu-vscode/jaggu-vscode-2.0.0.vsix
 ```
 
 ### Option B: VS Code UI Install
@@ -254,13 +254,13 @@ code --install-extension packages/jaggu-vscode/jaggu-vscode-0.1.0.vsix
 1. Open VS Code.
 2. Press `Cmd+Shift+P` (macOS) or `Ctrl+Shift+P` (Windows/Linux).
 3. Type **`Extensions: Install from VSIX...`** and hit Enter.
-4. Select `packages/jaggu-vscode/jaggu-vscode-0.1.0.vsix`.
+4. Select `packages/jaggu-vscode/jaggu-vscode-2.0.0.vsix`.
 
 ### Package Verification
 
 | Attribute            | Details                                                                                          |
 | :------------------- | :----------------------------------------------------------------------------------------------- |
-| **Artifact Path**    | [`packages/jaggu-vscode/jaggu-vscode-0.1.0.vsix`](packages/jaggu-vscode/jaggu-vscode-0.1.0.vsix) |
+| **Artifact Path**    | [`packages/jaggu-vscode/jaggu-vscode-2.0.0.vsix`](packages/jaggu-vscode/jaggu-vscode-2.0.0.vsix) |
 | **Package Size**     | ~1.1 MB (Self-contained, zero external runtime dependencies)                                     |
 | **Included Bundles** | Bundled CJS extension host, minified Webview IIFE, icons, manifest, license                      |
 | **Target VS Code**   | `^1.90.0` or higher                                                                              |

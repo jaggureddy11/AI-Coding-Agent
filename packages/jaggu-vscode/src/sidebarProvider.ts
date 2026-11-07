@@ -529,18 +529,31 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
 
       case 'editor.insert_code': {
         const { code } = message.payload;
-        const activeEditor = vscode.window.activeTextEditor;
-        if (activeEditor) {
-          await activeEditor.edit((editBuilder) => {
-            if (!activeEditor.selection.isEmpty) {
-              editBuilder.replace(activeEditor.selection, code);
-            } else {
-              editBuilder.insert(activeEditor.selection.active, code);
+        if (typeof code !== 'string' || !code) {
+          break;
+        }
+        try {
+          const activeEditor = vscode.window.activeTextEditor;
+          if (activeEditor) {
+            const success = await activeEditor.edit((editBuilder) => {
+              if (!activeEditor.selection.isEmpty) {
+                editBuilder.replace(activeEditor.selection, code);
+              } else {
+                editBuilder.insert(activeEditor.selection.active, code);
+              }
+            });
+            if (!success) {
+              const doc = await vscode.workspace.openTextDocument({ content: code });
+              await vscode.window.showTextDocument(doc);
             }
-          });
-        } else {
-          const doc = await vscode.workspace.openTextDocument({ content: code });
-          await vscode.window.showTextDocument(doc);
+          } else {
+            const doc = await vscode.workspace.openTextDocument({ content: code });
+            await vscode.window.showTextDocument(doc);
+          }
+        } catch (err: unknown) {
+          vscode.window.showErrorMessage(
+            `Failed to insert code: ${err instanceof Error ? err.message : String(err)}`,
+          );
         }
         break;
       }
@@ -1021,20 +1034,32 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
           // Internal tool invocation: do not stream reasoning tokens to the user chat bubble
         } else {
           // Final text response reached! Stream tokens to the user
-          let cleanedText = turnTokens;
-          cleanedText = cleanedText.replace(
+          let cleanedText = turnTokens.replace(
             /^(?:(?:I will|I'll|Let me|Now let me|I have|Here is|Here's) (?:analyze|explore|examine|look at|review|investigate|check|provide)[^\n]*\n+)+/i,
             '',
           );
+          if (cleanedText.trim().length === 0) {
+            cleanedText = turnTokens;
+          }
 
-          for (const token of turnChunks) {
+          if (cleanedText !== turnTokens) {
             this.postMessageToWebview({
               type: 'token.delta',
               payload: {
-                text: token,
+                text: cleanedText,
                 messageId,
               },
             });
+          } else {
+            for (const token of turnChunks) {
+              this.postMessageToWebview({
+                type: 'token.delta',
+                payload: {
+                  text: token,
+                  messageId,
+                },
+              });
+            }
           }
           fullResponseText = cleanedText;
           loopFinished = true;
