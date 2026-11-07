@@ -30,8 +30,9 @@
 
 <p align="center">
   <a href="https://code.visualstudio.com/"><img src="https://img.shields.io/badge/VS_Code-%5E1.90.0-007ACC?style=flat-square&logo=visualstudiocode&logoColor=white" alt="VS Code"></a>
+  <a href="https://marketplace.visualstudio.com/items?itemName=jaggu.jaggu-vscode"><img src="https://img.shields.io/badge/Version-2.0.0-blueviolet?style=flat-square" alt="Version 2.0.0"></a>
   <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.7_Strict-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript"></a>
-  <a href="#-development--testing"><img src="https://img.shields.io/badge/Tests-39_Suites_Passing_(260_Tests)-brightgreen?style=flat-square" alt="Tests"></a>
+  <a href="#-development--testing"><img src="https://img.shields.io/badge/Tests-40_Suites_Passing_(271_Tests)-brightgreen?style=flat-square" alt="Tests"></a>
   <a href="#-security--privacy-first"><img src="https://img.shields.io/badge/Privacy-Zero_Exfiltration-orange?style=flat-square" alt="Privacy"></a>
   <a href="#-supported-models--intelligent-routing"><img src="https://img.shields.io/badge/Air--Gapped-100%25_Offline_Ready-purple?style=flat-square" alt="Air-Gapped"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue?style=flat-square" alt="License"></a>
