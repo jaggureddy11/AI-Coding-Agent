@@ -69,6 +69,19 @@ JAGGU uses a two-layer Git strategy:
 
 ---
 
-## 4. Future Roadmap Capabilities (Phase 6+)
-- **Smart Branch Creation**: Recommending branch creation based on user prompt (e.g., `git checkout -b feat/add-healthcheck`).
+## 4. Git Execution & Terminal Actions (`execute_command`)
+
+In addition to read-only status and diff queries, JAGGU provides an `execute_command` tool (`PermissionTier = 'EXECUTION'`) allowing the model to perform terminal & Git workflows:
+- **Git Commit Workflow**: Stages files via `git add <files>` and creates semantic commits via `git commit -m "..."`.
+- **Git Push & Remotes**: Executes `git push <remote> <branch>` to sync changes with GitHub / remote repositories.
+- **Branch Management**: Supports switching or creating branches (`git checkout -b <branch>`).
+- **Security & Workspace Guardrails**:
+  - Restricts execution `cwd` to valid workspace roots (blocking path traversal).
+  - Blocks dangerous system commands (`rm -rf /`, `mkfs`, fork bombs, `sudo`).
+  - Sets `GIT_TERMINAL_PROMPT=0` to prevent unhandled interactive terminal deadlocks.
+- **Authorized Git CLI Bridge**: `GitCliService.runAuthorizedGitCommand`, `add`, `commit`, and `push` enable direct programmatic Git mutations when approved.
+
+---
+
+## 5. Future Roadmap Capabilities (Phase 6+)
 - **PR Description Synthesis**: Formulating complete GitHub/GitLab Pull Request descriptions with summaries, test proofs, and checklist items.

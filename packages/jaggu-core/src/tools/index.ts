@@ -6,3 +6,4 @@ export * from './builtin/listDirectoryTool.js';
 export * from './builtin/proposeEditTool.js';
 export * from './builtin/applyEditTool.js';
 export * from './builtin/runTestsTool.js';
+export * from './builtin/executeCommandTool.js';

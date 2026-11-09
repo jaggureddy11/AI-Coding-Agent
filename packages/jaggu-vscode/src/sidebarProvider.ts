@@ -20,6 +20,7 @@ import {
   ProposeEditTool,
   ApplyEditTool,
   RunTestsTool,
+  ExecuteCommandTool,
   RipgrepSearchService,
   InMemoryVirtualDocStore,
   ProposedEditRecord,
@@ -104,6 +105,7 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
     this._toolExecutor.registerTool(this._proposeEditTool);
     this._toolExecutor.registerTool(this._applyEditTool);
     this._toolExecutor.registerTool(new RunTestsTool());
+    this._toolExecutor.registerTool(new ExecuteCommandTool());
   }
 
   public getConversationHistory(sessionId: string = 'default'): ModelMessage[] {
@@ -931,6 +933,7 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
       '2. SILENT TOOL INVOCATION: When you need workspace information, trigger tool calls (list_directory, read_file, search_code) silently without speaking beforehand.',
       '3. DIRECT ANSWERS: When delivering your answer, begin immediately with the structured explanation or code in clean GitHub-flavored Markdown. Do not say "Perfect! Now I understand...".',
       '4. FORMATTING: Use clean markdown headings (##, ###), bullet points, and code blocks with explicit language tags.',
+      '5. TERMINAL & GIT ACTIONS: When asked to run terminal commands, inspect git status, create git commits, or push to remotes, use the `execute_command` tool. For git commits, ensure targeted files are staged (e.g. `git add <files>`) and craft a concise, descriptive Conventional Commit message.',
     ];
     if (contextPackage && contextPackage.promptContextText) {
       systemPromptParts.push(contextPackage.promptContextText);
@@ -1102,6 +1105,9 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
             activityMsg = `Applying changes...`;
           } else if (toolName === 'run_tests') {
             activityMsg = `Running tests...`;
+          } else if (toolName === 'execute_command') {
+            const cmd = (toolArgs.command as string) || '';
+            activityMsg = `Executing: ${cmd}...`;
           }
 
           this._setStatus('PROCESSING', activityMsg);
@@ -1223,6 +1229,14 @@ export class JagguSidebarProvider implements vscode.WebviewViewProvider {
               this.postMessageToWebview({
                 type: 'agent.activity',
                 payload: { message: testMsg },
+              });
+            } else if (toolName === 'execute_command') {
+              const execData = result.data as { exitCode?: number } | undefined;
+              const passed = execData?.exitCode === 0;
+              const statusMsg = passed ? 'Command succeeded' : 'Command completed with non-zero exit code';
+              this.postMessageToWebview({
+                type: 'agent.activity',
+                payload: { message: statusMsg },
               });
             }
 

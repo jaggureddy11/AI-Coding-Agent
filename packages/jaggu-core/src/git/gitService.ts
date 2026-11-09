@@ -6,6 +6,11 @@ export interface IGitService {
   getBranch(cwd: string): Promise<string>;
   getHeadCommit(cwd: string): Promise<string>;
   getStatus(cwd: string): Promise<Record<string, GitFileState>>;
+  add?(cwd: string, files?: string[]): Promise<{ code: number; stdout: string; stderr: string }>;
+  commit?(cwd: string, message: string): Promise<{ code: number; stdout: string; stderr: string }>;
+  push?(cwd: string, remote?: string, branch?: string): Promise<{ code: number; stdout: string; stderr: string }>;
+  runGitQuery?(cwd: string, args: string[]): Promise<{ code: number; stdout: string; stderr: string }>;
+  runAuthorizedGitCommand?(cwd: string, args: string[]): Promise<{ code: number; stdout: string; stderr: string }>;
 }
 
 export class GitCliService implements IGitService {
@@ -107,7 +112,56 @@ export class GitCliService implements IGitService {
         throw new Error(`Security violation: Argument contains path traversal "${arg}"`);
       }
     }
-    return this.runGit(args, cwd);
+    return this.runGit(args, cwd, false);
+  }
+
+  /**
+   * Run an authorized git command (e.g. commit, push, add) with path traversal security checks.
+   */
+  public async runAuthorizedGitCommand(
+    cwd: string,
+    args: string[],
+  ): Promise<{ code: number; stdout: string; stderr: string }> {
+    for (const arg of args) {
+      if (arg.includes('..') && !arg.startsWith('HEAD..') && !arg.includes('...')) {
+        throw new Error(`Security violation: Argument contains path traversal "${arg}"`);
+      }
+    }
+    return this.runGit(args, cwd, true);
+  }
+
+  /**
+   * Stage files for commit.
+   */
+  public async add(
+    cwd: string,
+    files: string[] = ['.'],
+  ): Promise<{ code: number; stdout: string; stderr: string }> {
+    return this.runAuthorizedGitCommand(cwd, ['add', ...files]);
+  }
+
+  /**
+   * Commit staged changes with a commit message.
+   */
+  public async commit(
+    cwd: string,
+    message: string,
+  ): Promise<{ code: number; stdout: string; stderr: string }> {
+    return this.runAuthorizedGitCommand(cwd, ['commit', '-m', message]);
+  }
+
+  /**
+   * Push committed changes to a remote repository.
+   */
+  public async push(
+    cwd: string,
+    remote?: string,
+    branch?: string,
+  ): Promise<{ code: number; stdout: string; stderr: string }> {
+    const args = ['push'];
+    if (remote) args.push(remote);
+    if (branch) args.push(branch);
+    return this.runAuthorizedGitCommand(cwd, args);
   }
 
   /**
@@ -116,8 +170,9 @@ export class GitCliService implements IGitService {
   private runGit(
     args: string[],
     cwd: string,
+    allowMutating = false,
   ): Promise<{ code: number; stdout: string; stderr: string }> {
-    // Defense: Disallow any destructive or mutating commands
+    // Defense: Disallow any destructive or mutating commands unless explicitly authorized
     const FORBIDDEN_VERBS = [
       'commit',
       'push',
@@ -133,7 +188,7 @@ export class GitCliService implements IGitService {
     ];
 
     const verb = args[0]?.toLowerCase() || '';
-    if (FORBIDDEN_VERBS.includes(verb)) {
+    if (!allowMutating && FORBIDDEN_VERBS.includes(verb)) {
       throw new Error(
         `Security violation: GitCliService disallows destructive/mutating verb "${verb}"`,
       );

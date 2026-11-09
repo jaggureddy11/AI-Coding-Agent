@@ -44,6 +44,14 @@ describe('Git-Aware Task Checkpoints & User Change Preservation (M6 Pillar 2)', 
         gitService.runGitQuery(process.cwd(), ['status', '../../etc/passwd']),
       ).rejects.toThrow(/Security violation: Argument contains path traversal/i);
     });
+
+    it('should permit authorized git operations (commit, push, add) via runAuthorizedGitCommand', async () => {
+      const gitService = new GitCliService();
+      // Test that path traversal is still blocked for authorized operations
+      await expect(
+        gitService.runAuthorizedGitCommand(process.cwd(), ['commit', '-m', '../../passwd']),
+      ).rejects.toThrow(/Security violation: Argument contains path traversal/i);
+    });
   });
 
   describe('TaskCheckpointManager Baseline & Attribution', () => {
